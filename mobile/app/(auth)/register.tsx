@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,7 +12,13 @@ import { Link } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/src/context/AuthContext';
 import { Button } from '@/src/components/ui/Button';
-import { Input } from '@/src/components/ui/Input';
+import { ValidatedInput } from '@/src/components/auth/ValidatedInput';
+import { PasswordStrength } from '@/src/components/auth/PasswordStrength';
+import {
+  validateEmail,
+  validateFullName,
+  validatePassword,
+} from '../../../../shared/validators/auth.rules';
 import { theme } from '@/constants/theme';
 
 export default function RegisterScreen() {
@@ -19,24 +26,31 @@ export default function RegisterScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [touched, setTouched] = useState({ name: false, email: false, password: false });
+  const [submitError, setSubmitError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const nameVal = useMemo(() => validateFullName(name, touched.name), [name, touched.name]);
+  const emailVal = useMemo(() => validateEmail(email, touched.email), [email, touched.email]);
+  const passwordVal = useMemo(
+    () => validatePassword(password, touched.password),
+    [password, touched.password],
+  );
+
+  const isFormValid =
+    nameVal.status === 'valid' && emailVal.status === 'valid' && passwordVal.status === 'valid';
+
   const handleRegister = async () => {
-    setError('');
-    if (!name || !email || !password) {
-      setError('Completa todos los campos');
-      return;
-    }
-    if (password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres');
-      return;
-    }
+    setTouched({ name: true, email: true, password: true });
+    setSubmitError('');
+    if (!isFormValid) return;
+
     setLoading(true);
     try {
-      await register(name.trim(), email.trim().toLowerCase(), password);
+      await register(name.trim().replace(/\s+/g, ' '), email.trim().toLowerCase(), password);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al registrarse');
+      setSubmitError(e instanceof Error ? e.message : 'Error al registrarse');
     } finally {
       setLoading(false);
     }
@@ -47,27 +61,55 @@ export default function RegisterScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <Text style={styles.logo}>Crear cuenta</Text>
-          <Text style={styles.subtitle}>Empieza tu ascenso hoy</Text>
+          <Text style={styles.subtitle}>Nombre completo, correo y contraseña segura</Text>
 
           <View style={styles.form}>
-            <Input label="Nombre" placeholder="Tu nombre" value={name} onChangeText={setName} />
-            <Input
-              label="Email"
-              placeholder="tu@email.com"
+            <ValidatedInput
+              label="Nombre completo"
+              placeholder="Juan Pérez"
+              value={name}
+              onChangeText={setName}
+              onBlur={() => setTouched((t) => ({ ...t, name: true }))}
+              validation={nameVal}
+              autoCapitalize="words"
+              autoComplete="name"
+            />
+            <ValidatedInput
+              label="Correo electrónico"
+              placeholder="nombre@gmail.com"
               value={email}
               onChangeText={setEmail}
+              onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+              validation={emailVal}
               autoCapitalize="none"
               keyboardType="email-address"
+              autoComplete="email"
             />
-            <Input
+            <ValidatedInput
               label="Contraseña"
               placeholder="Mínimo 8 caracteres"
               value={password}
               onChangeText={setPassword}
-              secureTextEntry
+              onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+              validation={passwordVal}
+              secureTextEntry={!showPassword}
+              autoComplete="new-password"
             />
-            {error ? <Text style={styles.error}>{error}</Text> : null}
-            <Button title="Registrarse" onPress={handleRegister} loading={loading} />
+            <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.showBtn}>
+              <Text style={styles.showBtnText}>{showPassword ? 'Ocultar' : 'Mostrar'} contraseña</Text>
+            </Pressable>
+            <PasswordStrength
+              checks={passwordVal.checks}
+              strength={passwordVal.strength}
+              visible={touched.password || password.length > 0}
+            />
+            {submitError ? <Text style={styles.error}>{submitError}</Text> : null}
+            <Button
+              title="Crear cuenta"
+              onPress={handleRegister}
+              loading={loading}
+              disabled={!isFormValid}
+            />
           </View>
 
           <Link href="/(auth)/login" asChild>
@@ -84,36 +126,13 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   flex: { flex: 1 },
-  scroll: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: theme.spacing.lg,
-  },
-  logo: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: theme.colors.text,
-    textAlign: 'center',
-  },
-  subtitle: {
-    color: theme.colors.textMuted,
-    textAlign: 'center',
-    marginBottom: 32,
-    fontSize: 16,
-  },
+  scroll: { flexGrow: 1, justifyContent: 'center', padding: theme.spacing.lg },
+  logo: { fontSize: 32, fontWeight: '700', color: theme.colors.text, textAlign: 'center' },
+  subtitle: { color: theme.colors.textMuted, textAlign: 'center', marginBottom: 32, fontSize: 15 },
   form: { marginBottom: theme.spacing.lg },
-  error: {
-    color: theme.colors.danger,
-    marginBottom: theme.spacing.sm,
-    textAlign: 'center',
-  },
-  link: {
-    color: theme.colors.textMuted,
-    textAlign: 'center',
-    fontSize: 15,
-  },
-  linkBold: {
-    color: theme.colors.primaryLight,
-    fontWeight: '600',
-  },
+  showBtn: { marginTop: -8, marginBottom: theme.spacing.sm },
+  showBtnText: { color: theme.colors.primaryLight, fontSize: 13, textAlign: 'right' },
+  error: { color: theme.colors.danger, marginBottom: theme.spacing.sm, textAlign: 'center' },
+  link: { color: theme.colors.textMuted, textAlign: 'center', fontSize: 15 },
+  linkBold: { color: theme.colors.primaryLight, fontWeight: '600' },
 });

@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,27 +12,37 @@ import { Link } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/src/context/AuthContext';
 import { Button } from '@/src/components/ui/Button';
-import { Input } from '@/src/components/ui/Input';
+import { ValidatedInput } from '@/src/components/auth/ValidatedInput';
+import { validateLoginEmail, validateLoginPassword } from '../../../../shared/validators/auth.rules';
 import { theme } from '@/constants/theme';
 
 export default function LoginScreen() {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [touched, setTouched] = useState({ email: false, password: false });
+  const [submitError, setSubmitError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const emailVal = useMemo(() => validateLoginEmail(email, touched.email), [email, touched.email]);
+  const passwordVal = useMemo(
+    () => validateLoginPassword(password, touched.password),
+    [password, touched.password],
+  );
+
+  const isFormValid = emailVal.status === 'valid' && passwordVal.status === 'valid';
+
   const handleLogin = async () => {
-    setError('');
-    if (!email || !password) {
-      setError('Completa todos los campos');
-      return;
-    }
+    setTouched({ email: true, password: true });
+    setSubmitError('');
+    if (!isFormValid) return;
+
     setLoading(true);
     try {
       await login(email.trim().toLowerCase(), password);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al iniciar sesión');
+      setSubmitError(e instanceof Error ? e.message : 'Correo o contraseña incorrectos');
     } finally {
       setLoading(false);
     }
@@ -42,26 +53,35 @@ export default function LoginScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <Text style={styles.logo}>ASCENDX</Text>
-          <Text style={styles.subtitle}>Tu Life OS con IA</Text>
+          <Text style={styles.subtitle}>Inicia sesión en tu cuenta</Text>
 
           <View style={styles.form}>
-            <Input
-              label="Email"
-              placeholder="tu@email.com"
+            <ValidatedInput
+              label="Correo electrónico"
+              placeholder="nombre@gmail.com"
               value={email}
               onChangeText={setEmail}
+              onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+              validation={emailVal}
               autoCapitalize="none"
               keyboardType="email-address"
+              autoComplete="email"
             />
-            <Input
+            <ValidatedInput
               label="Contraseña"
               placeholder="••••••••"
               value={password}
               onChangeText={setPassword}
-              secureTextEntry
+              onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+              validation={passwordVal}
+              secureTextEntry={!showPassword}
+              autoComplete="password"
             />
-            {error ? <Text style={styles.error}>{error}</Text> : null}
-            <Button title="Iniciar sesión" onPress={handleLogin} loading={loading} />
+            <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.showBtn}>
+              <Text style={styles.showBtnText}>{showPassword ? 'Ocultar' : 'Mostrar'} contraseña</Text>
+            </Pressable>
+            {submitError ? <Text style={styles.error}>{submitError}</Text> : null}
+            <Button title="Iniciar sesión" onPress={handleLogin} loading={loading} disabled={!isFormValid} />
           </View>
 
           <Link href="/(auth)/register" asChild>
@@ -78,11 +98,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   flex: { flex: 1 },
-  scroll: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: theme.spacing.lg,
-  },
+  scroll: { flexGrow: 1, justifyContent: 'center', padding: theme.spacing.lg },
   logo: {
     fontSize: 42,
     fontWeight: '800',
@@ -90,25 +106,11 @@ const styles = StyleSheet.create({
     letterSpacing: 4,
     textAlign: 'center',
   },
-  subtitle: {
-    color: theme.colors.textMuted,
-    textAlign: 'center',
-    marginBottom: 40,
-    fontSize: 16,
-  },
+  subtitle: { color: theme.colors.textMuted, textAlign: 'center', marginBottom: 40, fontSize: 16 },
   form: { marginBottom: theme.spacing.lg },
-  error: {
-    color: theme.colors.danger,
-    marginBottom: theme.spacing.sm,
-    textAlign: 'center',
-  },
-  link: {
-    color: theme.colors.textMuted,
-    textAlign: 'center',
-    fontSize: 15,
-  },
-  linkBold: {
-    color: theme.colors.primaryLight,
-    fontWeight: '600',
-  },
+  showBtn: { marginTop: -8, marginBottom: theme.spacing.md },
+  showBtnText: { color: theme.colors.primaryLight, fontSize: 13, textAlign: 'right' },
+  error: { color: theme.colors.danger, marginBottom: theme.spacing.sm, textAlign: 'center' },
+  link: { color: theme.colors.textMuted, textAlign: 'center', fontSize: 15 },
+  linkBold: { color: theme.colors.primaryLight, fontWeight: '600' },
 });
