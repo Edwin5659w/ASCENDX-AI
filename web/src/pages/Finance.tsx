@@ -4,7 +4,7 @@ import { Trash2, Wallet } from 'lucide-react';
 import { Card } from '../components/Card';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { EmptyState } from '../components/ui/EmptyState';
-import { PageLoader } from '../components/ui/PageLoader';
+import { FinanceSkeleton } from '../components/ui/FinanceSkeleton';
 import { financeApi } from '../api/services';
 import { useToast } from '../context/ToastContext';
 import type { FinanceRecord, FinanceSummary } from '../types';
@@ -74,7 +74,7 @@ export function Finance() {
     { name: 'Gastos', value: summary?.expense ?? 0, color: '#f87171' },
   ];
 
-  if (loading) return <PageLoader />;
+  if (loading) return <FinanceSkeleton />;
 
   return (
     <div>

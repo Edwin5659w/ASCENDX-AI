@@ -15,6 +15,9 @@ const envSchema = z.object({
   OPENAI_MODEL: z.string().default('gpt-4o-mini'),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
   WEB_APP_ORIGIN: z.string().url().default('http://localhost:5173'),
+  RESEND_API_KEY: z.string().optional(),
+  /** Dirección "From" verificada en Resend, ej: onboarding@resend.dev o noreply@tudominio.com */
+  RESEND_FROM: z.string().min(1).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

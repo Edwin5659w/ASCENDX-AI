@@ -37,13 +37,9 @@ export function ForgotPassword() {
 
         {done ? (
           <div className="rounded-2xl border border-white/10 bg-[#14141f] p-8 space-y-4 text-center">
-            <p className="text-zinc-300 text-sm leading-relaxed">
-              Si existe una cuenta con ese correo, puedes restablecer la contraseña con el enlace que
-              generamos.
-            </p>
-            <p className="text-zinc-500 text-xs">
-              En modo desarrollo, revisa la consola del servidor backend: verás la URL completa con el
-              token.
+            <p className="text-zinc-300 mb-4">
+              Si existe una cuenta con ese correo, te enviaremos instrucciones (revisa spam).
+              Sin servicio de email configurado, el enlace aparece en la consola del servidor en desarrollo.
             </p>
             <Link to="/login" className="inline-block text-violet-400 hover:text-violet-300 font-medium">
               Volver al inicio de sesión

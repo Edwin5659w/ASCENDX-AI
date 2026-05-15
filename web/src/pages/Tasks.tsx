@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { CheckCircle, Circle, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { EmptyState } from '../components/ui/EmptyState';
-import { PageLoader } from '../components/ui/PageLoader';
+import { ListPageSkeleton } from '../components/ui/ListPageSkeleton';
 import { tasksApi } from '../api/services';
 import { useToast } from '../context/ToastContext';
 import type { Task } from '../types';
@@ -66,7 +66,7 @@ export function Tasks() {
     }
   };
 
-  if (loading) return <PageLoader />;
+  if (loading) return <ListPageSkeleton rows={6} />;
 
   return (
     <div>

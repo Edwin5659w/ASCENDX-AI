@@ -6,6 +6,7 @@ import { env } from '../config/env';
 import { AppError } from '../middleware/errorHandler';
 import type { RegisterInput, LoginInput } from '@ascendx/shared/validators/auth.validator';
 import type { AuthPayload } from '../middleware/auth';
+import { emailService } from './email.service';
 
 const SALT_ROUNDS = 12;
 
@@ -115,8 +116,19 @@ export const authService = {
 
     const base = env.WEB_APP_ORIGIN.replace(/\/$/, '');
     const link = `${base}/reset-password?token=${token}`;
-    if (env.NODE_ENV === 'development') {
-      console.log('[ascendx] Recuperación de contraseña:', link);
+
+    try {
+      const sent = await emailService.sendPasswordReset(user.email, link, user.name);
+      if (!sent) {
+        if (env.NODE_ENV === 'development') {
+          console.log('[ascendx] Email no enviado (configura RESEND_API_KEY y RESEND_FROM). Enlace:', link);
+        }
+      }
+    } catch (e) {
+      console.error('[ascendx] Error enviando email de recuperación:', e);
+      if (env.NODE_ENV === 'development') {
+        console.log('[ascendx] Enlace de respaldo:', link);
+      }
     }
 
     return { ok: true as const };

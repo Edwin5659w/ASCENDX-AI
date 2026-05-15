@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { AlertTriangle, Target, CheckSquare, Flame, Wallet } from 'lucide-react';
 import { Card } from '../components/Card';
-import { PageLoader } from '../components/ui/PageLoader';
+import { DashboardSkeleton } from '../components/ui/DashboardSkeleton';
+import { GamificationPanel } from '../components/GamificationPanel';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { userApi, aiApi } from '../api/services';
@@ -46,7 +47,7 @@ export function Dashboard() {
     { label: 'Balance', value: `$${stats?.financeBalance ?? 0}`, icon: Wallet, color: 'text-cyan-400' },
   ];
 
-  if (loading) return <PageLoader />;
+  if (loading) return <DashboardSkeleton />;
 
   return (
     <div>
@@ -54,9 +55,10 @@ export function Dashboard() {
         Hola, {user?.name?.split(' ')[0]} 👋
       </h1>
       <p className="text-zinc-500 mb-6">
-        Nivel {user?.level} · {user?.xp} XP
+        Sigue sumando XP con tareas y hábitos
       </p>
 
+      <GamificationPanel user={user ?? null} stats={stats} />
       {warning && (
         <div className="mb-6 flex gap-3 p-4 rounded-xl border border-amber-500/30 bg-amber-500/10">
           <AlertTriangle className="text-amber-400 shrink-0 mt-0.5" size={20} />

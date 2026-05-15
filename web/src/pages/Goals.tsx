@@ -3,7 +3,7 @@ import { Target, Trash2 } from 'lucide-react';
 import { Card } from '../components/Card';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { EmptyState } from '../components/ui/EmptyState';
-import { PageLoader } from '../components/ui/PageLoader';
+import { ListPageSkeleton } from '../components/ui/ListPageSkeleton';
 import { goalsApi } from '../api/services';
 import { useToast } from '../context/ToastContext';
 import type { Goal } from '../types';
@@ -63,7 +63,7 @@ export function Goals() {
     }
   };
 
-  if (loading) return <PageLoader />;
+  if (loading) return <ListPageSkeleton rows={4} />;
 
   return (
     <div>

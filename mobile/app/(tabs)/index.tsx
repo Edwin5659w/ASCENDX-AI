@@ -15,6 +15,20 @@ import { Card } from '@/src/components/ui/Card';
 import type { UserStats } from '@/src/types/api';
 import { theme } from '@/constants/theme';
 
+const XP_PER_LEVEL = 100;
+
+function countUnlockedBadges(stats: UserStats | null, level: number, xp: number) {
+  const checks = [
+    (stats?.completedTasks ?? 0) >= 1,
+    (stats?.longestStreak ?? 0) >= 7,
+    (stats?.totalGoals ?? 0) >= 3,
+    level >= 5,
+    (stats?.activeHabits ?? 0) >= 3 && (stats?.longestStreak ?? 0) >= 3,
+    (stats?.totalXp ?? xp) >= 500,
+  ];
+  return { unlocked: checks.filter(Boolean).length, total: checks.length };
+}
+
 export default function DashboardScreen() {
   const { user } = useAuth();
   const [stats, setStats] = useState<UserStats | null>(null);
@@ -45,6 +59,12 @@ export default function DashboardScreen() {
     setRefreshing(false);
   };
 
+  const xp = user?.xp ?? 0;
+  const level = user?.level ?? 1;
+  const xpIntoLevel = xp % XP_PER_LEVEL;
+  const xpToNext = xpIntoLevel === 0 && xp > 0 ? XP_PER_LEVEL : XP_PER_LEVEL - xpIntoLevel;
+  const { unlocked, total } = countUnlockedBadges(stats, level, xp);
+
   return (
     <ScrollView
       style={styles.container}
@@ -53,9 +73,14 @@ export default function DashboardScreen() {
       <LinearGradient colors={['#1a1033', '#0a0a0f']} style={styles.header}>
         <Text style={styles.greeting}>Hola, {user?.name?.split(' ')[0] ?? 'viajero'}</Text>
         <View style={styles.levelRow}>
-          <Text style={styles.level}>Nivel {user?.level ?? 1}</Text>
-          <Text style={styles.xp}>{user?.xp ?? 0} XP</Text>
+          <Text style={styles.level}>Nivel {level}</Text>
+          <Text style={styles.xp}>{xp} XP</Text>
+          <Text style={styles.badgesMini}>{unlocked}/{total} logros</Text>
         </View>
+        <View style={styles.xpTrack}>
+          <View style={[styles.xpFill, { width: `${xpIntoLevel}%` }]} />
+        </View>
+        <Text style={styles.xpHint}>{xpToNext} XP hasta nivel {level + 1}</Text>
       </LinearGradient>
 
       <View style={styles.statsGrid}>
@@ -96,8 +121,32 @@ const styles = StyleSheet.create({
   },
   levelRow: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 12,
     marginTop: 8,
+    flexWrap: 'wrap',
+    alignItems: 'center',
+  },
+  badgesMini: {
+    color: theme.colors.warning,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  xpTrack: {
+    height: 8,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 4,
+    marginTop: 12,
+    overflow: 'hidden',
+  },
+  xpFill: {
+    height: '100%',
+    borderRadius: 4,
+    backgroundColor: theme.colors.primaryLight,
+  },
+  xpHint: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    marginTop: 6,
   },
   level: {
     color: theme.colors.primaryLight,

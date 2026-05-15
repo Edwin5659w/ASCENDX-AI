@@ -3,7 +3,8 @@ import { Check, Flame, Plus, Trash2 } from 'lucide-react';
 import { Card } from '../components/Card';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { EmptyState } from '../components/ui/EmptyState';
-import { PageLoader } from '../components/ui/PageLoader';
+import { ListPageSkeleton } from '../components/ui/ListPageSkeleton';
+import { Skeleton } from '../components/ui/Skeleton';
 import { habitsApi } from '../api/services';
 import { useToast } from '../context/ToastContext';
 import type { Habit } from '../types';
@@ -73,7 +74,15 @@ export function Habits() {
     }
   };
 
-  if (loading) return <PageLoader />;
+  if (loading) {
+    return (
+      <div>
+        <Skeleton className="h-8 w-32 mb-2" />
+        <Skeleton className="h-4 w-full max-w-md mb-6" />
+        <ListPageSkeleton rows={4} />
+      </div>
+    );
+  }
 
   return (
     <div>
