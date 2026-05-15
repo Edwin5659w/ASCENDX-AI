@@ -40,6 +40,15 @@ const authLimiter = rateLimit({
   message: { success: false, error: 'Demasiados intentos de autenticación' },
 });
 
+/** Límite adicional solo para rutas IA (coste OpenAI / abuso). */
+const aiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Límite de consultas IA alcanzado; prueba en unos minutos' },
+});
+
 app.use(limiter);
 
 app.get('/health', (_req, res) => {
@@ -52,7 +61,7 @@ app.use('/goals', goalRoutes);
 app.use('/tasks', taskRoutes);
 app.use('/habits', habitRoutes);
 app.use('/finance', financeRoutes);
-app.use('/ai', aiRoutes);
+app.use('/ai', aiLimiter, aiRoutes);
 
 app.use(errorHandler);
 
