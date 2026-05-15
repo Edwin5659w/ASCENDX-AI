@@ -1,0 +1,20 @@
+{
+  "name": "@ascendx/shared",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/types/index.js",
+  "types": "./dist/types/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "exports": {
+    "./validators/*": "./dist/validators/*.js",
+    "./types": "./dist/types/index.js"
+  },
+  "dependencies": {
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

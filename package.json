@@ -1,0 +1,13 @@
+{
+  "name": "ascendx-ai",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "shared"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev --workspace=backend",
+    "build:backend": "npm run build --workspace=backend"
+  }
+}

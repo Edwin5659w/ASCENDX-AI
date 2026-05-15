@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+.expo/
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+Thumbs.db
+coverage/
+.prisma/
+*.db
+*.db-journal
