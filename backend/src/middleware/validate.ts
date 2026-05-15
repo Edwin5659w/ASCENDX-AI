@@ -9,9 +9,10 @@ export const validate =
     const result = schema.safeParse(req[part]);
 
     if (!result.success) {
+      const firstMessage = result.error.errors[0]?.message ?? 'Validación fallida';
       res.status(400).json({
         success: false,
-        error: 'Validación fallida',
+        error: firstMessage,
         details: result.error.flatten().fieldErrors,
       });
       return;

@@ -1,16 +1,41 @@
 import { z } from 'zod';
 
+const fullNameSchema = z
+  .string()
+  .trim()
+  .min(3, 'El nombre completo es obligatorio')
+  .max(50, 'El nombre no puede exceder 50 caracteres')
+  .refine((val) => val.split(/\s+/).filter(Boolean).length >= 2, {
+    message: 'Ingresa nombre y apellido (ej: Juan Pérez)',
+  })
+  .refine((val) => {
+    const parts = val.split(/\s+/).filter(Boolean);
+    return parts.every((p) => p.length >= 2);
+  }, 'Cada nombre debe tener al menos 2 letras')
+  .refine((val) => /^[\p{L}]+(?:[' -][\p{L}]+)*$/u.test(val.replace(/\s+/g, ' ')), {
+    message: 'Solo letras, espacios, guiones o apóstrofes',
+  })
+  .refine((val) => !/\d/.test(val), 'El nombre no puede contener números');
+
+const passwordSchema = z
+  .string()
+  .min(8, 'Mínimo 8 caracteres')
+  .max(128, 'Máximo 128 caracteres')
+  .refine((val) => !/\s/.test(val), 'La contraseña no puede contener espacios')
+  .refine((val) => /[A-Z]/.test(val), 'Debe incluir al menos una mayúscula')
+  .refine((val) => /[a-z]/.test(val), 'Debe incluir al menos una minúscula')
+  .refine((val) => /[0-9]/.test(val), 'Debe incluir al menos un número')
+  .refine((val) => /[^A-Za-z0-9]/.test(val), 'Debe incluir al menos un carácter especial');
+
 export const registerSchema = z.object({
-  name: z
+  name: fullNameSchema,
+  email: z
     .string()
     .trim()
-    .min(2, 'El nombre debe tener al menos 2 caracteres')
-    .max(50, 'El nombre no puede exceder 50 caracteres'),
-  email: z.string().trim().email('Email inválido').toLowerCase(),
-  password: z
-    .string()
-    .min(8, 'La contraseña debe tener al menos 8 caracteres')
-    .max(128, 'La contraseña es demasiado larga'),
+    .email('Email inválido')
+    .max(255, 'Email demasiado largo')
+    .toLowerCase(),
+  password: passwordSchema,
 });
 
 export const loginSchema = z.object({
