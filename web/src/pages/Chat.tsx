@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react';
-import { Send } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Send, Sparkles } from 'lucide-react';
 import { aiApi } from '../api/services';
+import { Card } from '../components/Card';
 
 interface Message {
   id: string;
@@ -8,13 +9,24 @@ interface Message {
   content: string;
 }
 
+interface Insight {
+  type: string;
+  message: string;
+  createdAt: string;
+}
+
 export function Chat() {
   const [messages, setMessages] = useState<Message[]>([
     { id: '0', role: 'assistant', content: 'Hola, soy tu mentor ASCENDX. ¿En qué puedo ayudarte hoy?' },
   ]);
+  const [insights, setInsights] = useState<Insight[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    aiApi.insights().then(setInsights).catch(() => {});
+  }, []);
 
   const send = async () => {
     const text = input.trim();
@@ -39,6 +51,24 @@ export function Chat() {
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
       <h1 className="text-2xl font-bold text-white mb-4">Mentor IA</h1>
+
+      {insights.length > 0 && (
+        <Card className="mb-4 shrink-0">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="text-violet-400" size={18} />
+            <h2 className="text-sm font-semibold text-white">Insights recientes</h2>
+          </div>
+          <ul className="space-y-2 max-h-28 overflow-y-auto">
+            {insights.slice(0, 5).map((ins, i) => (
+              <li key={i} className="text-zinc-400 text-xs border-l-2 border-violet-500/50 pl-2">
+                <span className="text-violet-400 uppercase text-[10px]">{ins.type}</span>
+                <p className="text-zinc-300 mt-0.5">{ins.message}</p>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
       <div className="flex-1 overflow-y-auto space-y-3 mb-4 pr-2">
         {messages.map((m) => (
           <div
@@ -62,6 +92,7 @@ export function Chat() {
           className="flex-1 bg-[#1c1c2e] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500"
         />
         <button
+          type="button"
           onClick={send}
           disabled={loading}
           className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white p-3 rounded-xl">

@@ -9,7 +9,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -41,14 +42,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data.user);
   };
 
-  const logout = () => {
-    authApi.logout();
+  const logout = async () => {
+    await authApi.logout();
     setUser(null);
+  };
+
+  const refreshUser = async () => {
+    await loadUser();
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, isAuthenticated: !!user, login, register, logout }}>
+      value={{ user, isLoading, isAuthenticated: !!user, login, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

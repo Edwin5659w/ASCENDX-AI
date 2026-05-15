@@ -1,9 +1,29 @@
+import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Card } from '../components/Card';
 import { API_URL } from '../api/client';
+import { userApi } from '../api/services';
+import { useToast } from '../context/ToastContext';
 
 export function Profile() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
+  const { showToast } = useToast();
+  const [name, setName] = useState(user?.name ?? '');
+  const [saving, setSaving] = useState(false);
+
+  const saveName = async () => {
+    if (!name.trim() || name.trim() === user?.name) return;
+    setSaving(true);
+    try {
+      await userApi.updateProfile({ name: name.trim() });
+      await refreshUser();
+      showToast('Perfil actualizado', 'success');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Error al guardar', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="max-w-lg">
@@ -14,6 +34,21 @@ export function Profile() {
         </div>
         <h2 className="text-xl font-bold text-white">{user?.name}</h2>
         <p className="text-zinc-500">{user?.email}</p>
+      </Card>
+      <Card className="mb-4 space-y-3">
+        <label className="block text-sm text-zinc-500">Nombre completo</label>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="w-full bg-[#0a0a0f] border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-violet-500"
+        />
+        <button
+          type="button"
+          onClick={saveName}
+          disabled={saving}
+          className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white py-2.5 rounded-lg text-sm font-medium">
+          {saving ? 'Guardando...' : 'Guardar nombre'}
+        </button>
       </Card>
       <Card className="space-y-3 mb-4">
         <div className="flex justify-between">
@@ -33,7 +68,8 @@ export function Profile() {
       </Card>
       <p className="text-zinc-600 text-xs mb-4">API: {API_URL}</p>
       <button
-        onClick={logout}
+        type="button"
+        onClick={() => logout()}
         className="w-full border border-red-500/30 text-red-400 hover:bg-red-500/10 py-3 rounded-xl transition-colors">
         Cerrar sesión
       </button>

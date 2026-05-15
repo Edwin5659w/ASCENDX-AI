@@ -10,9 +10,10 @@ import { Habits } from './pages/Habits';
 import { Finance } from './pages/Finance';
 import { Chat } from './pages/Chat';
 import { Profile } from './pages/Profile';
+import { Onboarding } from './pages/Onboarding';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
@@ -20,7 +21,23 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user && user.onboardingDone === false) return <Navigate to="/onboarding" replace />;
+  return <>{children}</>;
+}
+
+function OnboardingRoute() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
+        <div className="w-10 h-10 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user?.onboardingDone) return <Navigate to="/" replace />;
+  return <Onboarding />;
 }
 
 export default function App() {
@@ -28,6 +45,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/onboarding" element={<OnboardingRoute />} />
       <Route
         element={
           <PrivateRoute>

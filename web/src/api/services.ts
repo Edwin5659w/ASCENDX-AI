@@ -1,4 +1,4 @@
-import { apiRequest, saveTokens, clearTokens } from './client';
+import { apiRequest, saveTokens, clearTokens, getRefreshToken } from './client';
 import type {
   AuthResponse,
   User,
@@ -29,12 +29,29 @@ export const authApi = {
     saveTokens(data.accessToken, data.refreshToken);
     return data;
   },
-  logout: () => clearTokens(),
+  logout: async () => {
+    const refreshToken = getRefreshToken();
+    if (refreshToken) {
+      try {
+        await apiRequest<{ ok: boolean }>('/auth/logout', {
+          method: 'POST',
+          body: JSON.stringify({ refreshToken }),
+          public: true,
+        });
+      } catch {
+        /* token ya inválido */
+      }
+    }
+    clearTokens();
+  },
 };
 
 export const userApi = {
   me: () => apiRequest<User>('/user/me'),
   stats: () => apiRequest<UserStats>('/user/stats'),
+  updateProfile: (data: { name?: string; onboardingDone?: boolean }) =>
+    apiRequest<User>('/user/me', { method: 'PATCH', body: JSON.stringify(data) }),
+  completeOnboarding: () => apiRequest<User>('/user/onboarding-complete', { method: 'POST' }),
 };
 
 export const goalsApi = {
@@ -57,7 +74,12 @@ export const tasksApi = {
 
 export const habitsApi = {
   list: () => apiRequest<Habit[]>('/habits'),
+  create: (data: { name: string; frequency?: 'DAILY' | 'WEEKLY' }) =>
+    apiRequest<Habit>('/habits', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: { name?: string; frequency?: 'DAILY' | 'WEEKLY' }) =>
+    apiRequest<Habit>(`/habits/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   complete: (id: string) => apiRequest<Habit>(`/habits/${id}/complete`, { method: 'POST' }),
+  remove: (id: string) => apiRequest<void>(`/habits/${id}`, { method: 'DELETE' }),
 };
 
 export const financeApi = {
@@ -71,4 +93,5 @@ export const aiApi = {
   dailyPlan: () => apiRequest<{ plan: string; procrastinationWarning: string | null }>('/ai/daily-plan'),
   chat: (message: string) =>
     apiRequest<{ reply: string }>('/ai/chat', { method: 'POST', body: JSON.stringify({ message }) }),
+  insights: () => apiRequest<{ type: string; message: string; createdAt: string }[]>('/ai/insights'),
 };
