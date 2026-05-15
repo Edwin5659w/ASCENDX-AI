@@ -7,7 +7,7 @@ Plataforma Life OS: objetivos, tareas, hábitos, finanzas y mentor IA personal.
 ```
 /backend   → API Node.js + Express + Prisma + PostgreSQL
 /mobile    → Expo React Native + TypeScript
-/web       → React + Vite (próximo)
+/web       → React + Vite + Tailwind (dashboard SaaS)
 /shared    → Validadores Zod y tipos compartidos
 ```
 
@@ -49,9 +49,37 @@ npm start
 
 Pantallas: Login/Register, Dashboard, Objetivos, Tareas, Mentor IA, Finanzas, Perfil.
 
+## Web — inicio rápido
+
+```bash
+cd web
+cp .env.example .env
+npm install
+npm run dev
+```
+
+Dashboard: `http://localhost:5173`
+
+## Base de datos (Neon PostgreSQL)
+
+1. Crea un proyecto en [neon.tech](https://neon.tech)
+2. Copia la **Connection String** (`postgresql://...`)
+3. En `backend/.env` configura `DATABASE_URL=...`
+4. Ejecuta:
+
+```bash
+cd backend
+npx prisma migrate deploy
+npm run db:seed
+```
+
+**Script SQL manual:** `backend/prisma/NEON_SETUP.sql` (pegar en SQL Editor de Neon)
+
+**Usuario demo tras seed:** `demo@ascendx.ai` / `Demo1234!`
+
 ## Deploy
 
 - **Backend:** Render / Railway (`npm run build && npm start`)
 - **DB:** Neon PostgreSQL
-- **Web:** Vercel (próximo)
+- **Web:** Vercel (`npm run build`)
 - **Mobile:** Expo EAS Build
