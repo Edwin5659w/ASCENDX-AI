@@ -1,24 +1,44 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { AuthTextField } from '../components/auth/AuthTextField';
+import { validateLoginEmail, validateLoginPassword } from '@shared/validators/auth.rules';
 
 export function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [touched, setTouched] = useState({ email: false, password: false });
+  const [submitError, setSubmitError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const emailVal = useMemo(() => validateLoginEmail(email, touched.email), [email, touched.email]);
+  const passwordVal = useMemo(
+    () => validateLoginPassword(password, touched.password),
+    [password, touched.password],
+  );
+
+  const isFormValid = emailVal.status === 'valid' && passwordVal.status === 'valid';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setTouched({ email: true, password: true });
+    setSubmitError('');
+
+    if (!isFormValid) return;
+
     setLoading(true);
     try {
-      await login(email, password);
+      await login(email.trim().toLowerCase(), password);
       navigate('/');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
+      setSubmitError(
+        err instanceof Error ? err.message : 'Correo o contraseña incorrectos',
+      );
     } finally {
       setLoading(false);
     }
@@ -28,40 +48,61 @@ export function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0a0a0f] via-[#1a1033] to-[#0a0a0f] p-4">
       <div className="w-full max-w-md">
         <h1 className="text-4xl font-bold text-center text-white tracking-widest mb-2">ASCENDX</h1>
-        <p className="text-center text-zinc-500 mb-8">Tu Life OS con inteligencia artificial</p>
+        <p className="text-center text-zinc-500 mb-8">Inicia sesión en tu cuenta</p>
+
         <form
           onSubmit={handleSubmit}
-          className="rounded-2xl border border-white/10 bg-[#14141f] p-8 space-y-4">
-          <div>
-            <label className="text-sm text-zinc-400 mb-1 block">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-[#1c1c2e] border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-violet-500"
-              placeholder="tu@email.com"
-            />
-          </div>
-          <div>
-            <label className="text-sm text-zinc-400 mb-1 block">Contraseña</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[#1c1c2e] border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-violet-500"
-            />
-          </div>
-          {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+          noValidate
+          className="rounded-2xl border border-white/10 bg-[#14141f] p-8 space-y-5">
+          <AuthTextField
+            id="email"
+            label="Correo electrónico"
+            type="email"
+            value={email}
+            onChange={setEmail}
+            onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+            validation={emailVal}
+            placeholder="nombre@gmail.com"
+            autoComplete="email"
+          />
+
+          <AuthTextField
+            id="password"
+            label="Contraseña"
+            type={showPassword ? 'text' : 'password'}
+            value={password}
+            onChange={setPassword}
+            onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+            validation={passwordVal}
+            autoComplete="current-password"
+            rightElement={
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-zinc-400 hover:text-white p-1"
+                aria-label={showPassword ? 'Ocultar' : 'Mostrar'}>
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            }
+          />
+
+          {submitError ? (
+            <div className="rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-300" role="alert">
+              {submitError}
+            </div>
+          ) : null}
+
           <button
             type="submit"
-            disabled={loading}
-            className="w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50">
-            {loading ? 'Entrando...' : 'Iniciar sesión'}
+            disabled={loading || !isFormValid}
+            className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white font-semibold py-3 rounded-lg transition-colors">
+            {loading ? 'Entrando...' : 'Siguiente'}
           </button>
+
           <p className="text-center text-zinc-500 text-sm">
             ¿No tienes cuenta?{' '}
-            <Link to="/register" className="text-violet-400 hover:text-violet-300">
-              Regístrate
+            <Link to="/register" className="text-violet-400 hover:text-violet-300 font-medium">
+              Crear cuenta
             </Link>
           </p>
         </form>
