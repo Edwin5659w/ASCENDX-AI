@@ -9,7 +9,13 @@
     "start": "node dist/app.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "db:migrate": "prisma migrate deploy",
+    "db:push": "prisma db push",
+    "db:seed": "ts-node prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@ascendx/shared": "*",
