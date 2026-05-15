@@ -1,6 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000';
+import { API_URL } from '../config/api';
 
 const TOKEN_KEY = 'ascendx_access_token';
 const REFRESH_KEY = 'ascendx_refresh_token';
@@ -61,14 +60,30 @@ export async function apiRequest<T>(
     return fetch(`${API_URL}${path}`, { ...fetchOptions, headers });
   };
 
-  let res = await doFetch(token);
+  let res: Response;
+  try {
+    res = await doFetch(token);
+  } catch {
+    throw new Error(
+      `Sin conexión al servidor (${API_URL}). Activa el backend (npm run dev) y configura EXPO_PUBLIC_API_URL en mobile/.env con la IP de tu PC.`,
+    );
+  }
 
   if (res.status === 401 && token && !isPublic) {
     token = await refreshAccessToken();
-    res = await doFetch(token);
+    try {
+      res = await doFetch(token);
+    } catch {
+      throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
+    }
   }
 
-  const json = await res.json();
+  let json: { data?: T; error?: string; message?: string };
+  try {
+    json = await res.json();
+  } catch {
+    throw new Error('Respuesta inválida del servidor');
+  }
 
   if (!res.ok) {
     throw new Error(json.error ?? json.message ?? 'Error en la solicitud');

@@ -23,7 +23,8 @@
         "backgroundColor": "#0a0a0f"
       },
       "package": "com.ascendx.ai",
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "usesCleartextTraffic": true
     },
     "web": {
       "bundler": "metro",
