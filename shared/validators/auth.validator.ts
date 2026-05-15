@@ -17,7 +17,7 @@ const fullNameSchema = z
   })
   .refine((val) => !/\d/.test(val), 'El nombre no puede contener números');
 
-const passwordSchema = z
+export const passwordSchema = z
   .string()
   .min(8, 'Mínimo 8 caracteres')
   .max(128, 'Máximo 128 caracteres')
@@ -45,6 +45,15 @@ export const loginSchema = z.object({
 
 export const refreshSchema = z.object({
   refreshToken: z.string().min(1, 'Refresh token requerido'),
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().email('Email inválido').toLowerCase(),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().trim().min(32, 'Token inválido'),
+  password: passwordSchema,
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

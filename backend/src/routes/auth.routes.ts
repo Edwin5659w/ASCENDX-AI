@@ -6,6 +6,8 @@ import {
   registerSchema,
   loginSchema,
   refreshSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
 } from '@ascendx/shared/validators/auth.validator';
 
 const router = Router();
@@ -41,6 +43,24 @@ router.post('/logout', validate(refreshSchema), async (req, res, next) => {
   try {
     await authService.logout(req.body.refreshToken);
     sendSuccess(res, { ok: true });
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.post('/forgot-password', validate(forgotPasswordSchema), async (req, res, next) => {
+  try {
+    const result = await authService.forgotPassword(req.body.email);
+    sendSuccess(res, result);
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.post('/reset-password', validate(resetPasswordSchema), async (req, res, next) => {
+  try {
+    const result = await authService.resetPassword(req.body.token, req.body.password);
+    sendSuccess(res, result);
   } catch (e) {
     next(e);
   }

@@ -14,6 +14,7 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_MODEL: z.string().default('gpt-4o-mini'),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
+  WEB_APP_ORIGIN: z.string().url().default('http://localhost:5173'),
 });
 
 const parsed = envSchema.safeParse(process.env);

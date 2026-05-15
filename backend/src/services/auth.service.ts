@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma';
@@ -93,5 +94,48 @@ export const authService = {
 
   async logout(refreshToken: string) {
     await prisma.refreshToken.deleteMany({ where: { token: refreshToken } });
+  },
+
+  /** Siempre responde OK; en desarrollo imprime el enlace (sin servicio de email). */
+  async forgotPassword(email: string) {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return { ok: true as const };
+    }
+
+    await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 1);
+
+    await prisma.passwordResetToken.create({
+      data: { token, userId: user.id, expiresAt },
+    });
+
+    const base = env.WEB_APP_ORIGIN.replace(/\/$/, '');
+    const link = `${base}/reset-password?token=${token}`;
+    if (env.NODE_ENV === 'development') {
+      console.log('[ascendx] Recuperación de contraseña:', link);
+    }
+
+    return { ok: true as const };
+  },
+
+  async resetPassword(token: string, newPassword: string) {
+    const row = await prisma.passwordResetToken.findUnique({ where: { token } });
+    if (!row || row.usedAt || row.expiresAt < new Date()) {
+      throw new AppError(400, 'El enlace es inválido o expiró. Solicita uno nuevo.');
+    }
+
+    const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({ where: { id: row.userId }, data: { password: hashed } });
+      await tx.passwordResetToken.update({ where: { id: row.id }, data: { usedAt: new Date() } });
+      await tx.refreshToken.deleteMany({ where: { userId: row.userId } });
+    });
+
+    return { ok: true as const };
   },
 };
