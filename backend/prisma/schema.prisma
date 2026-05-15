@@ -39,6 +39,7 @@ model User {
   xp               Int      @default(0)
   level            Int      @default(1)
   onboardingDone   Boolean  @default(false)
+  pushToken        String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -49,6 +50,7 @@ model User {
   aiInsights       AIInsight[]
   refreshTokens    RefreshToken[]
   passwordResetTokens PasswordResetToken[]
+  userBadges       UserBadge[]
 }
 
 model RefreshToken {
@@ -71,6 +73,26 @@ model PasswordResetToken {
   createdAt DateTime  @default(now())
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+}
+
+model Badge {
+  id         String      @id
+  title      String
+  subtitle   String
+  sortOrder  Int         @default(0)
+  userBadges UserBadge[]
+}
+
+model UserBadge {
+  id         String   @id @default(uuid())
+  userId     String
+  badgeId    String
+  unlockedAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge      Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
   @@index([userId])
 }
 

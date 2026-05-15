@@ -61,7 +61,7 @@ export const authApi = {
 export const userApi = {
   me: () => apiRequest<User>('/user/me'),
   stats: () => apiRequest<UserStats>('/user/stats'),
-  updateProfile: (data: { name?: string; onboardingDone?: boolean }) =>
+  updateProfile: (data: { name?: string; onboardingDone?: boolean; pushToken?: string }) =>
     apiRequest<User>('/user/me', { method: 'PATCH', body: JSON.stringify(data) }),
   completeOnboarding: () => apiRequest<User>('/user/onboarding-complete', { method: 'POST' }),
 };

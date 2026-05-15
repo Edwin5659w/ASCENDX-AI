@@ -1,13 +1,29 @@
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Platform, StyleSheet, Text, View } from 'react-native';
+import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useAuth } from '@/src/context/AuthContext';
 import { Card } from '@/src/components/ui/Card';
 import { Button } from '@/src/components/ui/Button';
 import { theme } from '@/constants/theme';
 import { API_URL } from '@/src/api/client';
+import { userApi } from '@/src/api/services';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
+  const [pushBusy, setPushBusy] = useState(false);
 
   const handleLogout = () => {
     Alert.alert('Cerrar sesión', '¿Seguro que quieres salir?', [
@@ -15,9 +31,49 @@ export default function ProfileScreen() {
       {
         text: 'Salir',
         style: 'destructive',
-        onPress: logout,
+        onPress: () => {
+          void logout();
+        },
       },
     ]);
+  };
+
+  const registerPush = async () => {
+    if (!Device.isDevice) {
+      Alert.alert('Avisos', 'Las notificaciones push funcionan en un dispositivo físico.');
+      return;
+    }
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.DEFAULT,
+      });
+    }
+    setPushBusy(true);
+    try {
+      const { status: existing } = await Notifications.getPermissionsAsync();
+      let final = existing;
+      if (existing !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        final = status;
+      }
+      if (final !== 'granted') {
+        Alert.alert('Permisos', 'Activa las notificaciones para ASCENDX en los ajustes del sistema.');
+        return;
+      }
+      const projectId =
+        Constants.expoConfig?.extra?.eas?.projectId ??
+        (Constants as { easConfig?: { projectId?: string } }).easConfig?.projectId;
+      const opts = projectId ? { projectId } : undefined;
+      const { data } = await Notifications.getExpoPushTokenAsync(opts);
+      await userApi.updateProfile({ pushToken: data });
+      await refreshUser();
+      Alert.alert('Listo', 'Notificaciones registradas en tu cuenta.');
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo obtener el token de Expo.');
+    } finally {
+      setPushBusy(false);
+    }
   };
 
   return (
@@ -40,11 +96,24 @@ export default function ProfileScreen() {
         <View style={styles.statRow}>
           <Text style={styles.statLabel}>Miembro desde</Text>
           <Text style={styles.statValue}>
-            {user?.createdAt
-              ? new Date(user.createdAt).toLocaleDateString('es')
-              : '—'}
+            {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('es') : '—'}
           </Text>
         </View>
+        {user?.pushToken ? (
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Push</Text>
+            <Text style={styles.statValueSmall}>Activo</Text>
+          </View>
+        ) : null}
+      </Card>
+
+      <Card style={styles.pushCard}>
+        <Text style={styles.pushTitle}>Notificaciones</Text>
+        <Text style={styles.pushHint}>
+          Registra el token en el servidor para futuros recordatorios (hábitos, metas). En Expo Go puede requerir
+          proyecto EAS con projectId.
+        </Text>
+        <Button title="Activar notificaciones push" onPress={registerPush} loading={pushBusy} />
       </Card>
 
       <Text style={styles.apiLabel}>API: {API_URL}</Text>
@@ -87,6 +156,21 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 24,
   },
+  pushCard: {
+    width: '100%',
+    marginTop: 16,
+  },
+  pushTitle: {
+    color: theme.colors.text,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  pushHint: {
+    color: theme.colors.textMuted,
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 12,
+  },
   statRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -96,6 +180,7 @@ const styles = StyleSheet.create({
   },
   statLabel: { color: theme.colors.textMuted },
   statValue: { color: theme.colors.text, fontWeight: '600' },
+  statValueSmall: { color: theme.colors.success, fontWeight: '600', fontSize: 13 },
   apiLabel: {
     color: theme.colors.textMuted,
     fontSize: 11,

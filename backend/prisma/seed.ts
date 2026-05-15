@@ -4,6 +4,18 @@ import bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
+  await prisma.badge.createMany({
+    data: [
+      { id: 'FIRST_TASK', title: 'En marcha', subtitle: 'Primera tarea completada', sortOrder: 1 },
+      { id: 'STREAK_7', title: 'Constancia', subtitle: 'Racha de 7 días o más', sortOrder: 2 },
+      { id: 'GOALS_3', title: 'Visionario', subtitle: '3 o más objetivos creados', sortOrder: 3 },
+      { id: 'LEVEL_5', title: 'Ascenso', subtitle: 'Alcanza el nivel 5', sortOrder: 4 },
+      { id: 'STEEL', title: 'Acero', subtitle: '3 hábitos y racha 3+', sortOrder: 5 },
+      { id: 'XP_500', title: 'Veterano', subtitle: '500 XP totales', sortOrder: 6 },
+    ],
+    skipDuplicates: true,
+  });
+
   const password = await bcrypt.hash('Demo1234!', 12);
 
   const user = await prisma.user.upsert({

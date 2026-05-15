@@ -5,6 +5,7 @@ export interface User {
   xp: number;
   level: number;
   onboardingDone?: boolean;
+  pushToken?: string | null;
   createdAt: string;
 }
 
@@ -12,6 +13,14 @@ export interface AuthResponse {
   user: User;
   accessToken: string;
   refreshToken: string;
+}
+
+export interface UserBadgeDto {
+  slug: string;
+  title: string;
+  subtitle: string;
+  unlocked: boolean;
+  unlockedAt: string | null;
 }
 
 export interface UserStats {
@@ -23,6 +32,7 @@ export interface UserStats {
   level: number;
   longestStreak: number;
   financeBalance: number;
+  badges: UserBadgeDto[];
 }
 
 export interface Goal {

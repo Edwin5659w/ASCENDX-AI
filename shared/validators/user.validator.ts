@@ -10,4 +10,5 @@ const fullNameSchema = z
 export const updateProfileSchema = z.object({
   name: fullNameSchema.optional(),
   onboardingDone: z.boolean().optional(),
+  pushToken: z.string().max(512).optional(),
 });

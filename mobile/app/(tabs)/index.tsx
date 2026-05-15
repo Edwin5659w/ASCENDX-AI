@@ -63,7 +63,14 @@ export default function DashboardScreen() {
   const level = user?.level ?? 1;
   const xpIntoLevel = xp % XP_PER_LEVEL;
   const xpToNext = xpIntoLevel === 0 && xp > 0 ? XP_PER_LEVEL : XP_PER_LEVEL - xpIntoLevel;
-  const { unlocked, total } = countUnlockedBadges(stats, level, xp);
+  const badgeCounts =
+    stats?.badges && stats.badges.length > 0
+      ? {
+          unlocked: stats.badges.filter((b) => b.unlocked).length,
+          total: stats.badges.length,
+        }
+      : countUnlockedBadges(stats, level, xp);
+  const { unlocked, total } = badgeCounts;
 
   return (
     <ScrollView

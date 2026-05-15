@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Send, Sparkles } from 'lucide-react';
 import { aiApi } from '../api/services';
 import { Card } from '../components/Card';
+import { ChatSkeleton } from '../components/ChatSkeleton';
 
 interface Message {
   id: string;
@@ -20,12 +21,25 @@ export function Chat() {
     { id: '0', role: 'assistant', content: 'Hola, soy tu mentor ASCENDX. ¿En qué puedo ayudarte hoy?' },
   ]);
   const [insights, setInsights] = useState<Insight[]>([]);
+  const [bootLoading, setBootLoading] = useState(true);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    aiApi.insights().then(setInsights).catch(() => {});
+    let alive = true;
+    aiApi
+      .insights()
+      .then((data) => {
+        if (alive) setInsights(data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (alive) setBootLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const send = async () => {
@@ -47,6 +61,10 @@ export function Chat() {
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     }
   };
+
+  if (bootLoading) {
+    return <ChatSkeleton />;
+  }
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">

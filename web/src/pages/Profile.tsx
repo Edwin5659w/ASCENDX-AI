@@ -1,15 +1,20 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Card } from '../components/Card';
+import { ProfileSkeleton } from '../components/ProfileSkeleton';
 import { API_URL } from '../api/client';
 import { userApi } from '../api/services';
 import { useToast } from '../context/ToastContext';
 
 export function Profile() {
-  const { user, logout, refreshUser } = useAuth();
+  const { user, logout, refreshUser, isLoading } = useAuth();
   const { showToast } = useToast();
   const [name, setName] = useState(user?.name ?? '');
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setName(user?.name ?? '');
+  }, [user?.name]);
 
   const saveName = async () => {
     if (!name.trim() || name.trim() === user?.name) return;
@@ -25,15 +30,19 @@ export function Profile() {
     }
   };
 
+  if (isLoading || !user) {
+    return <ProfileSkeleton />;
+  }
+
   return (
     <div className="max-w-lg">
       <h1 className="text-2xl font-bold text-white mb-6">Perfil</h1>
       <Card className="text-center mb-4">
         <div className="w-20 h-20 rounded-full bg-violet-600/20 border-2 border-violet-500 flex items-center justify-center mx-auto mb-4 text-3xl">
-          {user?.name?.[0]?.toUpperCase()}
+          {user.name?.[0]?.toUpperCase()}
         </div>
-        <h2 className="text-xl font-bold text-white">{user?.name}</h2>
-        <p className="text-zinc-500">{user?.email}</p>
+        <h2 className="text-xl font-bold text-white">{user.name}</h2>
+        <p className="text-zinc-500">{user.email}</p>
       </Card>
       <Card className="mb-4 space-y-3">
         <label className="block text-sm text-zinc-500">Nombre completo</label>
@@ -53,16 +62,16 @@ export function Profile() {
       <Card className="space-y-3 mb-4">
         <div className="flex justify-between">
           <span className="text-zinc-500">Nivel</span>
-          <span className="text-white font-semibold">{user?.level}</span>
+          <span className="text-white font-semibold">{user.level}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-zinc-500">XP total</span>
-          <span className="text-white font-semibold">{user?.xp}</span>
+          <span className="text-white font-semibold">{user.xp}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-zinc-500">Miembro desde</span>
           <span className="text-white">
-            {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('es') : '—'}
+            {user.createdAt ? new Date(user.createdAt).toLocaleDateString('es') : '—'}
           </span>
         </div>
       </Card>

@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma';
 import { AppError } from '../middleware/errorHandler';
+import { badgeService } from './badge.service';
 
 export const userService = {
   async getMe(userId: string) {
@@ -12,6 +13,7 @@ export const userService = {
         xp: true,
         level: true,
         onboardingDone: true,
+        pushToken: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -39,7 +41,7 @@ export const userService = {
       return r.type === 'INCOME' ? acc + r.amount : acc - r.amount;
     }, 0);
 
-    return {
+    const statsCore = {
       totalGoals: goals,
       completedTasks,
       totalTasks: tasks.length,
@@ -49,6 +51,18 @@ export const userService = {
       longestStreak,
       financeBalance: Math.round(financeBalance * 100) / 100,
     };
+
+    const badges = await badgeService.syncAndList(userId, {
+      totalGoals: statsCore.totalGoals,
+      completedTasks: statsCore.completedTasks,
+      totalTasks: statsCore.totalTasks,
+      activeHabits: statsCore.activeHabits,
+      totalXp: statsCore.totalXp,
+      level: statsCore.level,
+      longestStreak: statsCore.longestStreak,
+    });
+
+    return { ...statsCore, badges };
   },
 
   async addXp(userId: string, amount: number) {
@@ -70,10 +84,15 @@ export const userService = {
     return { id: user.id, xp: user.xp, level: user.level, leveledUp: false };
   },
 
-  async updateProfile(userId: string, data: { name?: string; onboardingDone?: boolean }) {
+  async updateProfile(userId: string, data: { name?: string; onboardingDone?: boolean; pushToken?: string | null }) {
+    const payload: { name?: string; onboardingDone?: boolean; pushToken?: string | null } = { ...data };
+    if (payload.pushToken !== undefined) {
+      payload.pushToken = payload.pushToken && payload.pushToken.length > 0 ? payload.pushToken : null;
+    }
+
     return prisma.user.update({
       where: { id: userId },
-      data,
+      data: payload,
       select: {
         id: true,
         name: true,
@@ -81,6 +100,7 @@ export const userService = {
         xp: true,
         level: true,
         onboardingDone: true,
+        pushToken: true,
         createdAt: true,
         updatedAt: true,
       },
