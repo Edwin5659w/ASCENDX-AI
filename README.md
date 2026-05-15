@@ -27,15 +27,18 @@ API: `http://localhost:4000`
 
 ## Endpoints principales
 
-| Módulo   | Rutas |
-|----------|-------|
-| Auth     | `POST /auth/register`, `/login`, `/refresh` |
-| Usuario  | `GET /user/me`, `/user/stats` |
-| Objetivos| `CRUD /goals` |
-| Tareas   | `CRUD /tasks` |
-| Hábitos  | `CRUD /habits` + `POST /habits/:id/complete` |
+| Área | Rutas |
+|------|--------|
+| Sistema | `GET /health` |
+| Auth | `POST /auth/register`, `/login`, `/refresh`, `/logout`, `/forgot-password`, `/reset-password` |
+| Usuario | `GET /user/me`, `GET /user/stats`, `PATCH /user/me`, `POST /user/onboarding-complete`, `POST /user/push/test` |
+| Objetivos | `CRUD /goals` |
+| Tareas | `CRUD /tasks` |
+| Hábitos | `CRUD /habits` + `POST /habits/:id/complete` |
 | Finanzas | `CRUD /finance` + `GET /finance/summary` |
-| IA       | `GET /ai/daily-plan`, `POST /ai/chat`, `GET /ai/insights` |
+| IA | `GET /ai/daily-plan`, `POST /ai/chat`, `GET /ai/insights` |
+
+**SQL reset Neon (editor):** `backend/prisma/neon-full-reset.sql` — preferible en desarrollo usar `npx prisma migrate deploy` en una base vacía.
 
 ## Mobile — inicio rápido
 
@@ -73,7 +76,7 @@ npx prisma migrate deploy
 npm run db:seed
 ```
 
-**Script SQL manual:** `backend/prisma/NEON_SETUP.sql` (pegar en SQL Editor de Neon)
+**Script SQL manual:** `backend/prisma/neon-full-reset.sql` (reset + esquema completo; ver comentarios sobre Prisma Migrate).
 
 **Usuario demo tras seed:** `demo@ascendx.ai` / `Demo1234!`
 

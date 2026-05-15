@@ -12,3 +12,4 @@ coverage/
 .prisma/
 *.db
 *.db-journal
+mobile/.vscode/
