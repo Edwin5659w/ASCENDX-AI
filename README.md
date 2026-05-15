@@ -6,7 +6,7 @@ Plataforma Life OS: objetivos, tareas, hábitos, finanzas y mentor IA personal.
 
 ```
 /backend   → API Node.js + Express + Prisma + PostgreSQL
-/mobile    → Expo React Native (próximo)
+/mobile    → Expo React Native + TypeScript
 /web       → React + Vite (próximo)
 /shared    → Validadores Zod y tipos compartidos
 ```
@@ -37,9 +37,21 @@ API: `http://localhost:4000`
 | Finanzas | `CRUD /finance` + `GET /finance/summary` |
 | IA       | `GET /ai/daily-plan`, `POST /ai/chat`, `GET /ai/insights` |
 
+## Mobile — inicio rápido
+
+```bash
+cd mobile
+cp .env.example .env
+# EXPO_PUBLIC_API_URL → IP de tu PC o 10.0.2.2:4000 en Android emulator
+npm install
+npm start
+```
+
+Pantallas: Login/Register, Dashboard, Objetivos, Tareas, Mentor IA, Finanzas, Perfil.
+
 ## Deploy
 
 - **Backend:** Render / Railway (`npm run build && npm start`)
 - **DB:** Neon PostgreSQL
 - **Web:** Vercel (próximo)
-- **Mobile:** Expo EAS (próximo)
+- **Mobile:** Expo EAS Build
