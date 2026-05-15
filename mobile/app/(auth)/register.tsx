@@ -18,7 +18,7 @@ import {
   validateEmail,
   validateFullName,
   validatePassword,
-} from '../../../../shared/validators/auth.rules';
+} from '@/src/lib/auth.rules';
 import { theme } from '@/constants/theme';
 
 export default function RegisterScreen() {

@@ -3,7 +3,7 @@ import {
   PASSWORD_REQUIREMENTS,
   PasswordChecks,
   STRENGTH_LABELS,
-} from '../../../../shared/validators/auth.rules';
+} from '@/src/lib/auth.rules';
 import { theme } from '@/constants/theme';
 
 const COLORS = ['#f87171', '#fb923c', '#fbbf24', '#a3e635', '#34d399'];

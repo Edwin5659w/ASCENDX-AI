@@ -13,7 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/src/context/AuthContext';
 import { Button } from '@/src/components/ui/Button';
 import { ValidatedInput } from '@/src/components/auth/ValidatedInput';
-import { validateLoginEmail, validateLoginPassword } from '../../../../shared/validators/auth.rules';
+import { validateLoginEmail, validateLoginPassword } from '@/src/lib/auth.rules';
 import { theme } from '@/constants/theme';
 
 export default function LoginScreen() {

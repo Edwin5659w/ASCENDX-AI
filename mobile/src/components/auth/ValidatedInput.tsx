@@ -1,5 +1,5 @@
 import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
-import { FieldValidation } from '../../../../shared/validators/auth.rules';
+import { FieldValidation } from '@/src/lib/auth.rules';
 import { theme } from '@/constants/theme';
 
 interface ValidatedInputProps extends TextInputProps {
