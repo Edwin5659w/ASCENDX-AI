@@ -24,6 +24,7 @@ Notifications.setNotificationHandler({
 export default function ProfileScreen() {
   const { user, logout, refreshUser } = useAuth();
   const [pushBusy, setPushBusy] = useState(false);
+  const [testPushBusy, setTestPushBusy] = useState(false);
 
   const handleLogout = () => {
     Alert.alert('Cerrar sesión', '¿Seguro que quieres salir?', [
@@ -76,6 +77,22 @@ export default function ProfileScreen() {
     }
   };
 
+  const sendTestPush = async () => {
+    if (!user?.pushToken) {
+      Alert.alert('Token push', 'Primero activa las notificaciones push en esta pantalla.');
+      return;
+    }
+    setTestPushBusy(true);
+    try {
+      await userApi.testPush();
+      Alert.alert('Enviado', 'Revisa la bandeja de notificaciones del sistema.');
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo enviar la prueba.');
+    } finally {
+      setTestPushBusy(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.avatar}>
@@ -114,6 +131,15 @@ export default function ProfileScreen() {
           proyecto EAS con projectId.
         </Text>
         <Button title="Activar notificaciones push" onPress={registerPush} loading={pushBusy} />
+        {user?.pushToken ? (
+          <Button
+            title="Probar notificación"
+            variant="secondary"
+            onPress={sendTestPush}
+            loading={testPushBusy}
+            style={styles.testPushButton}
+          />
+        ) : null}
       </Card>
 
       <Text style={styles.apiLabel}>API: {API_URL}</Text>
@@ -170,6 +196,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     marginBottom: 12,
+  },
+  testPushButton: {
+    marginTop: 12,
   },
   statRow: {
     flexDirection: 'row',

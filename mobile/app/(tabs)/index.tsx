@@ -12,7 +12,7 @@ import { useAuth } from '@/src/context/AuthContext';
 import { userApi, aiApi } from '@/src/api/services';
 import { StatCard } from '@/src/components/StatCard';
 import { Card } from '@/src/components/ui/Card';
-import type { UserStats } from '@/src/types/api';
+import type { UserStats, AIInsight } from '@/src/types/api';
 import { theme } from '@/constants/theme';
 
 const XP_PER_LEVEL = 100;
@@ -34,14 +34,20 @@ export default function DashboardScreen() {
   const [stats, setStats] = useState<UserStats | null>(null);
   const [dailyPlan, setDailyPlan] = useState('');
   const [warning, setWarning] = useState<string | null>(null);
+  const [insights, setInsights] = useState<AIInsight[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const [s, plan] = await Promise.all([userApi.stats(), aiApi.dailyPlan()]);
+      const [s, plan, ins] = await Promise.all([
+        userApi.stats(),
+        aiApi.dailyPlan(),
+        aiApi.insights(),
+      ]);
       setStats(s);
       setDailyPlan(plan.plan);
       setWarning(plan.procrastinationWarning);
+      setInsights(ins.slice(0, 5));
     } catch {
       /* silencioso en dashboard */
     }
@@ -103,6 +109,23 @@ export default function DashboardScreen() {
           <Text style={styles.warningTitle}>⚠️ Alerta de procrastinación</Text>
           <Text style={styles.warningText}>{warning}</Text>
         </Card>
+      ) : null}
+
+      {insights.length > 0 ? (
+        <>
+          <Text style={styles.sectionTitle}>Insights recientes</Text>
+          <Card style={styles.insightsCard}>
+            {insights.map((it) => (
+              <View key={it.id} style={styles.insightRow}>
+                <Text style={styles.insightType}>{it.type}</Text>
+                <Text style={styles.insightMsg}>{it.message}</Text>
+                <Text style={styles.insightDate}>
+                  {new Date(it.createdAt).toLocaleDateString('es', { day: 'numeric', month: 'short' })}
+                </Text>
+              </View>
+            ))}
+          </Card>
+        </>
       ) : null}
 
       <Text style={styles.sectionTitle}>Plan del día — IA</Text>
@@ -197,4 +220,19 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontSize: 15,
   },
+  insightsCard: { marginHorizontal: theme.spacing.md, marginBottom: theme.spacing.sm },
+  insightRow: {
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  insightType: {
+    color: theme.colors.primaryLight,
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  insightMsg: { color: theme.colors.text, fontSize: 14, lineHeight: 20 },
+  insightDate: { color: theme.colors.textMuted, fontSize: 11, marginTop: 6 },
 });

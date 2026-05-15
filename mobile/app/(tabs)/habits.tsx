@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import {
   Alert,
   FlatList,
+  Modal,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -21,6 +22,8 @@ export default function HabitsScreen() {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [renameFor, setRenameFor] = useState<Habit | null>(null);
+  const [renameText, setRenameText] = useState('');
 
   const load = useCallback(async () => {
     try {
@@ -67,6 +70,22 @@ export default function HabitsScreen() {
       await load();
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo completar');
+    }
+  };
+
+  const openRename = (habit: Habit) => {
+    setRenameFor(habit);
+    setRenameText(habit.name);
+  };
+
+  const saveRename = async () => {
+    if (!renameFor || !renameText.trim()) return;
+    try {
+      await habitsApi.update(renameFor.id, { name: renameText.trim() });
+      setRenameFor(null);
+      await load();
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo renombrar');
     }
   };
 
@@ -122,12 +141,34 @@ export default function HabitsScreen() {
               </View>
               <Text style={styles.streak}>🔥 {item.streak}</Text>
             </Pressable>
+            <Pressable onPress={() => openRename(item)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Renombrar hábito">
+              <FontAwesome name="edit" size={18} color={theme.colors.textMuted} />
+            </Pressable>
             <Pressable onPress={() => remove(item)} hitSlop={8}>
               <FontAwesome name="trash-o" size={20} color={theme.colors.textMuted} />
             </Pressable>
           </View>
         )}
       />
+      <Modal visible={!!renameFor} transparent animationType="fade">
+        <Pressable style={styles.modalBackdrop} onPress={() => setRenameFor(null)}>
+          <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.modalTitle}>Renombrar hábito</Text>
+            <TextInput
+              style={styles.input}
+              value={renameText}
+              onChangeText={setRenameText}
+              placeholder="Nombre"
+              placeholderTextColor={theme.colors.textMuted}
+              autoFocus
+            />
+            <View style={styles.modalActions}>
+              <Button title="Cancelar" variant="secondary" onPress={() => setRenameFor(null)} style={styles.modalBtn} />
+              <Button title="Guardar" onPress={() => void saveRename()} style={styles.modalBtn} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -165,4 +206,25 @@ const styles = StyleSheet.create({
   freq: { color: theme.colors.textMuted, fontSize: 12, marginTop: 2 },
   streak: { fontSize: 14, color: theme.colors.warning },
   empty: { color: theme.colors.textMuted, textAlign: 'center', marginTop: 40 },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    padding: theme.spacing.lg,
+  },
+  modalCard: {
+    backgroundColor: theme.colors.surfaceLight,
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  modalTitle: {
+    color: theme.colors.text,
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: theme.spacing.md,
+  },
+  modalActions: { flexDirection: 'row', gap: 8, marginTop: theme.spacing.md },
+  modalBtn: { flex: 1 },
 });

@@ -68,6 +68,7 @@ export interface Habit {
   frequency: 'DAILY' | 'WEEKLY';
   streak: number;
   userId: string;
+  lastCompletedAt?: string | null;
   completedToday?: boolean;
 }
 
@@ -85,6 +86,14 @@ export interface FinanceSummary {
   expense: number;
   balance: number;
   totalRecords: number;
+}
+
+export interface AIInsight {
+  id: string;
+  userId: string;
+  type: string;
+  message: string;
+  createdAt: string;
 }
 
 export interface ChatMessage {

@@ -2,12 +2,15 @@ import { useCallback, useState } from 'react';
 import {
   Alert,
   FlatList,
+  Modal,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { financeApi } from '@/src/api/services';
 import { Card } from '@/src/components/ui/Card';
 import { Button } from '@/src/components/ui/Button';
@@ -21,14 +24,18 @@ export default function FinanceScreen() {
   const [category, setCategory] = useState('');
   const [type, setType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE');
   const [loading, setLoading] = useState(false);
+  const [editing, setEditing] = useState<FinanceRecord | null>(null);
+  const [editAmount, setEditAmount] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editType, setEditType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE');
 
   const load = useCallback(async () => {
     try {
       const [list, sum] = await Promise.all([financeApi.list(), financeApi.summary()]);
       setRecords(list);
       setSummary(sum);
-    } catch {
-      /* ignore */
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudieron cargar los datos');
     }
   }, []);
 
@@ -51,6 +58,47 @@ export default function FinanceScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const openEdit = (r: FinanceRecord) => {
+    setEditing(r);
+    setEditAmount(String(r.amount));
+    setEditCategory(r.category);
+    setEditType(r.type);
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    const num = parseFloat(editAmount);
+    if (!num || num <= 0 || !editCategory.trim()) {
+      Alert.alert('Error', 'Monto y categoría válidos, por favor');
+      return;
+    }
+    try {
+      await financeApi.update(editing.id, { type: editType, amount: num, category: editCategory.trim() });
+      setEditing(null);
+      await load();
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo actualizar');
+    }
+  };
+
+  const confirmRemove = (r: FinanceRecord) => {
+    Alert.alert('Eliminar', `¿Quitar "${r.category}" ($${r.amount})?`, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await financeApi.remove(r.id);
+            await load();
+          } catch (e) {
+            Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo eliminar');
+          }
+        },
+      },
+    ]);
   };
 
   return (
@@ -113,22 +161,67 @@ export default function FinanceScreen() {
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
           <View style={styles.recordRow}>
-            <View>
-              <Text style={styles.recordCat}>{item.category}</Text>
-              <Text style={styles.recordDate}>
-                {new Date(item.createdAt).toLocaleDateString('es')}
+            <Pressable style={styles.recordMain} onPress={() => openEdit(item)}>
+              <View>
+                <Text style={styles.recordCat}>{item.category}</Text>
+                <Text style={styles.recordDate}>
+                  {new Date(item.createdAt).toLocaleDateString('es')}
+                </Text>
+              </View>
+              <Text
+                style={[
+                  styles.recordAmount,
+                  { color: item.type === 'INCOME' ? theme.colors.income : theme.colors.expense },
+                ]}>
+                {item.type === 'INCOME' ? '+' : '-'}${item.amount}
               </Text>
-            </View>
-            <Text
-              style={[
-                styles.recordAmount,
-                { color: item.type === 'INCOME' ? theme.colors.income : theme.colors.expense },
-              ]}>
-              {item.type === 'INCOME' ? '+' : '-'}${item.amount}
-            </Text>
+            </Pressable>
+            <Pressable onPress={() => confirmRemove(item)} hitSlop={10} accessibilityLabel="Eliminar movimiento">
+              <FontAwesome name="trash-o" size={20} color={theme.colors.textMuted} />
+            </Pressable>
           </View>
         )}
       />
+      <Modal visible={!!editing} transparent animationType="fade">
+        <Pressable style={styles.modalBackdrop} onPress={() => setEditing(null)}>
+          <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.modalTitle}>Editar movimiento</Text>
+            <View style={styles.typeRow}>
+              <Button
+                title="Gasto"
+                variant={editType === 'EXPENSE' ? 'primary' : 'secondary'}
+                onPress={() => setEditType('EXPENSE')}
+                style={styles.typeBtn}
+              />
+              <Button
+                title="Ingreso"
+                variant={editType === 'INCOME' ? 'primary' : 'secondary'}
+                onPress={() => setEditType('INCOME')}
+                style={styles.typeBtn}
+              />
+            </View>
+            <TextInput
+              style={styles.input}
+              value={editAmount}
+              onChangeText={setEditAmount}
+              placeholder="Monto"
+              placeholderTextColor={theme.colors.textMuted}
+              keyboardType="decimal-pad"
+            />
+            <TextInput
+              style={styles.input}
+              value={editCategory}
+              onChangeText={setEditCategory}
+              placeholder="Categoría"
+              placeholderTextColor={theme.colors.textMuted}
+            />
+            <View style={styles.modalActions}>
+              <Button title="Cancelar" variant="secondary" onPress={() => setEditing(null)} style={styles.modalBtn} />
+              <Button title="Guardar" onPress={() => void saveEdit()} style={styles.modalBtn} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -166,12 +259,37 @@ const styles = StyleSheet.create({
   list: { padding: theme.spacing.md },
   recordRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
+    gap: 12,
   },
+  recordMain: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   recordCat: { color: theme.colors.text, fontWeight: '500' },
   recordDate: { color: theme.colors.textMuted, fontSize: 12, marginTop: 2 },
   recordAmount: { fontSize: 16, fontWeight: '700' },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    padding: theme.spacing.md,
+  },
+  modalCard: {
+    backgroundColor: theme.colors.surfaceLight,
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: 8,
+  },
+  modalTitle: {
+    color: theme.colors.text,
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: theme.spacing.sm,
+  },
+  modalActions: { flexDirection: 'row', gap: 8, marginTop: theme.spacing.md },
+  modalBtn: { flex: 1 },
 });

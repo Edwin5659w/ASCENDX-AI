@@ -89,7 +89,11 @@ export async function apiRequest<T>(
     throw new Error(json.error ?? json.message ?? 'Error en la solicitud');
   }
 
-  return json.data as T;
+  if (json.data !== undefined) {
+    return json.data as T;
+  }
+
+  return undefined as T;
 }
 
 export { API_URL };

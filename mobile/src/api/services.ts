@@ -8,6 +8,7 @@ import type {
   Habit,
   FinanceRecord,
   FinanceSummary,
+  AIInsight,
 } from '../types/api';
 
 export const authApi = {
@@ -64,6 +65,7 @@ export const userApi = {
   updateProfile: (data: { name?: string; pushToken?: string }) =>
     apiRequest<User>('/user/me', { method: 'PATCH', body: JSON.stringify(data) }),
   completeOnboarding: () => apiRequest<User>('/user/onboarding-complete', { method: 'POST' }),
+  testPush: () => apiRequest<{ ok: boolean }>('/user/push/test', { method: 'POST' }),
 };
 
 export const goalsApi = {
@@ -88,6 +90,8 @@ export const habitsApi = {
   list: () => apiRequest<Habit[]>('/habits'),
   create: (data: { name: string; frequency?: 'DAILY' | 'WEEKLY' }) =>
     apiRequest<Habit>('/habits', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: { name?: string; frequency?: 'DAILY' | 'WEEKLY' }) =>
+    apiRequest<Habit>(`/habits/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   complete: (id: string) => apiRequest<Habit>(`/habits/${id}/complete`, { method: 'POST' }),
   remove: (id: string) => apiRequest<void>(`/habits/${id}`, { method: 'DELETE' }),
 };
@@ -95,8 +99,13 @@ export const habitsApi = {
 export const financeApi = {
   list: () => apiRequest<FinanceRecord[]>('/finance'),
   summary: () => apiRequest<FinanceSummary>('/finance/summary'),
-  create: (data: { type: 'INCOME' | 'EXPENSE'; amount: number; category: string }) =>
+  create: (data: { type: 'INCOME' | 'EXPENSE'; amount: number; category: string; note?: string }) =>
     apiRequest<FinanceRecord>('/finance', { method: 'POST', body: JSON.stringify(data) }),
+  update: (
+    id: string,
+    data: Partial<{ type: 'INCOME' | 'EXPENSE'; amount: number; category: string; note?: string }>,
+  ) => apiRequest<FinanceRecord>(`/finance/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  remove: (id: string) => apiRequest<void>(`/finance/${id}`, { method: 'DELETE' }),
 };
 
 export const aiApi = {
@@ -105,4 +114,5 @@ export const aiApi = {
     method: 'POST',
     body: JSON.stringify({ message }),
   }),
+  insights: () => apiRequest<AIInsight[]>('/ai/insights'),
 };
