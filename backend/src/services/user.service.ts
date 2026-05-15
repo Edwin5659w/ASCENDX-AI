@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { badgeService } from './badge.service';
+import { pushService } from './push.service';
 
 export const userService = {
   async getMe(userId: string) {
@@ -63,6 +64,30 @@ export const userService = {
     });
 
     return { ...statsCore, badges };
+  },
+
+  async sendTestPushNotification(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { pushToken: true },
+    });
+    if (!user?.pushToken) {
+      throw new AppError(400, 'No hay token push. Regístralo desde Perfil en la app móvil.');
+    }
+    const { ok, tickets } = await pushService.send([
+      {
+        to: user.pushToken,
+        title: 'ASCENDX',
+        body: 'Notificación de prueba correcta ✓',
+        sound: 'default',
+        data: { type: 'test' },
+      },
+    ]);
+    if (!ok) {
+      const msg = tickets[0]?.message ?? tickets[0]?.details?.error ?? 'Expo rechazó el envío';
+      throw new AppError(502, msg);
+    }
+    return { ok: true as const };
   },
 
   async addXp(userId: string, amount: number) {

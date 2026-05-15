@@ -45,4 +45,13 @@ router.post('/onboarding-complete', async (req, res, next) => {
   }
 });
 
+router.post('/push/test', async (req, res, next) => {
+  try {
+    const result = await userService.sendTestPushNotification(req.user!.userId);
+    sendSuccess(res, result);
+  } catch (e) {
+    next(e);
+  }
+});
+
 export default router;

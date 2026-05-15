@@ -2,6 +2,7 @@ import { prisma } from '../lib/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { userService } from './user.service';
 import { startOfDayUTC, isSameDayUTC, yesterdayUTC } from '../utils/date';
+import { pushService } from './push.service';
 import type { z } from 'zod';
 import type { createHabitSchema, updateHabitSchema } from '@ascendx/shared/validators/habit.validator';
 
@@ -78,6 +79,14 @@ export const habitService = {
     });
 
     await userService.addXp(userId, 15);
+
+    void pushService
+      .sendToUser(userId, {
+        title: '¡Hábito listo!',
+        body: `"${habit.name}" hecho · +15 XP · racha ${updated.streak}`,
+        data: { type: 'habit_completed', habitId: id },
+      })
+      .catch((err) => console.warn('[ascendx] push hábito:', err));
 
     return { ...updated, completedToday: true };
   },

@@ -18,6 +18,8 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().optional(),
   /** Dirección "From" verificada en Resend, ej: onboarding@resend.dev o noreply@tudominio.com */
   RESEND_FROM: z.string().min(1).optional(),
+  /** Opcional: token de acceso Expo para límites/envío en producción */
+  EXPO_ACCESS_TOKEN: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
