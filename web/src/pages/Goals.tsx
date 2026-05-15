@@ -1,29 +1,69 @@
-import { useEffect, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Target, Trash2 } from 'lucide-react';
 import { Card } from '../components/Card';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { EmptyState } from '../components/ui/EmptyState';
+import { PageLoader } from '../components/ui/PageLoader';
 import { goalsApi } from '../api/services';
+import { useToast } from '../context/ToastContext';
 import type { Goal } from '../types';
 
 const priorityColor = { LOW: 'text-zinc-400', MEDIUM: 'text-cyan-400', HIGH: 'text-red-400' };
 
 export function Goals() {
+  const { showToast } = useToast();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [title, setTitle] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const load = () => goalsApi.list().then(setGoals).catch(() => {});
-  useEffect(() => { load(); }, []);
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      setGoals(await goalsApi.list());
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Error al cargar objetivos', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [showToast]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const create = async () => {
-    if (title.trim().length < 3) return;
-    await goalsApi.create({ title: title.trim() });
-    setTitle('');
-    load();
+    if (title.trim().length < 3) {
+      showToast('El título debe tener al menos 3 caracteres', 'info');
+      return;
+    }
+    setCreating(true);
+    try {
+      await goalsApi.create({ title: title.trim() });
+      setTitle('');
+      showToast('Objetivo creado', 'success');
+      await load();
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'No se pudo crear', 'error');
+    } finally {
+      setCreating(false);
+    }
   };
 
-  const remove = async (id: string) => {
-    await goalsApi.remove(id);
-    load();
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await goalsApi.remove(deleteId);
+      showToast('Objetivo eliminado', 'success');
+      setDeleteId(null);
+      await load();
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'No se pudo eliminar', 'error');
+    }
   };
+
+  if (loading) return <PageLoader />;
 
   return (
     <div>
@@ -36,7 +76,11 @@ export function Goals() {
           placeholder="Nuevo objetivo..."
           className="flex-1 bg-[#1c1c2e] border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-violet-500"
         />
-        <button onClick={create} className="bg-violet-600 hover:bg-violet-500 text-white px-5 py-2.5 rounded-lg font-medium">
+        <button
+          type="button"
+          onClick={create}
+          disabled={creating}
+          className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white px-5 py-2.5 rounded-lg font-medium">
           Añadir
         </button>
       </div>
@@ -53,13 +97,31 @@ export function Goals() {
               </div>
               <p className="text-zinc-500 text-xs mt-1">{g.progress}% completado</p>
             </div>
-            <button onClick={() => remove(g.id)} className="text-zinc-500 hover:text-red-400 p-1">
+            <button
+              type="button"
+              onClick={() => setDeleteId(g.id)}
+              className="text-zinc-500 hover:text-red-400 p-1"
+              aria-label="Eliminar">
               <Trash2 size={18} />
             </button>
           </Card>
         ))}
-        {!goals.length && <p className="text-zinc-500 text-center py-12">Sin objetivos. ¡Crea el primero!</p>}
+        {!goals.length && (
+          <EmptyState
+            icon={Target}
+            title="Sin objetivos"
+            description="Crea tu primera meta y vincula tareas para ver el progreso automático."
+          />
+        )}
       </div>
+
+      <ConfirmDialog
+        open={!!deleteId}
+        title="Eliminar objetivo"
+        message="Se eliminará este objetivo. Las tareas asociadas quedarán sin objetivo."
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteId(null)}
+      />
     </div>
   );
 }

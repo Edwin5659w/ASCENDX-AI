@@ -10,6 +10,8 @@ import { Habits } from './pages/Habits';
 import { Finance } from './pages/Finance';
 import { Chat } from './pages/Chat';
 import { Profile } from './pages/Profile';
+import { ForgotPassword } from './pages/ForgotPassword';
+import { ResetPassword } from './pages/ResetPassword';
 import { Onboarding } from './pages/Onboarding';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -45,6 +47,8 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/onboarding" element={<OnboardingRoute />} />
       <Route
         element={

@@ -96,8 +96,14 @@ export function Login() {
             type="submit"
             disabled={loading || !isFormValid}
             className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white font-semibold py-3 rounded-lg transition-colors">
-            {loading ? 'Entrando...' : 'Siguiente'}
+            {loading ? 'Entrando...' : 'Entrar'}
           </button>
+
+          <p className="text-center text-sm">
+            <Link to="/forgot-password" className="text-violet-400 hover:text-violet-300">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </p>
 
           <p className="text-center text-zinc-500 text-sm">
             ¿No tienes cuenta?{' '}

@@ -44,6 +44,18 @@ export const authApi = {
     }
     clearTokens();
   },
+  forgotPassword: (email: string) =>
+    apiRequest<{ ok: boolean }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+      public: true,
+    }),
+  resetPassword: (token: string, password: string) =>
+    apiRequest<{ ok: boolean }>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+      public: true,
+    }),
 };
 
 export const userApi = {
@@ -87,6 +99,7 @@ export const financeApi = {
   summary: () => apiRequest<FinanceSummary>('/finance/summary'),
   create: (data: { type: 'INCOME' | 'EXPENSE'; amount: number; category: string }) =>
     apiRequest<FinanceRecord>('/finance', { method: 'POST', body: JSON.stringify(data) }),
+  remove: (id: string) => apiRequest<void>(`/finance/${id}`, { method: 'DELETE' }),
 };
 
 export const aiApi = {

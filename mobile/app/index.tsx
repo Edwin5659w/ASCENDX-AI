@@ -4,7 +4,7 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { theme } from '@/constants/theme';
 
 export default function Index() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -14,7 +14,10 @@ export default function Index() {
     );
   }
 
-  return <Redirect href={isAuthenticated ? '/(tabs)' : '/(auth)/login'} />;
+  const href =
+    !isAuthenticated ? '/(auth)/login' : user?.onboardingDone === false ? '/(onboarding)' : '/(tabs)';
+
+  return <Redirect href={href as any} />;
 }
 
 const styles = StyleSheet.create({

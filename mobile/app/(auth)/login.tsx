@@ -84,6 +84,10 @@ export default function LoginScreen() {
             <Button title="Iniciar sesión" onPress={handleLogin} loading={loading} disabled={!isFormValid} />
           </View>
 
+          <Link href={'/(auth)/forgot-password' as any} asChild>
+            <Text style={styles.forgot}>¿Olvidaste tu contraseña?</Text>
+          </Link>
+
           <Link href="/(auth)/register" asChild>
             <Text style={styles.link}>
               ¿No tienes cuenta? <Text style={styles.linkBold}>Regístrate</Text>
@@ -107,7 +111,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   subtitle: { color: theme.colors.textMuted, textAlign: 'center', marginBottom: 40, fontSize: 16 },
-  form: { marginBottom: theme.spacing.lg },
+  form: { marginBottom: theme.spacing.md },
+  forgot: { color: theme.colors.primaryLight, textAlign: 'center', fontSize: 14, marginBottom: theme.spacing.lg },
   showBtn: { marginTop: -8, marginBottom: theme.spacing.md },
   showBtnText: { color: theme.colors.primaryLight, fontSize: 13, textAlign: 'right' },
   error: { color: theme.colors.danger, marginBottom: theme.spacing.sm, textAlign: 'center' },

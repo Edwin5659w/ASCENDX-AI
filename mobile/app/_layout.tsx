@@ -53,26 +53,41 @@ export default function RootLayout() {
 }
 
 function RootNavigator() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
     if (isLoading) return;
 
-    const inAuth = segments[0] === '(auth)';
+    const seg0 = segments[0] as string;
+    const inAuth = seg0 === '(auth)';
+    const inOnboarding = seg0 === '(onboarding)';
 
-    if (!isAuthenticated && !inAuth) {
-      router.replace('/(auth)/login');
-    } else if (isAuthenticated && inAuth) {
+    if (!isAuthenticated) {
+      if (!inAuth) {
+        router.replace('/(auth)/login');
+      }
+      return;
+    }
+
+    if (user?.onboardingDone === false) {
+      if (!inOnboarding) {
+        router.replace('/(onboarding)' as any);
+      }
+      return;
+    }
+
+    if (inAuth || inOnboarding) {
       router.replace('/(tabs)');
     }
-  }, [isAuthenticated, isLoading, segments, router]);
+  }, [isAuthenticated, isLoading, segments, router, user?.onboardingDone]);
 
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.background } }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="(auth)" />
+      <Stack.Screen name="(onboarding)" />
       <Stack.Screen name="(tabs)" />
     </Stack>
   );

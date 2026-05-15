@@ -1,4 +1,4 @@
-import { apiRequest, saveTokens, clearTokens } from './client';
+import { apiRequest, saveTokens, clearTokens, getRefreshToken } from './client';
 import type {
   AuthResponse,
   User,
@@ -30,8 +30,32 @@ export const authApi = {
     return data;
   },
   logout: async () => {
+    const refreshToken = await getRefreshToken();
+    if (refreshToken) {
+      try {
+        await apiRequest<{ ok: boolean }>('/auth/logout', {
+          method: 'POST',
+          body: JSON.stringify({ refreshToken }),
+          public: true,
+        });
+      } catch {
+        /* ignorar */
+      }
+    }
     await clearTokens();
   },
+  forgotPassword: (email: string) =>
+    apiRequest<{ ok: boolean }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+      public: true,
+    }),
+  resetPassword: (token: string, password: string) =>
+    apiRequest<{ ok: boolean }>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+      public: true,
+    }),
 };
 
 export const userApi = {
