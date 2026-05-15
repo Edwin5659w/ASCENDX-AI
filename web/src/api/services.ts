@@ -97,8 +97,10 @@ export const habitsApi = {
 export const financeApi = {
   list: () => apiRequest<FinanceRecord[]>('/finance'),
   summary: () => apiRequest<FinanceSummary>('/finance/summary'),
-  create: (data: { type: 'INCOME' | 'EXPENSE'; amount: number; category: string }) =>
+  create: (data: { type: 'INCOME' | 'EXPENSE'; amount: number; category: string; note?: string }) =>
     apiRequest<FinanceRecord>('/finance', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: Partial<{ type: 'INCOME' | 'EXPENSE'; amount: number; category: string; note?: string }>) =>
+    apiRequest<FinanceRecord>(`/finance/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   remove: (id: string) => apiRequest<void>(`/finance/${id}`, { method: 'DELETE' }),
 };
 

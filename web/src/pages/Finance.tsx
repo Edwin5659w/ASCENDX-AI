@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { Trash2, Wallet } from 'lucide-react';
+import { Pencil, Trash2, Wallet, X } from 'lucide-react';
 import { Card } from '../components/Card';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -19,6 +19,7 @@ export function Finance() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -37,7 +38,21 @@ export function Finance() {
     load();
   }, [load]);
 
-  const add = async () => {
+  const resetForm = () => {
+    setAmount('');
+    setCategory('');
+    setType('EXPENSE');
+    setEditingId(null);
+  };
+
+  const startEdit = (r: FinanceRecord) => {
+    setEditingId(r.id);
+    setAmount(String(r.amount));
+    setCategory(r.category);
+    setType(r.type);
+  };
+
+  const save = async () => {
     const num = parseFloat(amount);
     if (!num || num <= 0 || !category.trim()) {
       showToast('Indica monto y categoría válidos', 'info');
@@ -45,13 +60,17 @@ export function Finance() {
     }
     setSaving(true);
     try {
-      await financeApi.create({ type, amount: num, category: category.trim() });
-      setAmount('');
-      setCategory('');
-      showToast('Registro guardado', 'success');
+      if (editingId) {
+        await financeApi.update(editingId, { type, amount: num, category: category.trim() });
+        showToast('Movimiento actualizado', 'success');
+      } else {
+        await financeApi.create({ type, amount: num, category: category.trim() });
+        showToast('Registro guardado', 'success');
+      }
+      resetForm();
       await load();
     } catch (e) {
-      showToast(e instanceof Error ? e.message : 'No se pudo registrar', 'error');
+      showToast(e instanceof Error ? e.message : 'No se pudo guardar', 'error');
     } finally {
       setSaving(false);
     }
@@ -111,7 +130,19 @@ export function Finance() {
         </Card>
 
         <Card>
-          <h2 className="text-white font-semibold mb-4">Nuevo registro</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-white font-semibold">{editingId ? 'Editar movimiento' : 'Nuevo registro'}</h2>
+            {editingId ? (
+              <button
+                type="button"
+                onClick={resetForm}
+                className="text-zinc-400 hover:text-white flex items-center gap-1 text-sm"
+                aria-label="Cancelar edición">
+                <X size={16} />
+                Cancelar
+              </button>
+            ) : null}
+          </div>
           <div className="flex gap-2 mb-3">
             <button
               type="button"
@@ -141,10 +172,10 @@ export function Finance() {
           />
           <button
             type="button"
-            onClick={add}
+            onClick={save}
             disabled={saving}
             className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white py-2 rounded-lg">
-            Registrar
+            {editingId ? 'Guardar cambios' : 'Registrar'}
           </button>
         </Card>
       </div>
@@ -164,10 +195,17 @@ export function Finance() {
                 <p className="text-white">{r.category}</p>
                 <p className="text-zinc-500 text-xs">{new Date(r.createdAt).toLocaleDateString('es')}</p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <p className={r.type === 'INCOME' ? 'text-emerald-400' : 'text-red-400'}>
                   {r.type === 'INCOME' ? '+' : '-'}${r.amount}
                 </p>
+                <button
+                  type="button"
+                  onClick={() => startEdit(r)}
+                  className="text-zinc-500 hover:text-violet-400 p-1"
+                  aria-label="Editar movimiento">
+                  <Pencil size={16} />
+                </button>
                 <button
                   type="button"
                   onClick={() => setDeleteId(r.id)}
