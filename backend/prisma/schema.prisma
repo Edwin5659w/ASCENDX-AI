@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum HabitFrequency {
+  DAILY
+  WEEKLY
+}
+
+enum FinanceType {
+  INCOME
+  EXPENSE
+}
+
+enum AIInsightType {
+  MOTIVATION
+  WARNING
+  DAILY_PLAN
+  PROCRASTINATION
+  CHAT
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  xp        Int      @default(0)
+  level     Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  goals          Goal[]
+  habits         Habit[]
+  financeRecords FinanceRecord[]
+  aiInsights     AIInsight[]
+  refreshTokens  RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Goal {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  category    String?
+  priority    Priority  @default(MEDIUM)
+  progress    Int       @default(0)
+  deadline    DateTime?
+  userId      String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks       Task[]
+
+  @@index([userId])
+}
+
+model Task {
+  id          String    @id @default(uuid())
+  title       String
+  completed   Boolean   @default(false)
+  goalId      String?
+  userId      String
+  dueDate     DateTime?
+  streakCount Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  goal        Goal?     @relation(fields: [goalId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([goalId])
+}
+
+model Habit {
+  id        String         @id @default(uuid())
+  name      String
+  frequency HabitFrequency @default(DAILY)
+  streak    Int            @default(0)
+  userId    String
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model FinanceRecord {
+  id        String      @id @default(uuid())
+  type      FinanceType
+  amount    Float
+  category  String
+  note      String?
+  userId    String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model AIInsight {
+  id        String        @id @default(uuid())
+  userId    String
+  type      AIInsightType
+  message   String
+  createdAt DateTime      @default(now())
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

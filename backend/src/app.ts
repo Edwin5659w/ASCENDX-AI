@@ -1,0 +1,63 @@
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import { env } from './config/env';
+import { errorHandler } from './middleware/errorHandler';
+
+import authRoutes from './routes/auth.routes';
+import userRoutes from './routes/user.routes';
+import goalRoutes from './routes/goal.routes';
+import taskRoutes from './routes/task.routes';
+import habitRoutes from './routes/habit.routes';
+import financeRoutes from './routes/finance.routes';
+import aiRoutes from './routes/ai.routes';
+
+const app = express();
+
+const corsOrigins = env.CORS_ORIGIN.split(',').map((o) => o.trim());
+
+app.use(helmet());
+app.use(
+  cors({
+    origin: corsOrigins,
+    credentials: true,
+  }),
+);
+app.use(express.json({ limit: '10kb' }));
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Demasiadas solicitudes, intenta más tarde' },
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { success: false, error: 'Demasiados intentos de autenticación' },
+});
+
+app.use(limiter);
+
+app.get('/health', (_req, res) => {
+  res.json({ success: true, service: 'ASCENDX AI API', status: 'ok' });
+});
+
+app.use('/auth', authLimiter, authRoutes);
+app.use('/user', userRoutes);
+app.use('/goals', goalRoutes);
+app.use('/tasks', taskRoutes);
+app.use('/habits', habitRoutes);
+app.use('/finance', financeRoutes);
+app.use('/ai', aiRoutes);
+
+app.use(errorHandler);
+
+app.listen(env.PORT, () => {
+  console.log(`🚀 ASCENDX AI API en http://localhost:${env.PORT}`);
+});
+
+export default app;
