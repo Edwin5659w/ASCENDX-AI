@@ -3,6 +3,7 @@ import {
   Alert,
   FlatList,
   Pressable,
+  RefreshControl,
   StyleSheet,
   Text,
   TextInput,
@@ -29,6 +30,12 @@ export default function TasksScreen() {
   }, []);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  };
 
   const handleCreate = async () => {
     if (!title.trim()) return;
@@ -67,6 +74,7 @@ export default function TasksScreen() {
         data={tasks}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
         ListEmptyComponent={<Text style={styles.empty}>Sin tareas pendientes</Text>}
         renderItem={({ item }) => (
           <Pressable style={styles.taskRow} onPress={() => toggleTask(item)}>

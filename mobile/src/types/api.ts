@@ -4,6 +4,7 @@ export interface User {
   email: string;
   xp: number;
   level: number;
+  onboardingDone?: boolean;
   createdAt: string;
 }
 
@@ -57,6 +58,7 @@ export interface Habit {
   frequency: 'DAILY' | 'WEEKLY';
   streak: number;
   userId: string;
+  completedToday?: boolean;
 }
 
 export interface FinanceRecord {

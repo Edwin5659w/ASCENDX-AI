@@ -37,6 +37,7 @@ export const authApi = {
 export const userApi = {
   me: () => apiRequest<User>('/user/me'),
   stats: () => apiRequest<UserStats>('/user/stats'),
+  completeOnboarding: () => apiRequest<User>('/user/onboarding-complete', { method: 'POST' }),
 };
 
 export const goalsApi = {
@@ -59,7 +60,10 @@ export const tasksApi = {
 
 export const habitsApi = {
   list: () => apiRequest<Habit[]>('/habits'),
+  create: (data: { name: string; frequency?: 'DAILY' | 'WEEKLY' }) =>
+    apiRequest<Habit>('/habits', { method: 'POST', body: JSON.stringify(data) }),
   complete: (id: string) => apiRequest<Habit>(`/habits/${id}/complete`, { method: 'POST' }),
+  remove: (id: string) => apiRequest<void>(`/habits/${id}`, { method: 'DELETE' }),
 };
 
 export const financeApi = {

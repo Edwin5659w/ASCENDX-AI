@@ -19,6 +19,7 @@ export default function DashboardScreen() {
   const { user } = useAuth();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [dailyPlan, setDailyPlan] = useState('');
+  const [warning, setWarning] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
@@ -26,6 +27,7 @@ export default function DashboardScreen() {
       const [s, plan] = await Promise.all([userApi.stats(), aiApi.dailyPlan()]);
       setStats(s);
       setDailyPlan(plan.plan);
+      setWarning(plan.procrastinationWarning);
     } catch {
       /* silencioso en dashboard */
     }
@@ -59,9 +61,17 @@ export default function DashboardScreen() {
       <View style={styles.statsGrid}>
         <StatCard label="Objetivos" value={stats?.totalGoals ?? 0} icon="bullseye" />
         <StatCard label="Tareas hechas" value={`${stats?.completedTasks ?? 0}/${stats?.totalTasks ?? 0}`} icon="check" color={theme.colors.success} />
-        <StatCard label="Racha máxima" value={stats?.longestStreak ?? 0} icon="fire" color={theme.colors.warning} />
+        <StatCard label="Hábitos" value={stats?.activeHabits ?? 0} icon="fire" color={theme.colors.warning} />
+        <StatCard label="Racha máxima" value={stats?.longestStreak ?? 0} icon="bolt" color={theme.colors.primaryLight} />
         <StatCard label="Balance $" value={stats?.financeBalance ?? 0} icon="money" color={theme.colors.accent} />
       </View>
+
+      {warning ? (
+        <Card style={styles.warningCard}>
+          <Text style={styles.warningTitle}>⚠️ Alerta de procrastinación</Text>
+          <Text style={styles.warningText}>{warning}</Text>
+        </Card>
+      ) : null}
 
       <Text style={styles.sectionTitle}>Plan del día — IA</Text>
       <Card>
@@ -101,6 +111,22 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
     paddingHorizontal: theme.spacing.md,
+  },
+  warningCard: {
+    marginHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    borderColor: theme.colors.warning,
+    borderWidth: 1,
+  },
+  warningTitle: {
+    color: theme.colors.warning,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  warningText: {
+    color: theme.colors.text,
+    fontSize: 14,
+    lineHeight: 20,
   },
   sectionTitle: {
     color: theme.colors.text,
