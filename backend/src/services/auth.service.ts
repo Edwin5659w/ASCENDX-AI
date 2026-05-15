@@ -31,7 +31,7 @@ export const authService = {
     const hashed = await bcrypt.hash(input.password, SALT_ROUNDS);
     const user = await prisma.user.create({
       data: { name: input.name, email: input.email, password: hashed },
-      select: { id: true, name: true, email: true, xp: true, level: true, createdAt: true },
+      select: { id: true, name: true, email: true, xp: true, level: true, onboardingDone: true, createdAt: true },
     });
 
     const payload: AuthPayload = { userId: user.id, email: user.email };
@@ -61,6 +61,7 @@ export const authService = {
         email: user.email,
         xp: user.xp,
         level: user.level,
+        onboardingDone: user.onboardingDone,
         createdAt: user.createdAt,
       },
       accessToken,

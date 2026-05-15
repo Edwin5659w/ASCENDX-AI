@@ -8,13 +8,14 @@ async function main() {
 
   const user = await prisma.user.upsert({
     where: { email: 'demo@ascendx.ai' },
-    update: {},
+    update: { onboardingDone: true },
     create: {
       name: 'Usuario Demo',
       email: 'demo@ascendx.ai',
       password,
       xp: 120,
       level: 2,
+      onboardingDone: true,
     },
   });
 

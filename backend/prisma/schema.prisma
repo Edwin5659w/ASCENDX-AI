@@ -32,20 +32,22 @@ enum AIInsightType {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  xp        Int      @default(0)
-  level     Int      @default(1)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String   @id @default(uuid())
+  name             String
+  email            String   @unique
+  password         String
+  xp               Int      @default(0)
+  level            Int      @default(1)
+  onboardingDone   Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  goals          Goal[]
-  habits         Habit[]
-  financeRecords FinanceRecord[]
-  aiInsights     AIInsight[]
-  refreshTokens  RefreshToken[]
+  goals            Goal[]
+  habits           Habit[]
+  habitCompletions HabitCompletion[]
+  financeRecords   FinanceRecord[]
+  aiInsights       AIInsight[]
+  refreshTokens    RefreshToken[]
 }
 
 model RefreshToken {
@@ -93,16 +95,32 @@ model Task {
 }
 
 model Habit {
-  id        String         @id @default(uuid())
-  name      String
-  frequency HabitFrequency @default(DAILY)
-  streak    Int            @default(0)
-  userId    String
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String         @id @default(uuid())
+  name            String
+  frequency       HabitFrequency @default(DAILY)
+  streak          Int            @default(0)
+  lastCompletedAt DateTime?
+  userId          String
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  completions     HabitCompletion[]
 
   @@index([userId])
+}
+
+model HabitCompletion {
+  id            String   @id @default(uuid())
+  habitId       String
+  userId        String
+  completedDate DateTime @db.Date
+  createdAt     DateTime @default(now())
+  habit         Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, completedDate])
+  @@index([userId])
+  @@index([habitId])
 }
 
 model FinanceRecord {

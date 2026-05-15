@@ -37,4 +37,13 @@ router.post('/refresh', validate(refreshSchema), async (req, res, next) => {
   }
 });
 
+router.post('/logout', validate(refreshSchema), async (req, res, next) => {
+  try {
+    await authService.logout(req.body.refreshToken);
+    sendSuccess(res, { ok: true });
+  } catch (e) {
+    next(e);
+  }
+});
+
 export default router;

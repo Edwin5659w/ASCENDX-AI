@@ -11,6 +11,7 @@ export const userService = {
         email: true,
         xp: true,
         level: true,
+        onboardingDone: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -58,13 +59,31 @@ export const userService = {
 
     const newLevel = Math.floor(user.xp / 100) + 1;
     if (newLevel > user.level) {
-      return prisma.user.update({
+      const updated = await prisma.user.update({
         where: { id: userId },
         data: { level: newLevel },
         select: { id: true, xp: true, level: true },
       });
+      return { ...updated, leveledUp: true };
     }
 
-    return { id: user.id, xp: user.xp, level: user.level };
+    return { id: user.id, xp: user.xp, level: user.level, leveledUp: false };
+  },
+
+  async updateProfile(userId: string, data: { name?: string; onboardingDone?: boolean }) {
+    return prisma.user.update({
+      where: { id: userId },
+      data,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        xp: true,
+        level: true,
+        onboardingDone: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
   },
 };

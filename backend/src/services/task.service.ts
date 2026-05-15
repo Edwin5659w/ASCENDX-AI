@@ -43,12 +43,12 @@ export const taskService = {
 
     const task = await prisma.task.update({ where: { id }, data });
 
-    if (data.completed === true && !existing.completed) {
-      await userService.addXp(userId, 10);
+    if (data.completed !== undefined && data.completed !== existing.completed) {
+      if (data.completed) await userService.addXp(userId, 10);
       if (existing.goalId) {
         const goalTasks = await prisma.task.findMany({ where: { goalId: existing.goalId } });
-        const completed = goalTasks.filter((t) => t.id === id ? true : t.completed).length;
-        const progress = Math.round((completed / goalTasks.length) * 100);
+        const completed = goalTasks.filter((t) => (t.id === id ? data.completed : t.completed)).length;
+        const progress = goalTasks.length ? Math.round((completed / goalTasks.length) * 100) : 0;
         await prisma.goal.update({ where: { id: existing.goalId }, data: { progress } });
       }
     }
