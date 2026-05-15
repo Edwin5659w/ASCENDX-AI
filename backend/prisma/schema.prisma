@@ -3,11 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  /** En runtime (Express) Prisma usa esta URL. En Neon puedes usar el pooler (-pooler). */
-  url       = env("DATABASE_URL")
-  /** Migraciones y `db push` usan esta URL. Debe ser el host DIRECTO de Neon (sin -pooler). Evita P1001 intermitentes en `migrate`. */
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  /** En Neon: si P1001 con host "-pooler", usa aquí la URL "Direct" (sin -pooler) y sslmode=require. */
+  url      = env("DATABASE_URL")
 }
 
 enum Priority {
