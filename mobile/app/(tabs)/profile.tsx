@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Platform, StyleSheet, Text, View } from 'react-native';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
@@ -7,6 +7,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useAuth } from '@/src/context/AuthContext';
 import { Card } from '@/src/components/ui/Card';
 import { Button } from '@/src/components/ui/Button';
+import { Input } from '@/src/components/ui/Input';
 import { theme } from '@/constants/theme';
 import { API_URL } from '@/src/api/client';
 import { userApi } from '@/src/api/services';
@@ -25,6 +26,27 @@ export default function ProfileScreen() {
   const { user, logout, refreshUser } = useAuth();
   const [pushBusy, setPushBusy] = useState(false);
   const [testPushBusy, setTestPushBusy] = useState(false);
+  const [name, setName] = useState(user?.name ?? '');
+  const [savingName, setSavingName] = useState(false);
+
+  useEffect(() => {
+    setName(user?.name ?? '');
+  }, [user?.name]);
+
+  const saveName = async () => {
+    const trimmed = name.trim();
+    if (!trimmed || trimmed === user?.name) return;
+    setSavingName(true);
+    try {
+      await userApi.updateProfile({ name: trimmed });
+      await refreshUser();
+      Alert.alert('Listo', 'Nombre actualizado');
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo guardar');
+    } finally {
+      setSavingName(false);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert('Cerrar sesión', '¿Seguro que quieres salir?', [
@@ -100,6 +122,11 @@ export default function ProfileScreen() {
       </View>
       <Text style={styles.name}>{user?.name}</Text>
       <Text style={styles.email}>{user?.email}</Text>
+
+      <Card style={styles.nameCard}>
+        <Input label="Nombre completo" value={name} onChangeText={setName} autoCapitalize="words" />
+        <Button title="Guardar nombre" onPress={saveName} loading={savingName} />
+      </Card>
 
       <Card style={styles.statsCard}>
         <View style={styles.statRow}>
@@ -178,9 +205,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginTop: 4,
   },
+  nameCard: {
+    width: '100%',
+    marginTop: 20,
+  },
   statsCard: {
     width: '100%',
-    marginTop: 24,
+    marginTop: 16,
   },
   pushCard: {
     width: '100%',

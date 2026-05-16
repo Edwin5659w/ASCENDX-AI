@@ -12,6 +12,7 @@ import { useFocusEffect } from 'expo-router';
 import { goalsApi } from '@/src/api/services';
 import { Card } from '@/src/components/ui/Card';
 import { Button } from '@/src/components/ui/Button';
+import { EmptyState } from '@/src/components/EmptyState';
 import type { Goal } from '@/src/types/api';
 import { theme } from '@/constants/theme';
 
@@ -29,8 +30,8 @@ export default function GoalsScreen() {
   const load = useCallback(async () => {
     try {
       setGoals(await goalsApi.list());
-    } catch {
-      /* ignore */
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudieron cargar los objetivos');
     }
   }, []);
 
@@ -60,8 +61,12 @@ export default function GoalsScreen() {
         text: 'Eliminar',
         style: 'destructive',
         onPress: async () => {
-          await goalsApi.remove(id);
-          load();
+          try {
+            await goalsApi.remove(id);
+            await load();
+          } catch (e) {
+            Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo eliminar');
+          }
         },
       },
     ]);
@@ -84,7 +89,13 @@ export default function GoalsScreen() {
         data={goals}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
-        ListEmptyComponent={<Text style={styles.empty}>Sin objetivos. ¡Crea el primero!</Text>}
+        ListEmptyComponent={
+          <EmptyState
+            icon="bullseye"
+            title="Sin objetivos"
+            description="Crea tu primera meta y vincula tareas para ver el progreso."
+          />
+        }
         renderItem={({ item }) => (
           <Pressable onLongPress={() => handleDelete(item.id)}>
             <Card style={styles.card}>

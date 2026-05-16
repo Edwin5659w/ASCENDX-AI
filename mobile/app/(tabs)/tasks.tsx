@@ -13,6 +13,7 @@ import { useFocusEffect } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { tasksApi } from '@/src/api/services';
 import { Button } from '@/src/components/ui/Button';
+import { EmptyState } from '@/src/components/EmptyState';
 import type { Task } from '@/src/types/api';
 import { theme } from '@/constants/theme';
 
@@ -25,8 +26,8 @@ export default function TasksScreen() {
   const load = useCallback(async () => {
     try {
       setTasks(await tasksApi.list());
-    } catch {
-      /* ignore */
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudieron cargar las tareas');
     }
   }, []);
 
@@ -53,8 +54,12 @@ export default function TasksScreen() {
   };
 
   const toggleTask = async (task: Task) => {
-    await tasksApi.update(task.id, { completed: !task.completed });
-    load();
+    try {
+      await tasksApi.update(task.id, { completed: !task.completed });
+      await load();
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo actualizar la tarea');
+    }
   };
 
   return (
@@ -76,7 +81,13 @@ export default function TasksScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
-        ListEmptyComponent={<Text style={styles.empty}>Sin tareas pendientes</Text>}
+        ListEmptyComponent={
+          <EmptyState
+            icon="check-square-o"
+            title="Sin tareas"
+            description="Añade tareas y márcalas al completarlas para ganar XP."
+          />
+        }
         renderItem={({ item }) => (
           <Pressable style={styles.taskRow} onPress={() => toggleTask(item)}>
             <FontAwesome

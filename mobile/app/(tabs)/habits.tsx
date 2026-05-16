@@ -14,6 +14,7 @@ import { useFocusEffect } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { habitsApi } from '@/src/api/services';
 import { Button } from '@/src/components/ui/Button';
+import { EmptyState } from '@/src/components/EmptyState';
 import type { Habit } from '@/src/types/api';
 import { theme } from '@/constants/theme';
 
@@ -46,7 +47,10 @@ export default function HabitsScreen() {
   };
 
   const handleCreate = async () => {
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      Alert.alert('Nombre requerido', 'Escribe el nombre del hábito');
+      return;
+    }
     setLoading(true);
     try {
       await habitsApi.create({ name: name.trim(), frequency: 'DAILY' });
@@ -126,7 +130,13 @@ export default function HabitsScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
-        ListEmptyComponent={<Text style={styles.empty}>Sin hábitos. ¡Crea el primero!</Text>}
+        ListEmptyComponent={
+          <EmptyState
+            icon="fire"
+            title="Sin hábitos"
+            description="Crea un hábito diario y márcalo cada día para sumar racha y XP."
+          />
+        }
         renderItem={({ item }) => (
           <View style={styles.row}>
             <Pressable style={styles.rowMain} onPress={() => complete(item)}>

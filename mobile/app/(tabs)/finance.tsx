@@ -14,6 +14,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { financeApi } from '@/src/api/services';
 import { Card } from '@/src/components/ui/Card';
 import { Button } from '@/src/components/ui/Button';
+import { EmptyState } from '@/src/components/EmptyState';
 import type { FinanceRecord, FinanceSummary } from '@/src/types/api';
 import { theme } from '@/constants/theme';
 
@@ -159,6 +160,13 @@ export default function FinanceScreen() {
         data={records}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
+        ListEmptyComponent={
+          <EmptyState
+            icon="money"
+            title="Sin movimientos"
+            description="Registra tu primer ingreso o gasto para ver el balance."
+          />
+        }
         renderItem={({ item }) => (
           <View style={styles.recordRow}>
             <Pressable style={styles.recordMain} onPress={() => openEdit(item)}>
