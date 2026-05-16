@@ -4,6 +4,10 @@ import bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('❌ No ejecutes el seed en producción (NODE_ENV=production).');
+    process.exit(1);
+  }
   await prisma.badge.createMany({
     data: [
       { id: 'FIRST_TASK', title: 'En marcha', subtitle: 'Primera tarea completada', sortOrder: 1 },

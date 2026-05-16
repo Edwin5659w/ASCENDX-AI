@@ -11,17 +11,18 @@ import { expiresAtFromJwt } from '../utils/jwt';
 
 const SALT_ROUNDS = 12;
 
+export async function cleanupExpiredRefreshTokens(): Promise<number> {
+  const result = await prisma.refreshToken.deleteMany({
+    where: { expiresAt: { lt: new Date() } },
+  });
+  return result.count;
+}
+
 const signAccessToken = (payload: AuthPayload): string =>
   jwt.sign(payload, env.JWT_ACCESS_SECRET, { expiresIn: env.JWT_ACCESS_EXPIRES_IN as jwt.SignOptions['expiresIn'] });
 
 const signRefreshToken = (payload: AuthPayload): string =>
   jwt.sign(payload, env.JWT_REFRESH_SECRET, { expiresIn: env.JWT_REFRESH_EXPIRES_IN as jwt.SignOptions['expiresIn'] });
-
-const pruneExpiredRefreshTokens = async (userId: string) => {
-  await prisma.refreshToken.deleteMany({
-    where: { userId, expiresAt: { lt: new Date() } },
-  });
-};
 
 const revokeUserRefreshTokens = async (userId: string) => {
   await prisma.refreshToken.deleteMany({ where: { userId } });
@@ -48,7 +49,7 @@ export const authService = {
     const payload: AuthPayload = { userId: user.id, email: user.email };
     const accessToken = signAccessToken(payload);
     const refreshToken = signRefreshToken(payload);
-    await pruneExpiredRefreshTokens(user.id);
+    await cleanupExpiredRefreshTokens();
     await revokeUserRefreshTokens(user.id);
     await storeRefreshToken(user.id, refreshToken);
 
@@ -65,7 +66,7 @@ export const authService = {
     const payload: AuthPayload = { userId: user.id, email: user.email };
     const accessToken = signAccessToken(payload);
     const refreshToken = signRefreshToken(payload);
-    await pruneExpiredRefreshTokens(user.id);
+    await cleanupExpiredRefreshTokens();
     await revokeUserRefreshTokens(user.id);
     await storeRefreshToken(user.id, refreshToken);
 

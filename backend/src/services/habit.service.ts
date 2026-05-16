@@ -1,7 +1,13 @@
 import { prisma } from '../lib/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { userService } from './user.service';
-import { startOfDayUTC, isSameDayUTC, yesterdayUTC } from '../utils/date';
+import {
+  startOfDayUTC,
+  isSameDayUTC,
+  yesterdayUTC,
+  startOfWeekUTC,
+  previousWeekStartUTC,
+} from '../utils/date';
 import { pushService } from './push.service';
 import type { z } from 'zod';
 import type { createHabitSchema, updateHabitSchema } from '@ascendx/shared/validators/habit.validator';
@@ -9,13 +15,30 @@ import type { createHabitSchema, updateHabitSchema } from '@ascendx/shared/valid
 type CreateHabitInput = z.infer<typeof createHabitSchema>;
 type UpdateHabitInput = z.infer<typeof updateHabitSchema>;
 
-async function enrichHabits<T extends { id: string }>(userId: string, habits: T[]) {
+async function enrichHabits<T extends { id: string; frequency: string }>(
+  userId: string,
+  habits: T[],
+) {
   const today = startOfDayUTC();
+  const weekStart = startOfWeekUTC();
   const completions = await prisma.habitCompletion.findMany({
-    where: { userId, completedDate: today },
+    where: {
+      userId,
+      completedDate: { in: [today, weekStart] },
+    },
   });
-  const done = new Set(completions.map((c) => c.habitId));
-  return habits.map((h) => ({ ...h, completedToday: done.has(h.id) }));
+  const doneToday = new Set(
+    completions.filter((c) => c.completedDate.getTime() === today.getTime()).map((c) => c.habitId),
+  );
+  const doneWeek = new Set(
+    completions
+      .filter((c) => c.completedDate.getTime() === weekStart.getTime())
+      .map((c) => c.habitId),
+  );
+  return habits.map((h) => ({
+    ...h,
+    completedToday: h.frequency === 'WEEKLY' ? doneWeek.has(h.id) : doneToday.has(h.id),
+  }));
 }
 
 export const habitService = {
@@ -50,27 +73,43 @@ export const habitService = {
     const habit = await prisma.habit.findFirst({ where: { id, userId } });
     if (!habit) throw new AppError(404, 'Hábito no encontrado');
 
-    const today = startOfDayUTC();
+    const periodStart =
+      habit.frequency === 'WEEKLY' ? startOfWeekUTC() : startOfDayUTC();
 
     const already = await prisma.habitCompletion.findUnique({
-      where: { habitId_completedDate: { habitId: id, completedDate: today } },
+      where: { habitId_completedDate: { habitId: id, completedDate: periodStart } },
     });
-    if (already) throw new AppError(400, 'Ya completaste este hábito hoy');
+    if (already) {
+      throw new AppError(
+        400,
+        habit.frequency === 'WEEKLY'
+          ? 'Ya completaste este hábito esta semana'
+          : 'Ya completaste este hábito hoy',
+      );
+    }
 
     let newStreak = 1;
     if (habit.lastCompletedAt) {
-      const lastDay = startOfDayUTC(habit.lastCompletedAt);
-      const yday = yesterdayUTC();
-      if (isSameDayUTC(lastDay, yday)) {
-        newStreak = habit.streak + 1;
-      } else if (!isSameDayUTC(lastDay, today)) {
-        newStreak = 1;
+      if (habit.frequency === 'WEEKLY') {
+        const lastWeek = startOfWeekUTC(habit.lastCompletedAt);
+        const prevWeek = previousWeekStartUTC();
+        if (lastWeek.getTime() === prevWeek.getTime()) {
+          newStreak = habit.streak + 1;
+        }
+      } else {
+        const lastDay = startOfDayUTC(habit.lastCompletedAt);
+        const yday = yesterdayUTC();
+        if (isSameDayUTC(lastDay, yday)) {
+          newStreak = habit.streak + 1;
+        } else if (!isSameDayUTC(lastDay, periodStart)) {
+          newStreak = 1;
+        }
       }
     }
 
     const updated = await prisma.$transaction(async (tx) => {
       await tx.habitCompletion.create({
-        data: { habitId: id, userId, completedDate: today },
+        data: { habitId: id, userId, completedDate: periodStart },
       });
       return tx.habit.update({
         where: { id },

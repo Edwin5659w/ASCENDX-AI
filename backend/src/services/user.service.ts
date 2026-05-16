@@ -4,6 +4,7 @@ import { badgeService } from './badge.service';
 import { pushService } from './push.service';
 import type { OnboardingSetupInput } from '@ascendx/shared/validators/onboarding.validator';
 import { startOfDayUTC } from '../utils/date';
+import { roundMoney, toMoneyNumber } from '../utils/money';
 
 export const userService = {
   async getMe(userId: string) {
@@ -43,7 +44,8 @@ export const userService = {
     const longestStreak = Math.max(0, ...habits.map((h) => h.streak), ...tasks.map((t) => t.streakCount));
 
     const financeBalance = finance.reduce((acc, r) => {
-      return r.type === 'INCOME' ? acc + r.amount : acc - r.amount;
+      const amt = toMoneyNumber(r.amount);
+      return r.type === 'INCOME' ? acc + amt : acc - amt;
     }, 0);
 
     const statsCore = {
@@ -56,7 +58,7 @@ export const userService = {
       totalXp: user.xp,
       level: user.level,
       longestStreak,
-      financeBalance: Math.round(financeBalance * 100) / 100,
+      financeBalance: roundMoney(financeBalance),
     };
 
     const badges = await badgeService.syncAndList(userId, {
