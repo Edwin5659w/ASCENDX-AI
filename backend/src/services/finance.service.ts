@@ -1,3 +1,4 @@
+import type { FinanceRecord } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { roundMoney, toMoneyNumber } from '../utils/money';
@@ -7,7 +8,7 @@ import type { createFinanceSchema, updateFinanceSchema } from '@ascendx/shared/v
 type CreateFinanceInput = z.infer<typeof createFinanceSchema>;
 type UpdateFinanceInput = z.infer<typeof updateFinanceSchema>;
 
-function mapRecord<T extends { amount: unknown }>(record: T) {
+function mapRecord(record: FinanceRecord) {
   return { ...record, amount: toMoneyNumber(record.amount) };
 }
 

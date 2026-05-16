@@ -1,4 +1,5 @@
 import { prisma } from '../../lib/prisma';
+import { toMoneyNumber } from '../../utils/money';
 import type { AIContextLevel } from '@ascendx/shared/ai-prompts';
 
 export interface UserAIContext {
@@ -63,7 +64,7 @@ export async function buildUserAIContext(userId: string): Promise<UserAIContext>
     habits: habits.map((h) => ({ name: h.name, streak: h.streak })),
     recentFinance: finance.map((f) => ({
       type: f.type,
-      amount: f.amount,
+      amount: toMoneyNumber(f.amount),
       category: f.category,
     })),
     pendingTasksCount: pendingTasks.length,

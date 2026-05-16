@@ -1,42 +1,36 @@
 -- =============================================================================
--- ASCENDX AI — Reset completo + esquema para Neon (PostgreSQL)
+-- ASCENDX AI — Reset TOTAL + esquema actualizado (PostgreSQL / Neon)
 -- =============================================================================
--- ⚠️  BORRA TODOS LOS DATOS de las tablas listadas.
+-- ⚠️  ESTE SCRIPT BORRA **TODA** LA BASE (schema public): tablas, datos,
+--     enums, historial de Prisma (_prisma_migrations), etc.
 --
--- Recomendación: en entornos reales suele ser más limpio crear una base/rama
--- vacía en Neon y ejecutar desde backend:  npx prisma migrate deploy
--- Así la tabla _prisma_migrations queda alineada con el historial.
+-- Dónde ejecutar: Neon → SQL Editor → pegar y Run.
 --
--- Usa este archivo si quieres pegar todo en el SQL Editor de Neon de una vez.
+-- Después, en tu PC (carpeta backend/):
+--   npx prisma migrate resolve --applied 20250515000000_init
+--   npx prisma migrate resolve --applied 20250516000000_habit_completions
+--   npx prisma migrate resolve --applied 20250517120000_password_reset_tokens
+--   npx prisma migrate resolve --applied 20250518100000_badges_and_push
+--   npx prisma migrate resolve --applied 20250519120000_task_user_fkey
+--   npx prisma migrate resolve --applied 20250520120000_finance_decimal
+--   npx prisma migrate deploy
+--   npm run db:seed
+--   npm run dev
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
--- 1) DROP (orden: tablas dependientes primero; luego enums)
+-- 1) DROP TOTAL — elimina todo el schema public
 -- -----------------------------------------------------------------------------
 
-DROP TABLE IF EXISTS "UserBadge" CASCADE;
-DROP TABLE IF EXISTS "HabitCompletion" CASCADE;
-DROP TABLE IF EXISTS "Task" CASCADE;
-DROP TABLE IF EXISTS "Goal" CASCADE;
-DROP TABLE IF EXISTS "Habit" CASCADE;
-DROP TABLE IF EXISTS "PasswordResetToken" CASCADE;
-DROP TABLE IF EXISTS "RefreshToken" CASCADE;
-DROP TABLE IF EXISTS "FinanceRecord" CASCADE;
-DROP TABLE IF EXISTS "AIInsight" CASCADE;
-DROP TABLE IF EXISTS "Badge" CASCADE;
-DROP TABLE IF EXISTS "User" CASCADE;
-DROP TABLE IF EXISTS "_prisma_migrations" CASCADE;
+DROP SCHEMA IF EXISTS public CASCADE;
+CREATE SCHEMA public;
 
-DROP TYPE IF EXISTS "AIInsightType" CASCADE;
-DROP TYPE IF EXISTS "FinanceType" CASCADE;
-DROP TYPE IF EXISTS "HabitFrequency" CASCADE;
-DROP TYPE IF EXISTS "Priority" CASCADE;
+GRANT ALL ON SCHEMA public TO public;
+GRANT ALL ON SCHEMA public TO CURRENT_USER;
 
 -- -----------------------------------------------------------------------------
--- 2) CREATE (generado con: prisma migrate diff --from-empty --to-schema-datamodel)
+-- 2) CREATE — esquema alineado con prisma/schema.prisma (mayo 2025)
 -- -----------------------------------------------------------------------------
-
-CREATE SCHEMA IF NOT EXISTS "public";
 
 CREATE TYPE "Priority" AS ENUM ('LOW', 'MEDIUM', 'HIGH');
 
@@ -155,7 +149,7 @@ CREATE TABLE "HabitCompletion" (
 CREATE TABLE "FinanceRecord" (
     "id" TEXT NOT NULL,
     "type" "FinanceType" NOT NULL,
-    "amount" DOUBLE PRECISION NOT NULL,
+    "amount" DECIMAL(12,2) NOT NULL,
     "category" TEXT NOT NULL,
     "note" TEXT,
     "userId" TEXT NOT NULL,
@@ -232,7 +226,7 @@ ALTER TABLE "FinanceRecord" ADD CONSTRAINT "FinanceRecord_userId_fkey" FOREIGN K
 ALTER TABLE "AIInsight" ADD CONSTRAINT "AIInsight_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- -----------------------------------------------------------------------------
--- 3) Catálogo de badges (idempotente; alineado con migración del repo)
+-- 3) Catálogo de badges
 -- -----------------------------------------------------------------------------
 
 INSERT INTO "Badge" ("id", "title", "subtitle", "sortOrder") VALUES
