@@ -65,6 +65,16 @@ export const userApi = {
   updateProfile: (data: { name?: string; pushToken?: string }) =>
     apiRequest<User>('/user/me', { method: 'PATCH', body: JSON.stringify(data) }),
   completeOnboarding: () => apiRequest<User>('/user/onboarding-complete', { method: 'POST' }),
+  setupOnboarding: (data: {
+    focus: string;
+    goalTitle: string;
+    taskTitles: string[];
+    habitName: string;
+  }) =>
+    apiRequest<{ user: User }>('/user/onboarding-setup', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
   testPush: () => apiRequest<{ ok: boolean }>('/user/push/test', { method: 'POST' }),
 };
 

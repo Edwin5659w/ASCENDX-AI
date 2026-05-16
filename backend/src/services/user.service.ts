@@ -2,6 +2,7 @@ import { prisma } from '../lib/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { badgeService } from './badge.service';
 import { pushService } from './push.service';
+import type { OnboardingSetupInput } from '@ascendx/shared/validators/onboarding.validator';
 
 export const userService = {
   async getMe(userId: string) {
@@ -107,6 +108,62 @@ export const userService = {
     }
 
     return { id: user.id, xp: user.xp, level: user.level, leveledUp: false };
+  },
+
+  async setupOnboarding(userId: string, input: OnboardingSetupInput) {
+    const existingGoals = await prisma.goal.count({ where: { userId } });
+    if (existingGoals > 0) {
+      throw new AppError(400, 'Ya tienes objetivos configurados. Usa la app para editarlos.');
+    }
+
+    const categoryMap: Record<OnboardingSetupInput['focus'], string> = {
+      ESTUDIO: 'Estudio',
+      SALUD: 'Salud',
+      FINANZAS: 'Finanzas',
+      TRABAJO: 'Trabajo',
+      PERSONAL: 'Personal',
+    };
+
+    return prisma.$transaction(async (tx) => {
+      const goal = await tx.goal.create({
+        data: {
+          title: input.goalTitle,
+          category: categoryMap[input.focus],
+          priority: 'MEDIUM',
+          userId,
+        },
+      });
+
+      const tasks = await Promise.all(
+        input.taskTitles.map((title) =>
+          tx.task.create({
+            data: { title, userId, goalId: goal.id },
+          }),
+        ),
+      );
+
+      const habit = await tx.habit.create({
+        data: { name: input.habitName, frequency: 'DAILY', userId },
+      });
+
+      const user = await tx.user.update({
+        where: { id: userId },
+        data: { onboardingDone: true },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          xp: true,
+          level: true,
+          onboardingDone: true,
+          pushToken: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      return { user, goal, tasks, habit };
+    });
   },
 
   async updateProfile(userId: string, data: { name?: string; onboardingDone?: boolean; pushToken?: string | null }) {

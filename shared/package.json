@@ -9,7 +9,8 @@
   },
   "exports": {
     "./validators/*": "./dist/validators/*.js",
-    "./types": "./dist/types/index.js"
+    "./types": "./dist/types/index.js",
+    "./onboarding-templates": "./dist/validators/onboarding.validator.js"
   },
   "dependencies": {
     "zod": "^3.24.1"
