@@ -1,6 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
 import { theme } from '@/constants/theme';
+import { BrandLogo } from '@/src/components/brand/BrandLogo';
 
 function TabIcon({ name, color }: { name: React.ComponentProps<typeof FontAwesome>['name']; color: string }) {
   return <FontAwesome size={22} name={name} color={color} style={{ marginBottom: -2 }} />;
@@ -20,7 +21,8 @@ export default function TabLayout() {
           height: 60,
           paddingBottom: 8,
         },
-        tabBarActiveTintColor: theme.colors.primaryLight,
+        tabBarActiveTintColor: theme.colors.accent,
+        headerLeft: () => <BrandLogo size="xs" style={{ marginLeft: 12 }} />,
         tabBarInactiveTintColor: theme.colors.textMuted,
       }}>
       <Tabs.Screen

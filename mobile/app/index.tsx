@@ -1,6 +1,7 @@
 import { Redirect } from 'expo-router';
 import { useAuth } from '@/src/context/AuthContext';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { BrandLoader } from '@/src/components/brand/BrandLoader';
 import { theme } from '@/constants/theme';
 
 export default function Index() {
@@ -9,7 +10,7 @@ export default function Index() {
   if (isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <BrandLoader />
       </View>
     );
   }

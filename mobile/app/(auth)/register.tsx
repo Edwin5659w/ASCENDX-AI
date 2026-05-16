@@ -1,15 +1,7 @@
 import { useMemo, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Link } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
+import { AuthScreenShell } from '@/src/components/brand/AuthScreenShell';
 import { useAuth } from '@/src/context/AuthContext';
 import { Button } from '@/src/components/ui/Button';
 import { ValidatedInput } from '@/src/components/auth/ValidatedInput';
@@ -57,12 +49,9 @@ export default function RegisterScreen() {
   };
 
   return (
-    <LinearGradient colors={['#0a0a0f', '#1a1033', '#0a0a0f']} style={styles.container}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <Text style={styles.logo}>Crear cuenta</Text>
-          <Text style={styles.subtitle}>Nombre completo, correo y contraseña segura</Text>
-
+    <AuthScreenShell
+      title="Crear cuenta"
+      subtitle="Nombre completo, correo y contraseña segura">
           <View style={styles.form}>
             <ValidatedInput
               label="Nombre completo"
@@ -117,22 +106,15 @@ export default function RegisterScreen() {
               ¿Ya tienes cuenta? <Text style={styles.linkBold}>Inicia sesión</Text>
             </Text>
           </Link>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </LinearGradient>
+    </AuthScreenShell>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  flex: { flex: 1 },
-  scroll: { flexGrow: 1, justifyContent: 'center', padding: theme.spacing.lg },
-  logo: { fontSize: 32, fontWeight: '700', color: theme.colors.text, textAlign: 'center' },
-  subtitle: { color: theme.colors.textMuted, textAlign: 'center', marginBottom: 32, fontSize: 15 },
   form: { marginBottom: theme.spacing.lg },
   showBtn: { marginTop: -8, marginBottom: theme.spacing.sm },
   showBtnText: { color: theme.colors.primaryLight, fontSize: 13, textAlign: 'right' },
   error: { color: theme.colors.danger, marginBottom: theme.spacing.sm, textAlign: 'center' },
   link: { color: theme.colors.textMuted, textAlign: 'center', fontSize: 15 },
-  linkBold: { color: theme.colors.primaryLight, fontWeight: '600' },
+  linkBold: { color: theme.colors.accent, fontWeight: '600' },
 });

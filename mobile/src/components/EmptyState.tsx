@@ -1,5 +1,6 @@
 import type { ComponentProps } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { theme } from '@/constants/theme';
 
@@ -14,9 +15,13 @@ interface EmptyStateProps {
 export function EmptyState({ icon, title, description }: EmptyStateProps) {
   return (
     <View style={styles.wrap}>
-      <View style={styles.iconWrap}>
-        <FontAwesome name={icon} size={28} color={theme.colors.primaryLight} />
-      </View>
+      <LinearGradient
+        colors={['rgba(138,43,226,0.12)', 'rgba(0,229,255,0.08)']}
+        start={{ x: 0, y: 1 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.iconWrap}>
+        <FontAwesome name={icon} size={28} color={theme.colors.brandCyan} />
+      </LinearGradient>
       <Text style={styles.title}>{title}</Text>
       {description ? <Text style={styles.description}>{description}</Text> : null}
     </View>
@@ -33,7 +38,8 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 16,
-    backgroundColor: 'rgba(139, 92, 246, 0.12)',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
