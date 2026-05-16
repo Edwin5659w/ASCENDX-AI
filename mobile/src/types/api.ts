@@ -28,6 +28,8 @@ export interface UserStats {
   completedTasks: number;
   totalTasks: number;
   activeHabits: number;
+  habitsCompletedToday: number;
+  financeRecordsCount: number;
   totalXp: number;
   level: number;
   longestStreak: number;

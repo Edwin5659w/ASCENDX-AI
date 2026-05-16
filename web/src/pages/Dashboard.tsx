@@ -4,6 +4,7 @@ import { AlertTriangle, Target, CheckSquare, Flame, Wallet } from 'lucide-react'
 import { Card } from '../components/Card';
 import { DashboardSkeleton } from '../components/ui/DashboardSkeleton';
 import { GamificationPanel } from '../components/GamificationPanel';
+import { FirstStepsPanel } from '../components/FirstStepsPanel';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { userApi, aiApi } from '../api/services';
@@ -49,6 +50,16 @@ export function Dashboard() {
 
   if (loading) return <DashboardSkeleton />;
 
+  const isEmptyWorkspace =
+    (stats?.totalGoals ?? 0) === 0 &&
+    (stats?.totalTasks ?? 0) === 0 &&
+    (stats?.activeHabits ?? 0) === 0;
+
+  const planDisplay =
+    isEmptyWorkspace && !plan.includes('objetivos activos')
+      ? 'Aún no hay datos para personalizar tu plan. Completa los pasos de configuración o crea tu primer objetivo para activar recomendaciones de la IA.'
+      : plan || 'Generando tu plan personalizado...';
+
   return (
     <div>
       <h1 className="text-2xl font-bold text-white mb-1">
@@ -58,6 +69,7 @@ export function Dashboard() {
         Sigue sumando XP con tareas y hábitos
       </p>
 
+      <FirstStepsPanel stats={stats} />
       <GamificationPanel user={user ?? null} stats={stats} />
       {warning && (
         <div className="mb-6 flex gap-3 p-4 rounded-xl border border-amber-500/30 bg-amber-500/10">
@@ -101,9 +113,7 @@ export function Dashboard() {
 
         <Card>
           <h2 className="text-lg font-semibold text-white mb-3">Plan del día — IA</h2>
-          <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap">
-            {plan || 'Generando tu plan personalizado...'}
-          </p>
+          <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap">{planDisplay}</p>
         </Card>
       </div>
     </div>

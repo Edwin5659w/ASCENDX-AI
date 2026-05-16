@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/src/context/AuthContext';
 import { userApi, aiApi } from '@/src/api/services';
 import { StatCard } from '@/src/components/StatCard';
+import { FirstStepsCard } from '@/src/components/FirstStepsCard';
 import { Card } from '@/src/components/ui/Card';
 import type { UserStats, AIInsight } from '@/src/types/api';
 import { theme } from '@/constants/theme';
@@ -78,6 +79,16 @@ export default function DashboardScreen() {
       : countUnlockedBadges(stats, level, xp);
   const { unlocked, total } = badgeCounts;
 
+  const isEmptyWorkspace =
+    (stats?.totalGoals ?? 0) === 0 &&
+    (stats?.totalTasks ?? 0) === 0 &&
+    (stats?.activeHabits ?? 0) === 0;
+
+  const planDisplay =
+    isEmptyWorkspace && !dailyPlan.includes('objetivos activos')
+      ? 'Completa los pasos de configuración para que la IA genere un plan personalizado con tus metas y hábitos.'
+      : dailyPlan || 'Cargando tu plan personalizado...';
+
   return (
     <ScrollView
       style={styles.container}
@@ -95,6 +106,8 @@ export default function DashboardScreen() {
         </View>
         <Text style={styles.xpHint}>{xpToNext} XP hasta nivel {level + 1}</Text>
       </LinearGradient>
+
+      <FirstStepsCard stats={stats} />
 
       <View style={styles.statsGrid}>
         <StatCard label="Objetivos" value={stats?.totalGoals ?? 0} icon="bullseye" />
@@ -130,7 +143,7 @@ export default function DashboardScreen() {
 
       <Text style={styles.sectionTitle}>Plan del día — IA</Text>
       <Card>
-        <Text style={styles.planText}>{dailyPlan || 'Cargando tu plan personalizado...'}</Text>
+        <Text style={styles.planText}>{planDisplay}</Text>
       </Card>
     </ScrollView>
   );

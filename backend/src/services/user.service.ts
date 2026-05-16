@@ -3,6 +3,7 @@ import { AppError } from '../middleware/errorHandler';
 import { badgeService } from './badge.service';
 import { pushService } from './push.service';
 import type { OnboardingSetupInput } from '@ascendx/shared/validators/onboarding.validator';
+import { startOfDayUTC } from '../utils/date';
 
 export const userService = {
   async getMe(userId: string) {
@@ -26,12 +27,14 @@ export const userService = {
   },
 
   async getStats(userId: string) {
-    const [user, goals, tasks, habits, finance] = await Promise.all([
+    const today = startOfDayUTC();
+    const [user, goals, tasks, habits, finance, habitsCompletedToday] = await Promise.all([
       prisma.user.findUnique({ where: { id: userId }, select: { xp: true, level: true } }),
       prisma.goal.count({ where: { userId } }),
       prisma.task.findMany({ where: { userId }, select: { completed: true, streakCount: true } }),
       prisma.habit.findMany({ where: { userId }, select: { streak: true } }),
       prisma.financeRecord.findMany({ where: { userId }, select: { type: true, amount: true } }),
+      prisma.habitCompletion.count({ where: { userId, completedDate: today } }),
     ]);
 
     if (!user) throw new AppError(404, 'Usuario no encontrado');
@@ -48,6 +51,8 @@ export const userService = {
       completedTasks,
       totalTasks: tasks.length,
       activeHabits: habits.length,
+      habitsCompletedToday,
+      financeRecordsCount: finance.length,
       totalXp: user.xp,
       level: user.level,
       longestStreak,
