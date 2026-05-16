@@ -1,14 +1,27 @@
 import OpenAI from 'openai';
 import { prisma } from '../../lib/prisma';
 import { env } from '../../config/env';
-import { AppError } from '../../middleware/errorHandler';
 import { startOfDayUTC } from '../../utils/date';
+import {
+  EMPTY_DAILY_PLAN,
+  getSuggestedPrompts,
+  type AIContextLevel,
+} from '@ascendx/shared/ai-prompts';
+import {
+  buildUserAIContext,
+  chatSystemPrompt,
+  dailyPlanSystemPrompt,
+  formatContextForPrompt,
+} from './user-context';
 
-const FALLBACK_DAILY_PLAN =
+const FALLBACK_DAILY_PLAN_PARTIAL =
+  'Plan del día: 1) Revisa tus objetivos en la app. 2) Elige la tarea más pequeña y complétala. 3) Marca un hábito hoy (+15 XP). 4) Registra un movimiento si aplica. ¡Vamos paso a paso!';
+
+const FALLBACK_DAILY_PLAN_READY =
   'Plan del día: 1) Revisa tus objetivos activos. 2) Completa 3 tareas prioritarias. 3) Registra un hábito clave. 4) Revisa tus finanzas. ¡Tú puedes!';
 
 const FALLBACK_CHAT =
-  'Soy tu mentor ASCENDX. En este momento no puedo conectar con la IA, pero recuerda: la disciplina diaria vence a la motivación temporal. ¿Qué pequeña acción puedes hacer ahora?';
+  'Soy tu mentor ASCENDX. En este momento no puedo conectar con la IA. Mientras tanto: abre Objetivos, crea una meta pequeña y añade una tarea de 15 minutos. ¿Cuál harías primero?';
 
 export class OpenAIService {
   private client: OpenAI | null = null;
@@ -19,89 +32,105 @@ export class OpenAIService {
     }
   }
 
-  private async buildUserContext(userId: string): Promise<string> {
-    const [user, goals, tasks, habits, finance] = await Promise.all([
-      prisma.user.findUnique({ where: { id: userId } }),
-      prisma.goal.findMany({ where: { userId }, take: 5 }),
-      prisma.task.findMany({ where: { userId, completed: false }, take: 10 }),
-      prisma.habit.findMany({ where: { userId } }),
-      prisma.financeRecord.findMany({ where: { userId }, take: 5, orderBy: { createdAt: 'desc' } }),
-    ]);
-
-    const pendingTasks = tasks.length;
-    const overdueGoals = goals.filter((g) => g.deadline && g.deadline < new Date()).length;
-
-    return JSON.stringify({
-      user: { name: user?.name, level: user?.level, xp: user?.xp },
-      goals: goals.map((g) => ({ title: g.title, progress: g.progress, priority: g.priority })),
-      pendingTasks: tasks.map((t) => t.title),
-      habits: habits.map((h) => ({ name: h.name, streak: h.streak })),
-      recentFinance: finance.map((f) => ({ type: f.type, amount: f.amount, category: f.category })),
-      metrics: { pendingTasks, overdueGoals },
-    });
+  async getContextMeta(userId: string) {
+    const ctx = await buildUserAIContext(userId);
+    return {
+      contextLevel: ctx.contextLevel,
+      suggestedPrompts: getSuggestedPrompts(ctx.contextLevel),
+    };
   }
 
-  async generateDailyPlan(userId: string): Promise<string> {
-    const context = await this.buildUserContext(userId);
+  async generateDailyPlan(userId: string): Promise<{
+    plan: string;
+    contextLevel: AIContextLevel;
+    suggestedPrompts: string[];
+  }> {
+    const ctx = await buildUserAIContext(userId);
+    const meta = { contextLevel: ctx.contextLevel, suggestedPrompts: getSuggestedPrompts(ctx.contextLevel) };
+
+    if (ctx.contextLevel === 'empty') {
+      await this.saveDailyPlanIfNew(userId, EMPTY_DAILY_PLAN);
+      return { plan: EMPTY_DAILY_PLAN, ...meta };
+    }
+
+    const todayStart = startOfDayUTC();
+    const cached = await prisma.aIInsight.findFirst({
+      where: { userId, type: 'DAILY_PLAN', createdAt: { gte: todayStart } },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (cached) {
+      return { plan: cached.message, ...meta };
+    }
 
     if (!this.client) {
-      await this.saveInsight(userId, 'DAILY_PLAN', FALLBACK_DAILY_PLAN);
-      return FALLBACK_DAILY_PLAN;
+      const fallback =
+        ctx.contextLevel === 'partial' ? FALLBACK_DAILY_PLAN_PARTIAL : FALLBACK_DAILY_PLAN_READY;
+      await this.saveInsight(userId, 'DAILY_PLAN', fallback);
+      return { plan: fallback, ...meta };
     }
 
     try {
       const completion = await this.client.chat.completions.create({
         model: env.OPENAI_MODEL,
         messages: [
-          {
-            role: 'system',
-            content:
-              'Eres ASCENDX AI, un mentor de vida personal. Genera un plan diario conciso en español (máx 200 palabras) con 4-6 acciones priorizadas basadas en los datos del usuario.',
-          },
-          { role: 'user', content: `Datos del usuario:\n${context}` },
+          { role: 'system', content: dailyPlanSystemPrompt(ctx) },
+          { role: 'user', content: `Datos del usuario:\n${formatContextForPrompt(ctx)}` },
         ],
         max_tokens: 400,
-        temperature: 0.7,
+        temperature: 0.65,
       });
 
-      const plan = completion.choices[0]?.message?.content?.trim() || FALLBACK_DAILY_PLAN;
+      const plan =
+        completion.choices[0]?.message?.content?.trim() ||
+        (ctx.contextLevel === 'partial' ? FALLBACK_DAILY_PLAN_PARTIAL : FALLBACK_DAILY_PLAN_READY);
+
       await this.saveInsight(userId, 'DAILY_PLAN', plan);
-      return plan;
+      return { plan, ...meta };
     } catch (error) {
       console.error('[OpenAI] daily-plan error:', error);
-      await this.saveInsight(userId, 'DAILY_PLAN', FALLBACK_DAILY_PLAN);
-      return FALLBACK_DAILY_PLAN;
+      const fallback =
+        ctx.contextLevel === 'partial' ? FALLBACK_DAILY_PLAN_PARTIAL : FALLBACK_DAILY_PLAN_READY;
+      await this.saveInsight(userId, 'DAILY_PLAN', fallback);
+      return { plan: fallback, ...meta };
     }
   }
 
-  async chat(userId: string, message: string): Promise<string> {
-    const context = await this.buildUserContext(userId);
+  async chat(
+    userId: string,
+    message: string,
+  ): Promise<{ reply: string; contextLevel: AIContextLevel; suggestedPrompts: string[] }> {
+    const ctx = await buildUserAIContext(userId);
+    const meta = { contextLevel: ctx.contextLevel, suggestedPrompts: getSuggestedPrompts(ctx.contextLevel) };
 
     if (!this.client) {
-      return FALLBACK_CHAT;
+      return { reply: FALLBACK_CHAT, ...meta };
+    }
+
+    const sanitized = message.trim().slice(0, 2000);
+    if (!sanitized) {
+      return { reply: 'Escribe tu pregunta y te ayudo con el siguiente paso concreto.', ...meta };
     }
 
     try {
       const completion = await this.client.chat.completions.create({
         model: env.OPENAI_MODEL,
         messages: [
+          { role: 'system', content: chatSystemPrompt(ctx) },
           {
-            role: 'system',
-            content:
-              'Eres ASCENDX AI, mentor personal empático y directo. Ayudas con objetivos, hábitos, productividad y finanzas. Responde en español, máximo 150 palabras. Detecta procrastinación y motiva con acciones concretas.',
+            role: 'user',
+            content: `Contexto:\n${formatContextForPrompt(ctx)}\n\nMensaje del usuario:\n${sanitized}`,
           },
-          { role: 'user', content: `Contexto:\n${context}\n\nMensaje: ${message}` },
         ],
         max_tokens: 300,
-        temperature: 0.8,
+        temperature: 0.75,
       });
 
       const reply = completion.choices[0]?.message?.content?.trim() || FALLBACK_CHAT;
       await this.saveInsight(userId, 'CHAT', reply);
-      return reply;
+      return { reply, ...meta };
     } catch (error) {
       console.error('[OpenAI] chat error:', error);
-      return FALLBACK_CHAT;
+      return { reply: FALLBACK_CHAT, ...meta };
     }
   }
 
@@ -131,6 +160,14 @@ export class OpenAIService {
 
     await this.saveInsight(userId, 'PROCRASTINATION', warning);
     return warning;
+  }
+
+  private async saveDailyPlanIfNew(userId: string, message: string) {
+    const todayStart = startOfDayUTC();
+    const existing = await prisma.aIInsight.findFirst({
+      where: { userId, type: 'DAILY_PLAN', createdAt: { gte: todayStart } },
+    });
+    if (!existing) await this.saveInsight(userId, 'DAILY_PLAN', message);
   }
 
   private async saveInsight(

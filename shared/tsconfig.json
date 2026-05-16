@@ -11,6 +11,6 @@
     "outDir": "./dist",
     "rootDir": "."
   },
-  "include": ["validators/**/*", "types/**/*", "first-steps.ts"],
+  "include": ["validators/**/*", "types/**/*", "first-steps.ts", "ai-prompts.ts"],
   "exclude": ["node_modules", "dist"]
 }

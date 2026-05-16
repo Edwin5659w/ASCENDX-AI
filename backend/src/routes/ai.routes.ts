@@ -12,9 +12,20 @@ router.use(requireAuth);
 
 router.get('/daily-plan', async (req, res, next) => {
   try {
-    const plan = await openaiService.generateDailyPlan(req.user!.userId);
+    const { plan, contextLevel, suggestedPrompts } = await openaiService.generateDailyPlan(
+      req.user!.userId,
+    );
     const warning = await openaiService.detectProcrastination(req.user!.userId);
-    sendSuccess(res, { plan, procrastinationWarning: warning });
+    sendSuccess(res, { plan, procrastinationWarning: warning, contextLevel, suggestedPrompts });
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.get('/context', async (req, res, next) => {
+  try {
+    const meta = await openaiService.getContextMeta(req.user!.userId);
+    sendSuccess(res, meta);
   } catch (e) {
     next(e);
   }
@@ -22,8 +33,8 @@ router.get('/daily-plan', async (req, res, next) => {
 
 router.post('/chat', validate(chatSchema), async (req, res, next) => {
   try {
-    const reply = await openaiService.chat(req.user!.userId, req.body.message);
-    sendSuccess(res, { reply });
+    const result = await openaiService.chat(req.user!.userId, req.body.message);
+    sendSuccess(res, result);
   } catch (e) {
     next(e);
   }

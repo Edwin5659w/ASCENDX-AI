@@ -5,6 +5,7 @@ import { Card } from '../components/Card';
 import { DashboardSkeleton } from '../components/ui/DashboardSkeleton';
 import { GamificationPanel } from '../components/GamificationPanel';
 import { FirstStepsPanel } from '../components/FirstStepsPanel';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { userApi, aiApi } from '../api/services';
@@ -16,6 +17,7 @@ export function Dashboard() {
   const [stats, setStats] = useState<UserStats | null>(null);
   const [plan, setPlan] = useState('');
   const [warning, setWarning] = useState<string | null>(null);
+  const [aiPrompts, setAiPrompts] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,6 +28,7 @@ export function Dashboard() {
         setStats(s);
         setPlan(ai.plan);
         setWarning(ai.procrastinationWarning);
+        setAiPrompts(ai.suggestedPrompts ?? []);
       } catch (e) {
         showToast(e instanceof Error ? e.message : 'Error al cargar dashboard', 'error');
       } finally {
@@ -50,15 +53,7 @@ export function Dashboard() {
 
   if (loading) return <DashboardSkeleton />;
 
-  const isEmptyWorkspace =
-    (stats?.totalGoals ?? 0) === 0 &&
-    (stats?.totalTasks ?? 0) === 0 &&
-    (stats?.activeHabits ?? 0) === 0;
-
-  const planDisplay =
-    isEmptyWorkspace && !plan.includes('objetivos activos')
-      ? 'Aún no hay datos para personalizar tu plan. Completa los pasos de configuración o crea tu primer objetivo para activar recomendaciones de la IA.'
-      : plan || 'Generando tu plan personalizado...';
+  const planDisplay = plan || 'Generando tu plan personalizado...';
 
   return (
     <div>
@@ -114,6 +109,22 @@ export function Dashboard() {
         <Card>
           <h2 className="text-lg font-semibold text-white mb-3">Plan del día — IA</h2>
           <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap">{planDisplay}</p>
+          {aiPrompts.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-white/10">
+              <p className="text-zinc-500 text-xs mb-2">Pregúntale al mentor:</p>
+              <div className="flex flex-wrap gap-2">
+                {aiPrompts.slice(0, 2).map((p) => (
+                  <Link
+                    key={p}
+                    to="/chat"
+                    state={{ prefill: p }}
+                    className="text-xs px-3 py-1.5 rounded-full border border-violet-500/30 text-violet-300 hover:bg-violet-500/10">
+                    {p}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </Card>
       </div>
     </div>

@@ -1,12 +1,13 @@
 import { useCallback, useState } from 'react';
 import {
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/src/context/AuthContext';
 import { userApi, aiApi } from '@/src/api/services';
@@ -31,10 +32,12 @@ function countUnlockedBadges(stats: UserStats | null, level: number, xp: number)
 }
 
 export default function DashboardScreen() {
+  const router = useRouter();
   const { user } = useAuth();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [dailyPlan, setDailyPlan] = useState('');
   const [warning, setWarning] = useState<string | null>(null);
+  const [aiPrompts, setAiPrompts] = useState<string[]>([]);
   const [insights, setInsights] = useState<AIInsight[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -48,6 +51,7 @@ export default function DashboardScreen() {
       setStats(s);
       setDailyPlan(plan.plan);
       setWarning(plan.procrastinationWarning);
+      setAiPrompts(plan.suggestedPrompts ?? []);
       setInsights(ins.slice(0, 5));
     } catch {
       /* silencioso en dashboard */
@@ -79,15 +83,7 @@ export default function DashboardScreen() {
       : countUnlockedBadges(stats, level, xp);
   const { unlocked, total } = badgeCounts;
 
-  const isEmptyWorkspace =
-    (stats?.totalGoals ?? 0) === 0 &&
-    (stats?.totalTasks ?? 0) === 0 &&
-    (stats?.activeHabits ?? 0) === 0;
-
-  const planDisplay =
-    isEmptyWorkspace && !dailyPlan.includes('objetivos activos')
-      ? 'Completa los pasos de configuración para que la IA genere un plan personalizado con tus metas y hábitos.'
-      : dailyPlan || 'Cargando tu plan personalizado...';
+  const planDisplay = dailyPlan || 'Cargando tu plan personalizado...';
 
   return (
     <ScrollView
@@ -144,6 +140,20 @@ export default function DashboardScreen() {
       <Text style={styles.sectionTitle}>Plan del día — IA</Text>
       <Card>
         <Text style={styles.planText}>{planDisplay}</Text>
+        {aiPrompts.length > 0 ? (
+          <View style={styles.promptRow}>
+            {aiPrompts.slice(0, 2).map((p) => (
+              <Pressable
+                key={p}
+                style={styles.promptChip}
+                onPress={() => router.push({ pathname: '/(tabs)/chat', params: { prefill: p } })}>
+                <Text style={styles.promptChipText} numberOfLines={2}>
+                  {p}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
       </Card>
     </ScrollView>
   );
@@ -248,4 +258,14 @@ const styles = StyleSheet.create({
   },
   insightMsg: { color: theme.colors.text, fontSize: 14, lineHeight: 20 },
   insightDate: { color: theme.colors.textMuted, fontSize: 11, marginTop: 6 },
+  promptRow: { marginTop: 14, gap: 8 },
+  promptChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.35)',
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+  },
+  promptChipText: { color: theme.colors.primaryLight, fontSize: 12 },
 });

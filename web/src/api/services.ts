@@ -114,9 +114,26 @@ export const financeApi = {
   remove: (id: string) => apiRequest<void>(`/finance/${id}`, { method: 'DELETE' }),
 };
 
+export type AIContextLevel = 'empty' | 'partial' | 'ready';
+
+export interface AIContextMeta {
+  contextLevel: AIContextLevel;
+  suggestedPrompts: string[];
+}
+
 export const aiApi = {
-  dailyPlan: () => apiRequest<{ plan: string; procrastinationWarning: string | null }>('/ai/daily-plan'),
+  dailyPlan: () =>
+    apiRequest<{
+      plan: string;
+      procrastinationWarning: string | null;
+      contextLevel: AIContextLevel;
+      suggestedPrompts: string[];
+    }>('/ai/daily-plan'),
+  context: () => apiRequest<AIContextMeta>('/ai/context'),
   chat: (message: string) =>
-    apiRequest<{ reply: string }>('/ai/chat', { method: 'POST', body: JSON.stringify({ message }) }),
-  insights: () => apiRequest<{ type: string; message: string; createdAt: string }[]>('/ai/insights'),
+    apiRequest<{ reply: string } & AIContextMeta>('/ai/chat', {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    }),
+  insights: () => apiRequest<{ id: string; type: string; message: string; createdAt: string }[]>('/ai/insights'),
 };

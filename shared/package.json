@@ -11,7 +11,8 @@
     "./validators/*": "./dist/validators/*.js",
     "./types": "./dist/types/index.js",
     "./onboarding-templates": "./dist/validators/onboarding.validator.js",
-    "./first-steps": "./dist/first-steps.js"
+    "./first-steps": "./dist/first-steps.js",
+    "./ai-prompts": "./dist/ai-prompts.js"
   },
   "dependencies": {
     "zod": "^3.24.1"
