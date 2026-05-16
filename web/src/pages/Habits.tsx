@@ -34,7 +34,10 @@ export function Habits() {
   }, [load]);
 
   const create = async () => {
-    if (name.trim().length < 1) return;
+    if (name.trim().length < 1) {
+      showToast('Escribe el nombre del hábito', 'info');
+      return;
+    }
     setCreating(true);
     try {
       await habitsApi.create({ name: name.trim(), frequency });

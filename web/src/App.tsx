@@ -28,6 +28,22 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function GuestRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
+        <div className="w-10 h-10 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  if (isAuthenticated) {
+    if (user?.onboardingDone === false) return <Navigate to="/onboarding" replace />;
+    return <Navigate to="/" replace />;
+  }
+  return <>{children}</>;
+}
+
 function OnboardingRoute() {
   const { isAuthenticated, isLoading, user } = useAuth();
   if (isLoading) {
@@ -45,8 +61,22 @@ function OnboardingRoute() {
 export default function App() {
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route
+        path="/login"
+        element={
+          <GuestRoute>
+            <Login />
+          </GuestRoute>
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          <GuestRoute>
+            <Register />
+          </GuestRoute>
+        }
+      />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/onboarding" element={<OnboardingRoute />} />
