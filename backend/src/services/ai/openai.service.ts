@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import { prisma } from '../../lib/prisma';
 import { env } from '../../config/env';
 import { AppError } from '../../middleware/errorHandler';
+import { startOfDayUTC } from '../../utils/date';
 
 const FALLBACK_DAILY_PLAN =
   'Plan del día: 1) Revisa tus objetivos activos. 2) Completa 3 tareas prioritarias. 3) Registra un hábito clave. 4) Revisa tus finanzas. ¡Tú puedes!';
@@ -116,6 +117,18 @@ export class OpenAIService {
     if (incompleteTasks < 3) return null;
 
     const warning = `Detecté ${incompleteTasks} tareas vencidas. La procrastinación acumula presión — elige UNA tarea de 15 minutos y complétala ahora.`;
+
+    const todayStart = startOfDayUTC();
+    const existing = await prisma.aIInsight.findFirst({
+      where: {
+        userId,
+        type: 'PROCRASTINATION',
+        createdAt: { gte: todayStart },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (existing) return existing.message;
+
     await this.saveInsight(userId, 'PROCRASTINATION', warning);
     return warning;
   }

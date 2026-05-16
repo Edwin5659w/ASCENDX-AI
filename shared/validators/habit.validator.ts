@@ -5,7 +5,6 @@ const frequencyEnum = z.enum(['DAILY', 'WEEKLY']);
 export const createHabitSchema = z.object({
   name: z.string().trim().min(1, 'El nombre es obligatorio').max(100),
   frequency: frequencyEnum.default('DAILY'),
-  streak: z.number().int().min(0).default(0),
 });
 
 export const updateHabitSchema = createHabitSchema.partial();

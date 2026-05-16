@@ -16,6 +16,19 @@ export const clearTokens = () => {
   localStorage.removeItem(REFRESH_KEY);
 };
 
+type SessionExpiredHandler = () => void;
+let sessionExpiredHandler: SessionExpiredHandler | null = null;
+
+/** Registra callback para limpiar estado de auth cuando la sesión ya no es válida. */
+export function setSessionExpiredHandler(handler: SessionExpiredHandler | null) {
+  sessionExpiredHandler = handler;
+}
+
+function notifySessionExpired() {
+  clearTokens();
+  sessionExpiredHandler?.();
+}
+
 type ApiPayload<T> = { data?: T; error?: string; message?: string };
 
 function parseJson<T>(res: Response, raw: string): ApiPayload<T> {
@@ -43,19 +56,19 @@ async function refreshAccessToken(): Promise<string | null> {
       body: JSON.stringify({ refreshToken }),
     });
   } catch {
-    clearTokens();
+    notifySessionExpired();
     return null;
   }
 
   const raw = await res.text();
   if (!res.ok) {
-    clearTokens();
+    notifySessionExpired();
     return null;
   }
 
   const json = parseJson<{ accessToken: string; refreshToken: string }>(res, raw);
   if (!json.data?.accessToken || !json.data?.refreshToken) {
-    clearTokens();
+    notifySessionExpired();
     return null;
   }
   saveTokens(json.data.accessToken, json.data.refreshToken);
@@ -89,15 +102,24 @@ export async function apiRequest<T>(
 
   if (res.status === 401 && token && !isPublic) {
     token = await refreshAccessToken();
+    if (!token) {
+      throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
+    }
     try {
       res = await doFetch(token);
     } catch {
+      notifySessionExpired();
       throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
     }
   }
 
   const raw = await res.text();
   const json = parseJson<T>(res, raw);
+
+  if (res.status === 401 && !isPublic) {
+    notifySessionExpired();
+    throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
+  }
 
   if (!res.ok) {
     throw new Error(json.error ?? json.message ?? 'Error en la solicitud');

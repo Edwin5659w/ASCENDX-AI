@@ -7,7 +7,6 @@ export const createGoalSchema = z.object({
   description: z.string().trim().max(2000).optional(),
   category: z.string().trim().max(100).optional(),
   priority: priorityEnum.default('MEDIUM'),
-  progress: z.number().int().min(0).max(100).default(0),
   deadline: z.coerce.date().optional(),
 });
 

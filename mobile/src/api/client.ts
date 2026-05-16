@@ -22,23 +22,53 @@ export async function clearTokens(): Promise<void> {
   await SecureStore.deleteItemAsync(REFRESH_KEY);
 }
 
+type SessionExpiredHandler = () => void;
+let sessionExpiredHandler: SessionExpiredHandler | null = null;
+
+export function setSessionExpiredHandler(handler: SessionExpiredHandler | null) {
+  sessionExpiredHandler = handler;
+}
+
+async function notifySessionExpired() {
+  await clearTokens();
+  sessionExpiredHandler?.();
+}
+
 async function refreshAccessToken(): Promise<string | null> {
   const refreshToken = await getRefreshToken();
   if (!refreshToken) return null;
 
-  const res = await fetch(`${API_URL}/auth/refresh`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken }),
-  });
-
-  if (!res.ok) {
-    await clearTokens();
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+  } catch {
+    await notifySessionExpired();
     return null;
   }
 
-  const json = await res.json();
-  const { accessToken, refreshToken: newRefresh } = json.data;
+  if (!res.ok) {
+    await notifySessionExpired();
+    return null;
+  }
+
+  let json: { data?: { accessToken: string; refreshToken: string } };
+  try {
+    json = await res.json();
+  } catch {
+    await notifySessionExpired();
+    return null;
+  }
+
+  const { accessToken, refreshToken: newRefresh } = json.data ?? {};
+  if (!accessToken || !newRefresh) {
+    await notifySessionExpired();
+    return null;
+  }
+
   await saveTokens(accessToken, newRefresh);
   return accessToken;
 }
@@ -71,9 +101,13 @@ export async function apiRequest<T>(
 
   if (res.status === 401 && token && !isPublic) {
     token = await refreshAccessToken();
+    if (!token) {
+      throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
+    }
     try {
       res = await doFetch(token);
     } catch {
+      await notifySessionExpired();
       throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
     }
   }
@@ -83,6 +117,11 @@ export async function apiRequest<T>(
     json = await res.json();
   } catch {
     throw new Error('Respuesta inválida del servidor');
+  }
+
+  if (res.status === 401 && !isPublic) {
+    await notifySessionExpired();
+    throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
   }
 
   if (!res.ok) {

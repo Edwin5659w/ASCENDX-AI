@@ -5,7 +5,6 @@ export const createTaskSchema = z.object({
   completed: z.boolean().default(false),
   goalId: z.string().uuid().optional().nullable(),
   dueDate: z.coerce.date().optional(),
-  streakCount: z.number().int().min(0).default(0),
 });
 
 export const updateTaskSchema = createTaskSchema.partial();

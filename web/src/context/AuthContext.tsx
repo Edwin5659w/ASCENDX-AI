@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { getAccessToken } from '../api/client';
+import { clearTokens, getAccessToken, setSessionExpiredHandler } from '../api/client';
 import { authApi, userApi } from '../api/services';
 import type { User } from '../types';
 
@@ -23,8 +23,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setUser(await userApi.me());
     } catch {
+      clearTokens();
       setUser(null);
     }
+  }, []);
+
+  useEffect(() => {
+    setSessionExpiredHandler(() => setUser(null));
+    return () => setSessionExpiredHandler(null);
   }, []);
 
   useEffect(() => {
