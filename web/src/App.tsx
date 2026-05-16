@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import { BrandLoader } from './components/brand/BrandLoader';
 import { Layout } from './components/Layout';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
@@ -17,11 +18,7 @@ import { Onboarding } from './pages/Onboarding';
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, user } = useAuth();
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
-        <div className="w-10 h-10 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <BrandLoader className="min-h-screen flex items-center justify-center bg-[#0a0a0f]" />;
   }
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (user && user.onboardingDone === false) return <Navigate to="/onboarding" replace />;
@@ -31,11 +28,7 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 function GuestRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, user } = useAuth();
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
-        <div className="w-10 h-10 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <BrandLoader className="min-h-screen flex items-center justify-center bg-[#0a0a0f]" />;
   }
   if (isAuthenticated) {
     if (user?.onboardingDone === false) return <Navigate to="/onboarding" replace />;
@@ -47,11 +40,7 @@ function GuestRoute({ children }: { children: React.ReactNode }) {
 function OnboardingRoute() {
   const { isAuthenticated, isLoading, user } = useAuth();
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
-        <div className="w-10 h-10 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <BrandLoader className="min-h-screen flex items-center justify-center bg-[#0a0a0f]" />;
   }
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (user?.onboardingDone) return <Navigate to="/" replace />;

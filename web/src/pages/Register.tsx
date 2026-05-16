@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AuthTextField } from '../components/auth/AuthTextField';
+import { AuthLayout } from '../components/brand/AuthLayout';
 import { PasswordStrength } from '../components/auth/PasswordStrength';
 import {
   validateEmail,
@@ -51,15 +52,11 @@ export function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0a0a0f] via-[#1a1033] to-[#0a0a0f] p-4">
-      <div className="w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center text-white mb-2">Crear tu cuenta</h1>
-        <p className="text-center text-zinc-500 mb-8 text-sm">Únete a ASCENDX AI — tu Life OS personal</p>
-
+    <AuthLayout title="Crear tu cuenta" subtitle="Únete a ASCENDX AI — tu Life OS personal">
         <form
           onSubmit={handleSubmit}
           noValidate
-          className="rounded-2xl border border-white/10 bg-[#14141f] p-8 space-y-5 shadow-xl shadow-violet-900/10">
+          className="rounded-2xl border border-white/10 bg-[#14141f] p-8 space-y-5">
           <AuthTextField
             id="name"
             label="Nombre completo"
@@ -119,18 +116,17 @@ export function Register() {
           <button
             type="submit"
             disabled={loading || !isFormValid}
-            className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-all">
+            className="w-full brand-btn-primary disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg">
             {loading ? 'Creando cuenta...' : 'Crear cuenta'}
           </button>
 
           <p className="text-center text-zinc-500 text-sm">
             ¿Ya tienes cuenta?{' '}
-            <Link to="/login" className="text-violet-400 hover:text-violet-300 font-medium">
+            <Link to="/login" className="brand-gradient-text font-medium hover:opacity-90">
               Inicia sesión
             </Link>
           </p>
         </form>
-      </div>
-    </div>
+    </AuthLayout>
   );
 }

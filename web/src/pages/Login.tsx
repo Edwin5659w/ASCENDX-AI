@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AuthTextField } from '../components/auth/AuthTextField';
+import { AuthLayout } from '../components/brand/AuthLayout';
 import { validateLoginEmail, validateLoginPassword } from '@shared/validators/auth.rules';
 
 export function Login() {
@@ -45,74 +46,71 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0a0a0f] via-[#1a1033] to-[#0a0a0f] p-4">
-      <div className="w-full max-w-md">
-        <h1 className="text-4xl font-bold text-center text-white tracking-widest mb-2">ASCENDX</h1>
-        <p className="text-center text-zinc-500 mb-8">Inicia sesión en tu cuenta</p>
+    <AuthLayout subtitle="Inicia sesión en tu cuenta">
+      <form
+        onSubmit={handleSubmit}
+        noValidate
+        className="rounded-2xl border border-white/10 bg-[#14141f] p-8 space-y-5">
+        <AuthTextField
+          id="email"
+          label="Correo electrónico"
+          type="email"
+          value={email}
+          onChange={setEmail}
+          onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+          validation={emailVal}
+          placeholder="nombre@gmail.com"
+          autoComplete="email"
+        />
 
-        <form
-          onSubmit={handleSubmit}
-          noValidate
-          className="rounded-2xl border border-white/10 bg-[#14141f] p-8 space-y-5">
-          <AuthTextField
-            id="email"
-            label="Correo electrónico"
-            type="email"
-            value={email}
-            onChange={setEmail}
-            onBlur={() => setTouched((t) => ({ ...t, email: true }))}
-            validation={emailVal}
-            placeholder="nombre@gmail.com"
-            autoComplete="email"
-          />
+        <AuthTextField
+          id="password"
+          label="Contraseña"
+          type={showPassword ? 'text' : 'password'}
+          value={password}
+          onChange={setPassword}
+          onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+          validation={passwordVal}
+          autoComplete="current-password"
+          rightElement={
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="text-zinc-400 hover:text-white p-1"
+              aria-label={showPassword ? 'Ocultar' : 'Mostrar'}>
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          }
+        />
 
-          <AuthTextField
-            id="password"
-            label="Contraseña"
-            type={showPassword ? 'text' : 'password'}
-            value={password}
-            onChange={setPassword}
-            onBlur={() => setTouched((t) => ({ ...t, password: true }))}
-            validation={passwordVal}
-            autoComplete="current-password"
-            rightElement={
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="text-zinc-400 hover:text-white p-1"
-                aria-label={showPassword ? 'Ocultar' : 'Mostrar'}>
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            }
-          />
+        {submitError ? (
+          <div
+            className="rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-300"
+            role="alert">
+            {submitError}
+          </div>
+        ) : null}
 
-          {submitError ? (
-            <div className="rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-300" role="alert">
-              {submitError}
-            </div>
-          ) : null}
+        <button
+          type="submit"
+          disabled={loading || !isFormValid}
+          className="w-full brand-btn-primary text-white font-semibold py-3 rounded-lg disabled:cursor-not-allowed">
+          {loading ? 'Entrando...' : 'Entrar'}
+        </button>
 
-          <button
-            type="submit"
-            disabled={loading || !isFormValid}
-            className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white font-semibold py-3 rounded-lg transition-colors">
-            {loading ? 'Entrando...' : 'Entrar'}
-          </button>
+        <p className="text-center text-sm">
+          <Link to="/forgot-password" className="text-cyan-400/90 hover:text-cyan-300 transition-colors">
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </p>
 
-          <p className="text-center text-sm">
-            <Link to="/forgot-password" className="text-violet-400 hover:text-violet-300">
-              ¿Olvidaste tu contraseña?
-            </Link>
-          </p>
-
-          <p className="text-center text-zinc-500 text-sm">
-            ¿No tienes cuenta?{' '}
-            <Link to="/register" className="text-violet-400 hover:text-violet-300 font-medium">
-              Crear cuenta
-            </Link>
-          </p>
-        </form>
-      </div>
-    </div>
+        <p className="text-center text-zinc-500 text-sm">
+          ¿No tienes cuenta?{' '}
+          <Link to="/register" className="brand-gradient-text font-medium hover:opacity-90">
+            Crear cuenta
+          </Link>
+        </p>
+      </form>
+    </AuthLayout>
   );
 }

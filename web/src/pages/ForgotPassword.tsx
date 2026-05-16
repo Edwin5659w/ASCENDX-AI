@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthTextField } from '../components/auth/AuthTextField';
+import { AuthLayout } from '../components/brand/AuthLayout';
 import { authApi } from '../api/services';
 import { validateLoginEmail } from '@shared/validators/auth.rules';
 
@@ -30,18 +31,14 @@ export function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0a0a0f] via-[#1a1033] to-[#0a0a0f] p-4">
-      <div className="w-full max-w-md">
-        <h1 className="text-4xl font-bold text-center text-white tracking-widest mb-2">ASCENDX</h1>
-        <p className="text-center text-zinc-500 mb-8">Recuperar contraseña</p>
-
+    <AuthLayout subtitle="Recuperar contraseña">
         {done ? (
           <div className="rounded-2xl border border-white/10 bg-[#14141f] p-8 space-y-4 text-center">
             <p className="text-zinc-300 mb-4">
               Si existe una cuenta con ese correo, te enviaremos instrucciones (revisa spam).
               Sin servicio de email configurado, el enlace aparece en la consola del servidor en desarrollo.
             </p>
-            <Link to="/login" className="inline-block text-violet-400 hover:text-violet-300 font-medium">
+            <Link to="/login" className="inline-block brand-gradient-text font-medium hover:opacity-90">
               Volver al inicio de sesión
             </Link>
           </div>
@@ -69,17 +66,16 @@ export function ForgotPassword() {
             <button
               type="submit"
               disabled={loading || emailVal.status !== 'valid'}
-              className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white font-semibold py-3 rounded-lg">
+              className="w-full brand-btn-primary text-white font-semibold py-3 rounded-lg">
               {loading ? 'Enviando...' : 'Enviar enlace'}
             </button>
             <p className="text-center text-zinc-500 text-sm">
-              <Link to="/login" className="text-violet-400 hover:text-violet-300">
+              <Link to="/login" className="text-cyan-400/90 hover:text-cyan-300">
                 Volver a iniciar sesión
               </Link>
             </p>
           </form>
         )}
-      </div>
-    </div>
+    </AuthLayout>
   );
 }

@@ -10,6 +10,7 @@ import {
   Flame,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { BrandLogo } from './brand/BrandLogo';
 
 const nav = [
   { to: '/', icon: LayoutDashboard, label: 'Inicio' },
@@ -32,11 +33,11 @@ function NavItems({ compact }: { compact?: boolean }) {
           className={({ isActive }) =>
             compact
               ? `flex flex-col items-center gap-0.5 px-2 py-1 min-w-[56px] rounded-lg text-[10px] transition-colors ${
-                  isActive ? 'text-violet-300' : 'text-zinc-500'
+                  isActive ? 'text-cyan-300' : 'text-zinc-500'
                 }`
               : `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                   isActive
-                    ? 'bg-violet-600/20 text-violet-300'
+                    ? 'bg-cyan-500/10 text-cyan-300'
                     : 'text-zinc-400 hover:bg-white/5 hover:text-white'
                 }`
           }>
@@ -55,8 +56,8 @@ export function Layout() {
     <div className="flex min-h-screen bg-[#0a0a0f] flex-col lg:flex-row">
       <aside className="hidden lg:flex w-64 border-r border-white/10 bg-[#14141f] p-4 flex-col shrink-0">
         <div className="mb-8 px-2">
-          <h1 className="text-xl font-bold tracking-widest text-white">ASCENDX</h1>
-          <p className="text-xs text-zinc-500 mt-1">Life OS + IA</p>
+          <BrandLogo size="sm" />
+          <p className="text-xs text-zinc-500 mt-2">Life OS + IA</p>
         </div>
         <nav className="flex-1 space-y-1">
           <NavItems />
@@ -78,9 +79,9 @@ export function Layout() {
 
       <header className="lg:hidden border-b border-white/10 bg-[#14141f] px-3 pt-3 pb-2 shrink-0">
         <div className="flex items-center justify-between mb-2 px-1">
-          <div>
-            <p className="text-sm font-bold text-white tracking-wide">ASCENDX</p>
-            <p className="text-[10px] text-zinc-500">Nivel {user?.level} · {user?.xp} XP</p>
+          <div className="flex items-center gap-2">
+            <BrandLogo size="xs" />
+            <p className="text-[10px] text-zinc-500">Nv. {user?.level} · {user?.xp} XP</p>
           </div>
           <button
             type="button"

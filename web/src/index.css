@@ -5,9 +5,12 @@
   --color-surface: #14141f;
   --color-surface-light: #1c1c2e;
   --color-border: rgba(255, 255, 255, 0.08);
-  --color-primary: #8b5cf6;
+  --color-primary: #7c3aed;
   --color-primary-light: #a78bfa;
-  --color-accent: #22d3ee;
+  --color-accent: #00e5ff;
+  --color-brand-magenta: #c026d3;
+  --color-brand-cyan: #00e5ff;
+  --color-brand-purple: #8a2be2;
 }
 
 * {
@@ -24,4 +27,94 @@ body {
 
 #root {
   min-height: 100vh;
+}
+
+/* Gradiente de marca (logo) */
+.brand-gradient {
+  background: linear-gradient(135deg, #8a2be2 0%, #c026d3 35%, #00a3ff 70%, #00e5ff 100%);
+}
+
+.brand-gradient-text {
+  background: linear-gradient(135deg, #c026d3 0%, #00e5ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.brand-glow {
+  box-shadow:
+    0 0 40px rgba(138, 43, 226, 0.25),
+    0 0 80px rgba(0, 229, 255, 0.12);
+}
+
+.brand-btn-primary {
+  background: linear-gradient(135deg, #7c3aed 0%, #00a3ff 100%);
+  transition:
+    opacity 0.2s ease,
+    box-shadow 0.25s ease,
+    transform 0.2s ease;
+}
+
+.brand-btn-primary:hover:not(:disabled) {
+  box-shadow:
+    0 4px 24px rgba(124, 58, 237, 0.35),
+    0 0 32px rgba(0, 229, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.brand-btn-primary:disabled {
+  opacity: 0.4;
+}
+
+@keyframes brand-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.brand-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(28, 28, 46, 0.9) 0%,
+    rgba(138, 43, 226, 0.12) 40%,
+    rgba(0, 229, 255, 0.1) 60%,
+    rgba(28, 28, 46, 0.9) 100%
+  );
+  background-size: 200% 100%;
+  animation: brand-shimmer 1.8s ease-in-out infinite;
+}
+
+@keyframes brand-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.brand-loader {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-top-color: #00e5ff;
+  border-right-color: #c026d3;
+  animation: brand-spin 0.85s linear infinite;
+}
+
+@keyframes brand-pulse-glow {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+}
+
+.brand-logo-breathe {
+  animation: brand-pulse-glow 4s ease-in-out infinite;
 }

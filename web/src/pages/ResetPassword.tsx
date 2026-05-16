@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { AuthTextField } from '../components/auth/AuthTextField';
+import { AuthLayout } from '../components/brand/AuthLayout';
 import { PasswordStrength } from '../components/auth/PasswordStrength';
 import { authApi } from '../api/services';
 import { validatePassword } from '@shared/validators/auth.rules';
@@ -40,23 +41,19 @@ export function ResetPassword() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0a0a0f] via-[#1a1033] to-[#0a0a0f] p-4">
-        <div className="max-w-md text-center text-zinc-400">
+      <AuthLayout subtitle="Enlace inválido">
+        <div className="rounded-2xl border border-white/10 bg-[#14141f] p-8 text-center text-zinc-400">
           <p className="mb-4">Enlace inválido: falta el token.</p>
-          <Link to="/forgot-password" className="text-violet-400">
+          <Link to="/forgot-password" className="brand-gradient-text hover:opacity-90">
             Solicitar nuevo enlace
           </Link>
         </div>
-      </div>
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0a0a0f] via-[#1a1033] to-[#0a0a0f] p-4">
-      <div className="w-full max-w-md">
-        <h1 className="text-4xl font-bold text-center text-white tracking-widest mb-2">ASCENDX</h1>
-        <p className="text-center text-zinc-500 mb-8">Nueva contraseña</p>
-
+    <AuthLayout subtitle="Nueva contraseña">
         {done ? (
           <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-8 text-center text-emerald-200 text-sm">
             Contraseña actualizada. Redirigiendo al inicio de sesión...
@@ -97,17 +94,16 @@ export function ResetPassword() {
             <button
               type="submit"
               disabled={loading || !canSubmit}
-              className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white font-semibold py-3 rounded-lg">
+              className="w-full brand-btn-primary text-white font-semibold py-3 rounded-lg">
               {loading ? 'Guardando...' : 'Guardar contraseña'}
             </button>
             <p className="text-center text-zinc-500 text-sm">
-              <Link to="/login" className="text-violet-400">
+              <Link to="/login" className="text-cyan-400/90 hover:text-cyan-300">
                 Iniciar sesión
               </Link>
             </p>
           </form>
         )}
-      </div>
-    </div>
+    </AuthLayout>
   );
 }
