@@ -25,4 +25,9 @@ describe('validadores Zod compartidos (auth)', () => {
     expect(r.success).toBe(true);
     if (r.success) expect(r.data.email).toBe('test@mail.com');
   });
+
+  it('login rechaza contraseña demasiado larga', () => {
+    const r = loginSchema.safeParse({ email: 'a@b.com', password: 'a'.repeat(129) });
+    expect(r.success).toBe(false);
+  });
 });

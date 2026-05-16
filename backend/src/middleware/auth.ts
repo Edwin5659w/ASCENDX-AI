@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
+import { prisma } from '../lib/prisma';
 
 export interface AuthPayload {
   userId: string;
@@ -15,7 +16,7 @@ declare global {
   }
 }
 
-export const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
+export const requireAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const header = req.headers.authorization;
 
   if (!header?.startsWith('Bearer ')) {
@@ -27,6 +28,14 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction): vo
 
   try {
     const payload = jwt.verify(token, env.JWT_ACCESS_SECRET) as AuthPayload;
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: { id: true },
+    });
+    if (!user) {
+      res.status(401).json({ success: false, error: 'Usuario no encontrado' });
+      return;
+    }
     req.user = payload;
     next();
   } catch {

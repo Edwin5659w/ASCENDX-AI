@@ -40,7 +40,10 @@ export const registerSchema = z.object({
 
 export const loginSchema = z.object({
   email: z.string().trim().email('Email inválido').toLowerCase(),
-  password: z.string().min(1, 'La contraseña es obligatoria'),
+  password: z
+    .string()
+    .min(1, 'La contraseña es obligatoria')
+    .max(128, 'La contraseña no puede exceder 128 caracteres'),
 });
 
 export const refreshSchema = z.object({

@@ -7,6 +7,7 @@ import { AppError } from '../middleware/errorHandler';
 import type { RegisterInput, LoginInput } from '@ascendx/shared/validators/auth.validator';
 import type { AuthPayload } from '../middleware/auth';
 import { emailService } from './email.service';
+import { expiresAtFromJwt } from '../utils/jwt';
 
 const SALT_ROUNDS = 12;
 
@@ -16,10 +17,18 @@ const signAccessToken = (payload: AuthPayload): string =>
 const signRefreshToken = (payload: AuthPayload): string =>
   jwt.sign(payload, env.JWT_REFRESH_SECRET, { expiresIn: env.JWT_REFRESH_EXPIRES_IN as jwt.SignOptions['expiresIn'] });
 
-const storeRefreshToken = async (userId: string, token: string): Promise<void> => {
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 7);
+const pruneExpiredRefreshTokens = async (userId: string) => {
+  await prisma.refreshToken.deleteMany({
+    where: { userId, expiresAt: { lt: new Date() } },
+  });
+};
 
+const revokeUserRefreshTokens = async (userId: string) => {
+  await prisma.refreshToken.deleteMany({ where: { userId } });
+};
+
+const storeRefreshToken = async (userId: string, token: string): Promise<void> => {
+  const expiresAt = expiresAtFromJwt(token);
   await prisma.refreshToken.create({
     data: { token, userId, expiresAt },
   });
@@ -39,6 +48,8 @@ export const authService = {
     const payload: AuthPayload = { userId: user.id, email: user.email };
     const accessToken = signAccessToken(payload);
     const refreshToken = signRefreshToken(payload);
+    await pruneExpiredRefreshTokens(user.id);
+    await revokeUserRefreshTokens(user.id);
     await storeRefreshToken(user.id, refreshToken);
 
     return { user, accessToken, refreshToken };
@@ -54,6 +65,8 @@ export const authService = {
     const payload: AuthPayload = { userId: user.id, email: user.email };
     const accessToken = signAccessToken(payload);
     const refreshToken = signRefreshToken(payload);
+    await pruneExpiredRefreshTokens(user.id);
+    await revokeUserRefreshTokens(user.id);
     await storeRefreshToken(user.id, refreshToken);
 
     return {
