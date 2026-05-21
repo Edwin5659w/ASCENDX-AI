@@ -2,7 +2,7 @@
 
 ## Qué NO tenemos hoy
 
-ASCENDX registra **finanzas personales** (ingresos y gastos). No hay compra/venta de activos, portafolio, cotizaciones ni P&L de mercado.
+ASCENDX registra **finanzas personales** (ingresos y gastos) y un **diario de trading MVP** (operaciones manuales, P&L opcional, etiquetas emocionales). No hay cotizaciones en vivo, APIs de mercado ni asesoría de inversión.
 
 ## Qué puede significar «Trading» (tres interpretaciones)
 
@@ -41,9 +41,11 @@ ASCENDX registra **finanzas personales** (ingresos y gastos). No hay compra/vent
 2. Si el profesor pide **trading financiero**, presentarlo como **fase 2** con disclaimer y sin sustituir el presupuesto personal actual.
 3. Mostrar en demo: tarea vinculada a objetivo → sube progreso → IA prioriza pendientes.
 
-## Si en el futuro implementáis trading financiero (esquema mínimo)
+## Trading MVP implementado (fase 2 ligera)
 
-- Modelos: `Portfolio`, `Trade` (symbol, side, qty, price, date, notes, emotionTag).
-- Pantalla: diario de operaciones + resumen P&L (no ejecución real de órdenes).
-- IA: «Detecta patrones de revenge trading» leyendo el diario (sin recomendar comprar/vender).
-- Legal: «No constituye asesoría financiera» en registro y en cada pantalla del módulo.
+- **API:** `GET/POST/PATCH/DELETE /trades`, `GET /trades/summary`
+- **Modelo:** `Trade` (symbol, side BUY/SELL, quantity, price, pnl opcional, emotionTag, note, tradedAt)
+- **UI:** pestaña «Diario trading» en Finanzas (móvil y web) con disclaimer
+- **Hábitos:** heatmap 7 días, hitos de racha, recordatorios (locales en móvil; preferencia guardada en BD)
+- **Perfil:** `POST /user/change-password`, versión de app en móvil
+- **Pendiente fase 3:** IA sobre patrones emocionales, cotizaciones en vivo, portafolio multi-activo

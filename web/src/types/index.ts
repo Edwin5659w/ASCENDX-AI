@@ -66,6 +66,32 @@ export interface Habit {
   frequency: 'DAILY' | 'WEEKLY';
   streak: number;
   completedToday?: boolean;
+  reminderEnabled?: boolean;
+  reminderHour?: number | null;
+  reminderMinute?: number | null;
+  weekHistory?: boolean[];
+  weekCompletionRate?: number;
+  streakMilestone?: number | null;
+}
+
+export interface Trade {
+  id: string;
+  symbol: string;
+  side: 'BUY' | 'SELL';
+  quantity: number;
+  price: number;
+  pnl: number | null;
+  emotionTag: string | null;
+  note: string | null;
+  tradedAt: string;
+}
+
+export interface TradeSummary {
+  totalTrades: number;
+  totalPnl: number;
+  wins: number;
+  losses: number;
+  breakEven: number;
 }
 
 export interface FinanceRecord {

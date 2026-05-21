@@ -29,6 +29,7 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { EmptyState } from '../components/ui/EmptyState';
 import { FinanceSkeleton } from '../components/ui/FinanceSkeleton';
 import { MethodologyHint } from '../components/MethodologyHint';
+import { TradingJournal } from '../components/TradingJournal';
 import { financeApi } from '../api/services';
 import { useToast } from '../context/ToastContext';
 import type { FinanceRecord, FinanceSummary } from '../types';
@@ -41,6 +42,7 @@ import {
 } from '@shared/finance-helpers';
 
 type FilterType = 'ALL' | 'INCOME' | 'EXPENSE';
+type FinanceTab = 'cashflow' | 'trading';
 
 const tooltipStyle = {
   background: '#1c1c2e',
@@ -51,6 +53,7 @@ const tooltipStyle = {
 
 export function Finance() {
   const { showToast } = useToast();
+  const [financeTab, setFinanceTab] = useState<FinanceTab>('cashflow');
   const [records, setRecords] = useState<FinanceRecord[]>([]);
   const [summary, setSummary] = useState<FinanceSummary | null>(null);
   const [amount, setAmount] = useState('');
@@ -186,6 +189,29 @@ export function Finance() {
       </div>
       <MethodologyHint module="finance" />
 
+      <div className="flex gap-2 mb-6">
+        <button
+          type="button"
+          onClick={() => setFinanceTab('cashflow')}
+          className={`flex-1 py-2 rounded-lg text-sm font-medium ${
+            financeTab === 'cashflow' ? 'bg-violet-600 text-white' : 'bg-white/5 text-zinc-400'
+          }`}>
+          Presupuesto
+        </button>
+        <button
+          type="button"
+          onClick={() => setFinanceTab('trading')}
+          className={`flex-1 py-2 rounded-lg text-sm font-medium ${
+            financeTab === 'trading' ? 'bg-violet-600 text-white' : 'bg-white/5 text-zinc-400'
+          }`}>
+          Diario trading
+        </button>
+      </div>
+
+      {financeTab === 'trading' ? <TradingJournal /> : null}
+
+      {financeTab === 'cashflow' ? (
+      <>
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <Card className="border-emerald-500/20">
@@ -524,6 +550,8 @@ export function Finance() {
           </ul>
         )}
       </Card>
+      </>
+      ) : null}
 
       <ConfirmDialog
         open={!!deleteId}

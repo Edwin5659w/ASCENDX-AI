@@ -10,10 +10,38 @@ export function Profile() {
   const { showToast } = useToast();
   const [name, setName] = useState(user?.name ?? '');
   const [saving, setSaving] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+  const appVersion = '1.0.0';
 
   useEffect(() => {
     setName(user?.name ?? '');
   }, [user?.name]);
+
+  const changePassword = async () => {
+    if (!currentPassword || !newPassword) {
+      showToast('Completa contraseña actual y nueva', 'info');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showToast('La confirmación no coincide', 'info');
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      await userApi.changePassword(currentPassword, newPassword);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      showToast('Contraseña actualizada', 'success');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'No se pudo cambiar', 'error');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
 
   const saveName = async () => {
     if (!name.trim() || name.trim() === user?.name) return;
@@ -42,6 +70,38 @@ export function Profile() {
         </div>
         <h2 className="text-xl font-bold text-white">{user.name}</h2>
         <p className="text-zinc-500">{user.email}</p>
+        <p className="text-zinc-600 text-xs mt-2">ASCENDX web v{appVersion}</p>
+      </Card>
+      <Card className="mb-4 space-y-3">
+        <h3 className="text-white font-semibold">Seguridad</h3>
+        <input
+          type="password"
+          value={currentPassword}
+          onChange={(e) => setCurrentPassword(e.target.value)}
+          placeholder="Contraseña actual"
+          className="w-full bg-[#0a0a0f] border border-white/10 rounded-lg px-4 py-2.5 text-white"
+        />
+        <input
+          type="password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          placeholder="Nueva contraseña"
+          className="w-full bg-[#0a0a0f] border border-white/10 rounded-lg px-4 py-2.5 text-white"
+        />
+        <input
+          type="password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          placeholder="Confirmar nueva"
+          className="w-full bg-[#0a0a0f] border border-white/10 rounded-lg px-4 py-2.5 text-white"
+        />
+        <button
+          type="button"
+          onClick={changePassword}
+          disabled={changingPassword}
+          className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white py-2.5 rounded-lg text-sm font-medium">
+          {changingPassword ? 'Actualizando...' : 'Cambiar contraseña'}
+        </button>
       </Card>
       <Card className="mb-4 space-y-3">
         <label className="block text-sm text-zinc-500">Nombre completo</label>
