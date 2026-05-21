@@ -6,6 +6,8 @@ import type {
   Goal,
   Task,
   Habit,
+  Trade,
+  TradeSummary,
   FinanceRecord,
   FinanceSummary,
   AIInsight,
@@ -77,6 +79,26 @@ export const userApi = {
       body: JSON.stringify(data),
     }),
   testPush: () => apiRequest<{ ok: boolean }>('/user/push/test', { method: 'POST' }),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    apiRequest<{ message: string }>('/user/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
+};
+
+export const tradesApi = {
+  list: () => apiRequest<Trade[]>('/trades'),
+  summary: () => apiRequest<TradeSummary>('/trades/summary'),
+  create: (data: {
+    symbol: string;
+    side: 'BUY' | 'SELL';
+    quantity: number;
+    price: number;
+    pnl?: number;
+    emotionTag?: string;
+    note?: string;
+  }) => apiRequest<Trade>('/trades', { method: 'POST', body: JSON.stringify(data) }),
+  remove: (id: string) => apiRequest<void>(`/trades/${id}`, { method: 'DELETE' }),
 };
 
 export const goalsApi = {
@@ -101,8 +123,16 @@ export const habitsApi = {
   list: () => apiRequest<Habit[]>('/habits'),
   create: (data: { name: string; frequency?: 'DAILY' | 'WEEKLY' }) =>
     apiRequest<Habit>('/habits', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: { name?: string; frequency?: 'DAILY' | 'WEEKLY' }) =>
-    apiRequest<Habit>(`/habits/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  update: (
+    id: string,
+    data: {
+      name?: string;
+      frequency?: 'DAILY' | 'WEEKLY';
+      reminderEnabled?: boolean;
+      reminderHour?: number | null;
+      reminderMinute?: number | null;
+    },
+  ) => apiRequest<Habit>(`/habits/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   complete: (id: string) => apiRequest<Habit>(`/habits/${id}/complete`, { method: 'POST' }),
   remove: (id: string) => apiRequest<void>(`/habits/${id}`, { method: 'DELETE' }),
 };

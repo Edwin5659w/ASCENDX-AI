@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -16,8 +16,18 @@ import { habitsApi } from '@/src/api/services';
 import { Button } from '@/src/components/ui/Button';
 import { EmptyState } from '@/src/components/EmptyState';
 import { MethodologyHint } from '@/src/components/MethodologyHint';
+import { HabitWeekStrip } from '@/src/components/HabitWeekStrip';
+import { syncHabitReminders } from '@/src/lib/habit-reminders';
 import type { Habit } from '@/src/types/api';
 import { theme } from '@/constants/theme';
+
+function streakBadge(milestone: number | null | undefined, streak: number) {
+  if (milestone === 30) return '🏆 Leyenda';
+  if (milestone === 21) return '⭐ 3 semanas';
+  if (milestone === 7) return '🔥 1 semana';
+  if (milestone === 3) return '✨ En marcha';
+  return `🔥 ${streak}`;
+}
 
 export default function HabitsScreen() {
   const [habits, setHabits] = useState<Habit[]>([]);
@@ -27,10 +37,15 @@ export default function HabitsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [renameFor, setRenameFor] = useState<Habit | null>(null);
   const [renameText, setRenameText] = useState('');
+  const [reminderFor, setReminderFor] = useState<Habit | null>(null);
+  const [reminderHour, setReminderHour] = useState('8');
+  const [reminderMinute, setReminderMinute] = useState('0');
 
   const load = useCallback(async () => {
     try {
-      setHabits(await habitsApi.list());
+      const list = await habitsApi.list();
+      setHabits(list);
+      await syncHabitReminders(list);
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudieron cargar hábitos');
     }
@@ -38,9 +53,21 @@ export default function HabitsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      load();
+      void load();
     }, [load]),
   );
+
+  const stats = useMemo(() => {
+    const doneToday = habits.filter((h) => h.completedToday).length;
+    const bestStreak = habits.reduce((m, h) => Math.max(m, h.streak), 0);
+    const avgWeek =
+      habits.length > 0
+        ? Math.round(
+            habits.reduce((s, h) => s + (h.weekCompletionRate ?? 0), 0) / habits.length,
+          )
+        : 0;
+    return { doneToday, bestStreak, avgWeek, total: habits.length };
+  }, [habits]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -67,7 +94,7 @@ export default function HabitsScreen() {
 
   const complete = async (habit: Habit) => {
     if (habit.completedToday) {
-      Alert.alert('Listo', 'Ya completaste este hábito hoy');
+      Alert.alert('Listo', habit.frequency === 'WEEKLY' ? 'Ya completaste este hábito esta semana' : 'Ya completaste este hábito hoy');
       return;
     }
     try {
@@ -95,6 +122,36 @@ export default function HabitsScreen() {
     }
   };
 
+  const openReminder = (habit: Habit) => {
+    setReminderFor(habit);
+    setReminderHour(String(habit.reminderHour ?? 8));
+    setReminderMinute(String(habit.reminderMinute ?? 0));
+  };
+
+  const saveReminder = async (enabled: boolean) => {
+    if (!reminderFor) return;
+    const h = parseInt(reminderHour, 10);
+    const m = parseInt(reminderMinute, 10);
+    if (enabled && (Number.isNaN(h) || h < 0 || h > 23 || Number.isNaN(m) || m < 0 || m > 59)) {
+      Alert.alert('Hora inválida', 'Usa hora 0-23 y minutos 0-59');
+      return;
+    }
+    try {
+      await habitsApi.update(reminderFor.id, {
+        reminderEnabled: enabled,
+        reminderHour: enabled ? h : null,
+        reminderMinute: enabled ? m : null,
+      });
+      setReminderFor(null);
+      await load();
+      if (enabled) {
+        Alert.alert('Recordatorio', 'Se programó una notificación local diaria (requiere permisos).');
+      }
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo guardar');
+    }
+  };
+
   const remove = (habit: Habit) => {
     Alert.alert('Eliminar hábito', `¿Eliminar "${habit.name}"?`, [
       { text: 'Cancelar', style: 'cancel' },
@@ -116,6 +173,22 @@ export default function HabitsScreen() {
   return (
     <View style={styles.container}>
       <MethodologyHint module="habits" />
+      {stats.total > 0 ? (
+        <View style={styles.statsBar}>
+          <View style={styles.stat}>
+            <Text style={styles.statNum}>{stats.doneToday}/{stats.total}</Text>
+            <Text style={styles.statLbl}>Hoy</Text>
+          </View>
+          <View style={styles.stat}>
+            <Text style={styles.statNum}>{stats.bestStreak}</Text>
+            <Text style={styles.statLbl}>Mejor racha</Text>
+          </View>
+          <View style={styles.stat}>
+            <Text style={styles.statNum}>{stats.avgWeek}%</Text>
+            <Text style={styles.statLbl}>Semana media</Text>
+          </View>
+        </View>
+      ) : null}
       <View style={styles.addSection}>
         <View style={styles.freqRow}>
           <Button
@@ -153,32 +226,43 @@ export default function HabitsScreen() {
           <EmptyState
             icon="fire"
             title="Sin hábitos"
-            description="Crea un hábito diario y márcalo cada día para sumar racha y XP."
+            description="Crea un hábito diario, marca la semana en el heatmap y activa recordatorios."
           />
         }
         renderItem={({ item }) => (
-          <View style={styles.row}>
-            <Pressable style={styles.rowMain} onPress={() => complete(item)}>
-              <FontAwesome
-                name={item.completedToday ? 'check-circle' : 'circle-o'}
-                size={24}
-                color={item.completedToday ? theme.colors.success : theme.colors.textMuted}
-              />
-              <View style={styles.content}>
-                <Text style={styles.title}>{item.name}</Text>
-                <Text style={styles.freq}>{item.frequency === 'DAILY' ? 'Diario' : 'Semanal'}</Text>
-              </View>
-              <Text style={styles.streak}>🔥 {item.streak}</Text>
-            </Pressable>
-            <Pressable onPress={() => openRename(item)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Renombrar hábito">
-              <FontAwesome name="edit" size={18} color={theme.colors.textMuted} />
-            </Pressable>
-            <Pressable onPress={() => remove(item)} hitSlop={8}>
-              <FontAwesome name="trash-o" size={20} color={theme.colors.textMuted} />
-            </Pressable>
+          <View style={styles.card}>
+            <View style={styles.row}>
+              <Pressable style={styles.rowMain} onPress={() => complete(item)}>
+                <FontAwesome
+                  name={item.completedToday ? 'check-circle' : 'circle-o'}
+                  size={24}
+                  color={item.completedToday ? theme.colors.success : theme.colors.textMuted}
+                />
+                <View style={styles.content}>
+                  <Text style={styles.title}>{item.name}</Text>
+                  <Text style={styles.freq}>{item.frequency === 'DAILY' ? 'Diario' : 'Semanal'}</Text>
+                </View>
+                <Text style={styles.streak}>{streakBadge(item.streakMilestone, item.streak)}</Text>
+              </Pressable>
+              <Pressable onPress={() => openReminder(item)} hitSlop={8}>
+                <FontAwesome
+                  name="bell"
+                  size={18}
+                  color={item.reminderEnabled ? theme.colors.primaryLight : theme.colors.textMuted}
+                />
+              </Pressable>
+              <Pressable onPress={() => openRename(item)} hitSlop={8}>
+                <FontAwesome name="edit" size={18} color={theme.colors.textMuted} />
+              </Pressable>
+              <Pressable onPress={() => remove(item)} hitSlop={8}>
+                <FontAwesome name="trash-o" size={20} color={theme.colors.textMuted} />
+              </Pressable>
+            </View>
+            <HabitWeekStrip weekHistory={item.weekHistory} weekCompletionRate={item.weekCompletionRate} />
           </View>
         )}
       />
+
       <Modal visible={!!renameFor} transparent animationType="fade">
         <Pressable style={styles.modalBackdrop} onPress={() => setRenameFor(null)}>
           <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
@@ -198,12 +282,57 @@ export default function HabitsScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <Modal visible={!!reminderFor} transparent animationType="fade">
+        <Pressable style={styles.modalBackdrop} onPress={() => setReminderFor(null)}>
+          <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.modalTitle}>Recordatorio diario</Text>
+            <Text style={styles.modalHint}>Notificación local a la hora indicada (UTC del dispositivo).</Text>
+            <View style={styles.timeRow}>
+              <TextInput
+                style={[styles.input, styles.timeInput]}
+                value={reminderHour}
+                onChangeText={setReminderHour}
+                keyboardType="number-pad"
+                placeholder="Hora"
+                placeholderTextColor={theme.colors.textMuted}
+              />
+              <Text style={styles.timeSep}>:</Text>
+              <TextInput
+                style={[styles.input, styles.timeInput]}
+                value={reminderMinute}
+                onChangeText={setReminderMinute}
+                keyboardType="number-pad"
+                placeholder="Min"
+                placeholderTextColor={theme.colors.textMuted}
+              />
+            </View>
+            <View style={styles.modalActions}>
+              <Button title="Desactivar" variant="secondary" onPress={() => void saveReminder(false)} style={styles.modalBtn} />
+              <Button title="Activar" onPress={() => void saveReminder(true)} style={styles.modalBtn} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
+  statsBar: {
+    flexDirection: 'row',
+    marginHorizontal: theme.spacing.md,
+    marginTop: theme.spacing.sm,
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.surfaceLight,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  stat: { flex: 1, alignItems: 'center' },
+  statNum: { color: theme.colors.text, fontSize: 18, fontWeight: '700' },
+  statLbl: { color: theme.colors.textMuted, fontSize: 11, marginTop: 2 },
   addSection: {
     padding: theme.spacing.md,
     paddingBottom: 0,
@@ -211,11 +340,7 @@ const styles = StyleSheet.create({
   },
   freqRow: { flexDirection: 'row', gap: 8 },
   freqBtn: { flex: 1 },
-  addRow: {
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'center',
-  },
+  addRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   input: {
     flex: 1,
     backgroundColor: theme.colors.surfaceLight,
@@ -226,21 +351,18 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
   },
   addBtn: { width: 52, paddingHorizontal: 0 },
-  list: { padding: theme.spacing.md, paddingTop: 0 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+  list: { padding: theme.spacing.md, paddingTop: 8 },
+  card: {
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   content: { flex: 1 },
   title: { color: theme.colors.text, fontSize: 16 },
   freq: { color: theme.colors.textMuted, fontSize: 12, marginTop: 2 },
-  streak: { fontSize: 14, color: theme.colors.warning },
-  empty: { color: theme.colors.textMuted, textAlign: 'center', marginTop: 40 },
+  streak: { fontSize: 13, color: theme.colors.warning, maxWidth: 100, textAlign: 'right' },
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
@@ -254,12 +376,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  modalTitle: {
-    color: theme.colors.text,
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: theme.spacing.md,
-  },
+  modalTitle: { color: theme.colors.text, fontSize: 18, fontWeight: '600', marginBottom: theme.spacing.md },
+  modalHint: { color: theme.colors.textMuted, fontSize: 12, marginBottom: 12 },
+  timeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  timeInput: { flex: 1, textAlign: 'center' },
+  timeSep: { color: theme.colors.text, fontSize: 20 },
   modalActions: { flexDirection: 'row', gap: 8, marginTop: theme.spacing.md },
   modalBtn: { flex: 1 },
 });
