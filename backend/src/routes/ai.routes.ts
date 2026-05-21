@@ -43,11 +43,32 @@ router.post('/chat', validate(chatSchema), async (req, res, next) => {
 router.get('/insights', async (req, res, next) => {
   try {
     const insights = await prisma.aIInsight.findMany({
-      where: { userId: req.user!.userId },
+      where: {
+        userId: req.user!.userId,
+        type: { not: 'CHAT' },
+      },
       orderBy: { createdAt: 'desc' },
       take: 20,
     });
     sendSuccess(res, insights);
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.get('/chat-history', async (req, res, next) => {
+  try {
+    const messages = await openaiService.getChatHistory(req.user!.userId);
+    sendSuccess(res, messages);
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.delete('/chat-history', async (req, res, next) => {
+  try {
+    await openaiService.clearChatHistory(req.user!.userId);
+    sendSuccess(res, { ok: true });
   } catch (e) {
     next(e);
   }

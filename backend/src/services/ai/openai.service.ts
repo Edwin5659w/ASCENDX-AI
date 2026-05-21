@@ -7,6 +7,7 @@ import {
   getSuggestedPrompts,
   type AIContextLevel,
 } from '@ascendx/shared/ai-prompts';
+import { encodeChatPair, decodeChatInsightMessage } from '@ascendx/shared/chat-helpers';
 import {
   buildUserAIContext,
   chatSystemPrompt,
@@ -126,7 +127,7 @@ export class OpenAIService {
       });
 
       const reply = completion.choices[0]?.message?.content?.trim() || FALLBACK_CHAT;
-      await this.saveInsight(userId, 'CHAT', reply);
+      await this.saveChatExchange(userId, sanitized, reply);
       return { reply, ...meta };
     } catch (error) {
       console.error('[OpenAI] chat error:', error);
@@ -168,6 +169,25 @@ export class OpenAIService {
       where: { userId, type: 'DAILY_PLAN', createdAt: { gte: todayStart } },
     });
     if (!existing) await this.saveInsight(userId, 'DAILY_PLAN', message);
+  }
+
+  async getChatHistory(userId: string, limit = 40) {
+    const rows = await prisma.aIInsight.findMany({
+      where: { userId, type: 'CHAT' },
+      orderBy: { createdAt: 'asc' },
+      take: limit,
+    });
+    return rows.flatMap((row) => decodeChatInsightMessage(row.id, row.message, row.createdAt));
+  }
+
+  async clearChatHistory(userId: string) {
+    await prisma.aIInsight.deleteMany({ where: { userId, type: 'CHAT' } });
+  }
+
+  private async saveChatExchange(userId: string, userMessage: string, assistantReply: string) {
+    await prisma.aIInsight.create({
+      data: { userId, type: 'CHAT', message: encodeChatPair(userMessage, assistantReply) },
+    });
   }
 
   private async saveInsight(

@@ -153,6 +153,18 @@ export const userService = {
         data: { name: input.habitName, frequency: 'DAILY', userId },
       });
 
+      if (input.focus === 'FINANZAS') {
+        await tx.financeRecord.create({
+          data: {
+            userId,
+            type: 'EXPENSE',
+            amount: 0.01,
+            category: 'Onboarding',
+            note: 'Primer registro — edita o añade tus gastos reales',
+          },
+        });
+      }
+
       const user = await tx.user.update({
         where: { id: userId },
         data: { onboardingDone: true },

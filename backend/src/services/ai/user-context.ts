@@ -120,7 +120,7 @@ export function dailyPlanSystemPrompt(ctx: UserAIContext): string {
   if (ctx.contextLevel === 'partial') {
     return `${base} El perfil está incompleto (faltan objetivos, tareas o hábitos). Usa solo los datos del JSON. Sugiere completar lo que falte y una acción inmediata para hoy.`;
   }
-  return `${base} Usa exclusivamente los datos del JSON. Prioriza tareas pendientes, hábitos con racha y objetivos con mayor progreso pendiente.`;
+  return `${base} Usa exclusivamente los datos del JSON. Prioriza tareas pendientes, hábitos con racha y objetivos con mayor progreso pendiente. Puedes citar metodologías cuando ayuden: SMART (objetivos), GTD/Eisenhower (tareas), habit stacking (hábitos), 50/30/20 (finanzas), Pomodoro 25 min (enfoque).`;
 }
 
 export function chatSystemPrompt(ctx: UserAIContext): string {
@@ -133,5 +133,5 @@ export function chatSystemPrompt(ctx: UserAIContext): string {
   if (ctx.contextLevel === 'partial') {
     return `${base} Perfil parcial: motiva a completar objetivos, tareas y hábitos en la app antes de planes complejos.`;
   }
-  return `${base} Usa el contexto JSON. Detecta procrastinación si hay muchas tareas pendientes y propón UN primer paso de 15 minutos.`;
+  return `${base} Usa el contexto JSON. Detecta procrastinación si hay muchas tareas pendientes y propón UN primer paso de 15 minutos. Menciona la metodología cuando encaje (SMART, GTD, Pomodoro, rachas de hábitos, 50/30/20). No des asesoría de inversión ni trading bursátil.`;
 }
