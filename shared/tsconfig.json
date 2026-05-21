@@ -18,7 +18,8 @@
     "ai-prompts.ts",
     "methodologies.ts",
     "finance-helpers.ts",
-    "chat-helpers.ts"
+    "chat-helpers.ts",
+    "dashboard-helpers.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }
