@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Check, Flame, Plus, Trash2 } from 'lucide-react';
+import { Check, Flame, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { MethodologyHint } from '../components/MethodologyHint';
 import { Card } from '../components/Card';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -17,6 +18,8 @@ export function Habits() {
   const [frequency, setFrequency] = useState<'DAILY' | 'WEEKLY'>('DAILY');
   const [creating, setCreating] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [renameFor, setRenameFor] = useState<Habit | null>(null);
+  const [renameText, setRenameText] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -65,6 +68,18 @@ export function Habits() {
     }
   };
 
+  const saveRename = async () => {
+    if (!renameFor || !renameText.trim()) return;
+    try {
+      await habitsApi.update(renameFor.id, { name: renameText.trim() });
+      showToast('Hábito actualizado', 'success');
+      setRenameFor(null);
+      await load();
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'No se pudo renombrar', 'error');
+    }
+  };
+
   const confirmDelete = async () => {
     if (!deleteId) return;
     try {
@@ -90,7 +105,8 @@ export function Habits() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-white mb-2">Hábitos</h1>
-      <p className="text-zinc-500 text-sm mb-6">Un completado por día. Mantén tu racha.</p>
+      <MethodologyHint module="habits" />
+      <p className="text-zinc-500 text-sm mb-6">Un completado por día. Mantén tu racha (tracking).</p>
 
       <div className="flex flex-col sm:flex-row gap-2 mb-6">
         <input
@@ -147,6 +163,16 @@ export function Habits() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => {
+                    setRenameFor(h);
+                    setRenameText(h.name);
+                  }}
+                  className="text-zinc-500 hover:text-violet-400 p-1"
+                  aria-label="Editar hábito">
+                  <Pencil size={16} />
+                </button>
+                <button
+                  type="button"
                   onClick={() => setDeleteId(h.id)}
                   className="text-zinc-500 hover:text-red-400 p-1">
                   <Trash2 size={16} />
@@ -163,6 +189,30 @@ export function Habits() {
           />
         )}
       </div>
+
+      {renameFor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
+          <div className="w-full max-w-md bg-[#1c1c2e] border border-white/10 rounded-2xl p-5">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-white font-semibold">Editar hábito</h3>
+              <button type="button" onClick={() => setRenameFor(null)} className="text-zinc-500 hover:text-white">
+                <X size={20} />
+              </button>
+            </div>
+            <input
+              value={renameText}
+              onChange={(e) => setRenameText(e.target.value)}
+              className="w-full bg-[#0a0a0f] border border-white/10 rounded-lg px-4 py-2.5 text-white mb-4"
+            />
+            <button
+              type="button"
+              onClick={saveRename}
+              className="w-full bg-violet-600 hover:bg-violet-500 text-white py-2.5 rounded-lg font-medium">
+              Guardar
+            </button>
+          </div>
+        </div>
+      )}
 
       <ConfirmDialog
         open={!!deleteId}

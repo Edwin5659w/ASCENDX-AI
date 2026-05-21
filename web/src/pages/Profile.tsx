@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Card } from '../components/Card';
 import { ProfileSkeleton } from '../components/ProfileSkeleton';
-import { API_URL } from '../api/client';
 import { userApi } from '../api/services';
 import { useToast } from '../context/ToastContext';
 
@@ -75,7 +74,6 @@ export function Profile() {
           </span>
         </div>
       </Card>
-      <p className="text-zinc-600 text-xs mb-4">API: {API_URL}</p>
       <button
         type="button"
         onClick={() => logout()}

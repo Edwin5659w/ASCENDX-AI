@@ -1,19 +1,25 @@
+import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { BrandLoader } from './components/brand/BrandLoader';
 import { Layout } from './components/Layout';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
-import { Dashboard } from './pages/Dashboard';
-import { Goals } from './pages/Goals';
-import { Tasks } from './pages/Tasks';
-import { Habits } from './pages/Habits';
-import { Finance } from './pages/Finance';
-import { Chat } from './pages/Chat';
-import { Profile } from './pages/Profile';
 import { ForgotPassword } from './pages/ForgotPassword';
 import { ResetPassword } from './pages/ResetPassword';
 import { Onboarding } from './pages/Onboarding';
+import { Dashboard } from './pages/Dashboard';
+
+const Goals = lazy(() => import('./pages/Goals').then((m) => ({ default: m.Goals })));
+const Tasks = lazy(() => import('./pages/Tasks').then((m) => ({ default: m.Tasks })));
+const Habits = lazy(() => import('./pages/Habits').then((m) => ({ default: m.Habits })));
+const Finance = lazy(() => import('./pages/Finance').then((m) => ({ default: m.Finance })));
+const Chat = lazy(() => import('./pages/Chat').then((m) => ({ default: m.Chat })));
+const Profile = lazy(() => import('./pages/Profile').then((m) => ({ default: m.Profile })));
+
+function PageFallback() {
+  return <BrandLoader className="min-h-[40vh] flex items-center justify-center" />;
+}
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -76,12 +82,54 @@ export default function App() {
           </PrivateRoute>
         }>
         <Route index element={<Dashboard />} />
-        <Route path="goals" element={<Goals />} />
-        <Route path="tasks" element={<Tasks />} />
-        <Route path="habits" element={<Habits />} />
-        <Route path="finance" element={<Finance />} />
-        <Route path="chat" element={<Chat />} />
-        <Route path="profile" element={<Profile />} />
+        <Route
+          path="goals"
+          element={
+            <Suspense fallback={<PageFallback />}>
+              <Goals />
+            </Suspense>
+          }
+        />
+        <Route
+          path="tasks"
+          element={
+            <Suspense fallback={<PageFallback />}>
+              <Tasks />
+            </Suspense>
+          }
+        />
+        <Route
+          path="habits"
+          element={
+            <Suspense fallback={<PageFallback />}>
+              <Habits />
+            </Suspense>
+          }
+        />
+        <Route
+          path="finance"
+          element={
+            <Suspense fallback={<PageFallback />}>
+              <Finance />
+            </Suspense>
+          }
+        />
+        <Route
+          path="chat"
+          element={
+            <Suspense fallback={<PageFallback />}>
+              <Chat />
+            </Suspense>
+          }
+        />
+        <Route
+          path="profile"
+          element={
+            <Suspense fallback={<PageFallback />}>
+              <Profile />
+            </Suspense>
+          }
+        />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

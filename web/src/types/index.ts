@@ -77,9 +77,4 @@ export interface FinanceRecord {
   createdAt: string;
 }
 
-export interface FinanceSummary {
-  income: number;
-  expense: number;
-  balance: number;
-  totalRecords: number;
-}
+export type { FinanceSummaryFull as FinanceSummary } from '@shared/finance-helpers';
