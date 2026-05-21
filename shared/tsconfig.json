@@ -11,6 +11,14 @@
     "outDir": "./dist",
     "rootDir": "."
   },
-  "include": ["validators/**/*", "types/**/*", "first-steps.ts", "ai-prompts.ts"],
+  "include": [
+    "validators/**/*",
+    "types/**/*",
+    "first-steps.ts",
+    "ai-prompts.ts",
+    "methodologies.ts",
+    "finance-helpers.ts",
+    "chat-helpers.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }

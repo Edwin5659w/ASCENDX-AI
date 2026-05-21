@@ -23,7 +23,7 @@ export const AI_SUGGESTED_PROMPTS: Record<AIContextLevel, string[]> = {
     'Prioriza mis tareas pendientes de hoy',
     '¿Qué hábito debería reforzar esta semana?',
     'Revisa mi progreso y dime el siguiente paso',
-    'Dame un plan de 25 minutos para avanzar',
+    'Dame un plan Pomodoro de 25 minutos para avanzar',
   ],
   ready: [
     'Planifica mi día con mis tareas actuales',
