@@ -154,15 +154,27 @@ export const userService = {
       });
 
       if (input.focus === 'FINANZAS') {
-        await tx.financeRecord.create({
-          data: {
-            userId,
-            type: 'EXPENSE',
-            amount: 0.01,
-            category: 'Onboarding',
-            note: 'Primer registro — edita o añade tus gastos reales',
-          },
-        });
+        if (input.initialFinance) {
+          await tx.financeRecord.create({
+            data: {
+              userId,
+              type: 'EXPENSE',
+              amount: roundMoney(input.initialFinance.amount),
+              category: input.initialFinance.category,
+              note: 'Primer gasto registrado en onboarding',
+            },
+          });
+        } else {
+          await tx.financeRecord.create({
+            data: {
+              userId,
+              type: 'EXPENSE',
+              amount: 0.01,
+              category: 'Onboarding',
+              note: 'Primer registro — edita o añade tus gastos reales',
+            },
+          });
+        }
       }
 
       const user = await tx.user.update({

@@ -48,6 +48,12 @@ export const onboardingSetupSchema = z.object({
     .min(1, 'Añade al menos una tarea')
     .max(3),
   habitName: z.string().trim().min(1, 'El hábito es obligatorio').max(100),
+  initialFinance: z
+    .object({
+      amount: z.number().positive('El monto debe ser mayor a 0').max(999_999_999.99),
+      category: z.string().trim().min(1, 'La categoría es obligatoria').max(100),
+    })
+    .optional(),
 });
 
 export type OnboardingSetupInput = z.infer<typeof onboardingSetupSchema>;

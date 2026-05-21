@@ -16,7 +16,8 @@
     "./methodologies": "./dist/methodologies.js",
     "./finance-helpers": "./dist/finance-helpers.js",
     "./chat-helpers": "./dist/chat-helpers.js",
-    "./dashboard-helpers": "./dist/dashboard-helpers.js"
+    "./dashboard-helpers": "./dist/dashboard-helpers.js",
+    "./onboarding-helpers": "./dist/onboarding-helpers.js"
   },
   "dependencies": {
     "zod": "^3.24.1"

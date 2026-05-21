@@ -19,7 +19,8 @@
     "methodologies.ts",
     "finance-helpers.ts",
     "chat-helpers.ts",
-    "dashboard-helpers.ts"
+    "dashboard-helpers.ts",
+    "onboarding-helpers.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }
