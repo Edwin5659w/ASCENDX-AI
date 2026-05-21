@@ -1,3 +1,4 @@
+import bcrypt from 'bcrypt';
 import { prisma } from '../lib/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { badgeService } from './badge.service';
@@ -218,5 +219,20 @@ export const userService = {
         updatedAt: true,
       },
     });
+  },
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { password: true },
+    });
+    if (!user) throw new AppError(404, 'Usuario no encontrado');
+    const valid = await bcrypt.compare(currentPassword, user.password);
+    if (!valid) throw new AppError(401, 'Contraseña actual incorrecta');
+
+    const password = await bcrypt.hash(newPassword, 12);
+    await prisma.user.update({ where: { id: userId }, data: { password } });
+    await prisma.refreshToken.deleteMany({ where: { userId } });
+    return { message: 'Contraseña actualizada' };
   },
 };

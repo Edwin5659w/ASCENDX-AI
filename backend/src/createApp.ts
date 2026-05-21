@@ -11,6 +11,7 @@ import goalRoutes from './routes/goal.routes';
 import taskRoutes from './routes/task.routes';
 import habitRoutes from './routes/habit.routes';
 import financeRoutes from './routes/finance.routes';
+import tradeRoutes from './routes/trade.routes';
 import aiRoutes from './routes/ai.routes';
 
 export function createApp() {
@@ -60,6 +61,7 @@ export function createApp() {
   app.use('/tasks', taskRoutes);
   app.use('/habits', habitRoutes);
   app.use('/finance', financeRoutes);
+  app.use('/trades', tradeRoutes);
   app.use('/ai', aiLimiter, aiRoutes);
 
   app.use(errorHandler);

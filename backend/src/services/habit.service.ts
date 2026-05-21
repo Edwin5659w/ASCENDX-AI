@@ -15,16 +15,27 @@ import type { createHabitSchema, updateHabitSchema } from '@ascendx/shared/valid
 type CreateHabitInput = z.infer<typeof createHabitSchema>;
 type UpdateHabitInput = z.infer<typeof updateHabitSchema>;
 
-async function enrichHabits<T extends { id: string; frequency: string }>(
+function last7DayStarts(): Date[] {
+  const days: Date[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = startOfDayUTC();
+    d.setUTCDate(d.getUTCDate() - i);
+    days.push(d);
+  }
+  return days;
+}
+
+async function enrichHabits<T extends { id: string; frequency: string; streak: number }>(
   userId: string,
   habits: T[],
 ) {
   const today = startOfDayUTC();
   const weekStart = startOfWeekUTC();
+  const dayStarts = last7DayStarts();
   const completions = await prisma.habitCompletion.findMany({
     where: {
       userId,
-      completedDate: { in: [today, weekStart] },
+      completedDate: { gte: dayStarts[0] },
     },
   });
   const doneToday = new Set(
@@ -35,10 +46,29 @@ async function enrichHabits<T extends { id: string; frequency: string }>(
       .filter((c) => c.completedDate.getTime() === weekStart.getTime())
       .map((c) => c.habitId),
   );
-  return habits.map((h) => ({
-    ...h,
-    completedToday: h.frequency === 'WEEKLY' ? doneWeek.has(h.id) : doneToday.has(h.id),
-  }));
+  const weekByHabit = new Map<string, boolean[]>();
+  for (const h of habits) {
+    weekByHabit.set(
+      h.id,
+      dayStarts.map((day) =>
+        completions.some(
+          (c) => c.habitId === h.id && c.completedDate.getTime() === day.getTime(),
+        ),
+      ),
+    );
+  }
+  return habits.map((h) => {
+    const weekHistory = weekByHabit.get(h.id) ?? dayStarts.map(() => false);
+    const doneCount = weekHistory.filter(Boolean).length;
+    return {
+      ...h,
+      completedToday: h.frequency === 'WEEKLY' ? doneWeek.has(h.id) : doneToday.has(h.id),
+      weekHistory,
+      weekCompletionRate: Math.round((doneCount / 7) * 100),
+      streakMilestone:
+        h.streak >= 30 ? 30 : h.streak >= 21 ? 21 : h.streak >= 7 ? 7 : h.streak >= 3 ? 3 : null,
+    };
+  });
 }
 
 export const habitService = {
