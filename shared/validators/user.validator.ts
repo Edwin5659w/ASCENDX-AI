@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { passwordSchema } from './auth.validator';
 
 const fullNameSchema = z
   .string()
@@ -11,4 +12,9 @@ export const updateProfileSchema = z.object({
   name: fullNameSchema.optional(),
   onboardingDone: z.boolean().optional(),
   pushToken: z.string().max(512).optional(),
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Contraseña actual obligatoria'),
+  newPassword: passwordSchema,
 });

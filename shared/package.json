@@ -17,7 +17,9 @@
     "./finance-helpers": "./dist/finance-helpers.js",
     "./chat-helpers": "./dist/chat-helpers.js",
     "./dashboard-helpers": "./dist/dashboard-helpers.js",
-    "./onboarding-helpers": "./dist/onboarding-helpers.js"
+    "./onboarding-helpers": "./dist/onboarding-helpers.js",
+    "./validators/trade.validator": "./dist/validators/trade.validator.js",
+    "./trading-helpers": "./dist/trading-helpers.js"
   },
   "dependencies": {
     "zod": "^3.24.1"
