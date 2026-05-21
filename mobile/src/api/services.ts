@@ -70,6 +70,7 @@ export const userApi = {
     goalTitle: string;
     taskTitles: string[];
     habitName: string;
+    initialFinance?: { amount: number; category: string };
   }) =>
     apiRequest<{ user: User }>('/user/onboarding-setup', {
       method: 'POST',
