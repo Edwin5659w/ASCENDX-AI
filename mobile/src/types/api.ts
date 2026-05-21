@@ -83,11 +83,29 @@ export interface FinanceRecord {
   createdAt: string;
 }
 
+export interface FinanceCategoryTotal {
+  category: string;
+  total: number;
+}
+
+export interface FinanceMonthTotal {
+  key: string;
+  label: string;
+  income: number;
+  expense: number;
+}
+
 export interface FinanceSummary {
   income: number;
   expense: number;
   balance: number;
   totalRecords: number;
+  savingsRate: number;
+  expenseByCategory: FinanceCategoryTotal[];
+  incomeByCategory: FinanceCategoryTotal[];
+  monthly: FinanceMonthTotal[];
+  budget503020: { needs: number; wants: number; savings: number } | null;
+  topExpenseCategory: string | null;
 }
 
 export interface AIInsight {
@@ -102,4 +120,5 @@ export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  createdAt?: string;
 }

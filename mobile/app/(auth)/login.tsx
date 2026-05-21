@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Link } from 'expo-router';
+import { formatApiError } from '@/src/api/client';
 import { useAuth } from '@/src/context/AuthContext';
 import { Button } from '@/src/components/ui/Button';
 import { ValidatedInput } from '@/src/components/auth/ValidatedInput';
@@ -34,7 +35,7 @@ export default function LoginScreen() {
     try {
       await login(email.trim().toLowerCase(), password);
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : 'Correo o contraseña incorrectos');
+      setSubmitError(formatApiError(e));
     } finally {
       setLoading(false);
     }

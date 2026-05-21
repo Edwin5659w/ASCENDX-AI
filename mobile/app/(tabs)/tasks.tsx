@@ -1,163 +1,341 @@
-import { useCallback, useState } from 'react';
-import {
-  Alert,
-  FlatList,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
-import { useFocusEffect } from 'expo-router';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { tasksApi } from '@/src/api/services';
-import { Button } from '@/src/components/ui/Button';
-import { EmptyState } from '@/src/components/EmptyState';
-import type { Task } from '@/src/types/api';
-import { theme } from '@/constants/theme';
-
-export default function TasksScreen() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [title, setTitle] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const load = useCallback(async () => {
-    try {
-      setTasks(await tasksApi.list());
-    } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudieron cargar las tareas');
-    }
-  }, []);
-
-  useFocusEffect(useCallback(() => { load(); }, [load]));
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
-  };
-
-  const handleCreate = async () => {
-    if (!title.trim()) return;
-    setLoading(true);
-    try {
-      await tasksApi.create({ title: title.trim() });
-      setTitle('');
-      await load();
-    } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo crear');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const toggleTask = async (task: Task) => {
-    try {
-      await tasksApi.update(task.id, { completed: !task.completed });
-      await load();
-    } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo actualizar la tarea');
-    }
-  };
-
-  return (
-    <View style={styles.container}>
-      <View style={styles.addRow}>
-        <TextInput
-          style={styles.input}
-          placeholder="Nueva tarea..."
-          placeholderTextColor={theme.colors.textMuted}
-          value={title}
-          onChangeText={setTitle}
-          onSubmitEditing={handleCreate}
-        />
-        <Button title="+" onPress={handleCreate} loading={loading} style={styles.addBtn} />
-      </View>
-
-      <FlatList
-        data={tasks}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
-        ListEmptyComponent={
-          <EmptyState
-            icon="check-square-o"
-            title="Sin tareas"
-            description="Añade tareas y márcalas al completarlas para ganar XP."
-          />
-        }
-        renderItem={({ item }) => (
-          <Pressable style={styles.taskRow} onPress={() => toggleTask(item)}>
-            <FontAwesome
-              name={item.completed ? 'check-circle' : 'circle-o'}
-              size={24}
-              color={item.completed ? theme.colors.success : theme.colors.textMuted}
-            />
-            <View style={styles.taskContent}>
-              <Text style={[styles.taskTitle, item.completed && styles.completed]}>
-                {item.title}
-              </Text>
-              {item.goal && (
-                <Text style={styles.goalTag}>{item.goal.title}</Text>
-              )}
-            </View>
-            {item.streakCount > 0 && (
-              <Text style={styles.streak}>🔥 {item.streakCount}</Text>
-            )}
-          </Pressable>
-        )}
-      />
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  addRow: {
-    flexDirection: 'row',
-    padding: theme.spacing.md,
-    gap: 8,
-    alignItems: 'center',
-  },
-  input: {
-    flex: 1,
-    backgroundColor: theme.colors.surfaceLight,
-    borderRadius: theme.radius.md,
-    padding: 12,
-    color: theme.colors.text,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  addBtn: { width: 52, paddingHorizontal: 0 },
-  list: { padding: theme.spacing.md, paddingTop: 0 },
-  taskRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  taskContent: { flex: 1 },
-  taskTitle: {
-    color: theme.colors.text,
-    fontSize: 16,
-  },
-  completed: {
-    textDecorationLine: 'line-through',
-    color: theme.colors.textMuted,
-  },
-  goalTag: {
-    color: theme.colors.primaryLight,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  streak: { fontSize: 12, color: theme.colors.warning },
-  empty: {
-    color: theme.colors.textMuted,
-    textAlign: 'center',
-    marginTop: 40,
-  },
-});
+import { useCallback, useState } from 'react';
+import {
+  Alert,
+  FlatList,
+  Modal,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { useFocusEffect } from 'expo-router';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { goalsApi, tasksApi } from '@/src/api/services';
+import { Button } from '@/src/components/ui/Button';
+import { EmptyState } from '@/src/components/EmptyState';
+import { MethodologyHint } from '@/src/components/MethodologyHint';
+import type { Goal, Task } from '@/src/types/api';
+import { theme } from '@/constants/theme';
+
+export default function TasksScreen() {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [title, setTitle] = useState('');
+  const [goalId, setGoalId] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [editTask, setEditTask] = useState<Task | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editGoalId, setEditGoalId] = useState('');
+  const [editDueDate, setEditDueDate] = useState('');
+
+  const load = useCallback(async () => {
+    try {
+      const [taskList, goalList] = await Promise.all([tasksApi.list(), goalsApi.list()]);
+      setTasks(taskList);
+      setGoals(goalList);
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudieron cargar las tareas');
+    }
+  }, []);
+
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  };
+
+  const handleCreate = async () => {
+    if (!title.trim()) return;
+    setLoading(true);
+    try {
+      await tasksApi.create({
+        title: title.trim(),
+        goalId: goalId || undefined,
+        dueDate: dueDate || undefined,
+      });
+      setTitle('');
+      setGoalId('');
+      setDueDate('');
+      await load();
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo crear');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleTask = async (task: Task) => {
+    try {
+      await tasksApi.update(task.id, { completed: !task.completed });
+      await load();
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo actualizar la tarea');
+    }
+  };
+
+  const openEdit = (task: Task) => {
+    setEditTask(task);
+    setEditTitle(task.title);
+    setEditGoalId(task.goalId ?? '');
+    setEditDueDate(task.dueDate ? task.dueDate.slice(0, 10) : '');
+  };
+
+  const saveEdit = async () => {
+    if (!editTask || !editTitle.trim()) return;
+    try {
+      await tasksApi.update(editTask.id, {
+        title: editTitle.trim(),
+        goalId: editGoalId || null,
+        dueDate: editDueDate || undefined,
+      });
+      setEditTask(null);
+      await load();
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo guardar');
+    }
+  };
+
+  const confirmDelete = (task: Task) => {
+    Alert.alert('Eliminar tarea', 'Esta acción no se puede deshacer.', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await tasksApi.remove(task.id);
+            await load();
+          } catch (e) {
+            Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo eliminar');
+          }
+        },
+      },
+    ]);
+  };
+
+  return (
+    <View style={styles.container}>
+      <MethodologyHint module="tasks" />
+      <View style={styles.addRow}>
+        <TextInput
+          style={styles.input}
+          placeholder="Nueva tarea..."
+          placeholderTextColor={theme.colors.textMuted}
+          value={title}
+          onChangeText={setTitle}
+          onSubmitEditing={handleCreate}
+        />
+        <Button title="+" onPress={handleCreate} loading={loading} style={styles.addBtn} />
+      </View>
+      {goals.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.goalPicker}>
+          <Pressable
+            style={[styles.chip, !goalId && styles.chipActive]}
+            onPress={() => setGoalId('')}>
+            <Text style={styles.chipText}>Sin objetivo</Text>
+          </Pressable>
+          {goals.map((g) => (
+            <Pressable
+              key={g.id}
+              style={[styles.chip, goalId === g.id && styles.chipActive]}
+              onPress={() => setGoalId(g.id)}>
+              <Text style={styles.chipText} numberOfLines={1}>
+                {g.title}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
+      <TextInput
+        style={styles.dateInput}
+        placeholder="Fecha límite AAAA-MM-DD (opcional)"
+        placeholderTextColor={theme.colors.textMuted}
+        value={dueDate}
+        onChangeText={setDueDate}
+      />
+
+      <FlatList
+        data={tasks}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
+        ListEmptyComponent={
+          <EmptyState
+            icon="check-square-o"
+            title="Sin tareas"
+            description="Vincula tareas a objetivos y añade fecha para priorizar con la IA."
+          />
+        }
+        renderItem={({ item }) => (
+          <View style={styles.taskRow}>
+            <Pressable style={styles.taskMain} onPress={() => toggleTask(item)}>
+              <FontAwesome
+                name={item.completed ? 'check-circle' : 'circle-o'}
+                size={24}
+                color={item.completed ? theme.colors.success : theme.colors.textMuted}
+              />
+              <View style={styles.taskContent}>
+                <Text style={[styles.taskTitle, item.completed && styles.completed]}>
+                  {item.title}
+                </Text>
+                {item.goal ? <Text style={styles.goalTag}>{item.goal.title}</Text> : null}
+                {item.dueDate ? (
+                  <Text style={styles.dueTag}>
+                    📅 {new Date(item.dueDate).toLocaleDateString('es')}
+                  </Text>
+                ) : null}
+              </View>
+              {item.streakCount > 0 ? (
+                <Text style={styles.streak}>🔥 {item.streakCount}</Text>
+              ) : null}
+            </Pressable>
+            <Pressable onPress={() => openEdit(item)} hitSlop={10}>
+              <FontAwesome name="pencil" size={18} color={theme.colors.textMuted} />
+            </Pressable>
+            <Pressable onPress={() => confirmDelete(item)} hitSlop={10}>
+              <FontAwesome name="trash-o" size={20} color={theme.colors.textMuted} />
+            </Pressable>
+          </View>
+        )}
+      />
+
+      <Modal visible={!!editTask} transparent animationType="fade">
+        <View style={styles.modalBg}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>Editar tarea</Text>
+            <TextInput
+              style={styles.input}
+              value={editTitle}
+              onChangeText={setEditTitle}
+              placeholderTextColor={theme.colors.textMuted}
+            />
+            <ScrollView horizontal style={styles.goalPicker}>
+              <Pressable
+                style={[styles.chip, !editGoalId && styles.chipActive]}
+                onPress={() => setEditGoalId('')}>
+                <Text style={styles.chipText}>Sin objetivo</Text>
+              </Pressable>
+              {goals.map((g) => (
+                <Pressable
+                  key={g.id}
+                  style={[styles.chip, editGoalId === g.id && styles.chipActive]}
+                  onPress={() => setEditGoalId(g.id)}>
+                  <Text style={styles.chipText}>{g.title}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+            <TextInput
+              style={styles.dateInput}
+              placeholder="Fecha AAAA-MM-DD"
+              placeholderTextColor={theme.colors.textMuted}
+              value={editDueDate}
+              onChangeText={setEditDueDate}
+            />
+            <View style={styles.modalActions}>
+              <Button title="Cancelar" variant="ghost" onPress={() => setEditTask(null)} />
+              <Button title="Guardar" onPress={saveEdit} />
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: theme.colors.background },
+  addRow: {
+    flexDirection: 'row',
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: theme.spacing.sm,
+    gap: 8,
+    alignItems: 'center',
+  },
+  input: {
+    flex: 1,
+    backgroundColor: theme.colors.surfaceLight,
+    borderRadius: theme.radius.md,
+    padding: 12,
+    color: theme.colors.text,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  dateInput: {
+    marginHorizontal: theme.spacing.md,
+    marginBottom: 8,
+    backgroundColor: theme.colors.surfaceLight,
+    borderRadius: theme.radius.md,
+    padding: 10,
+    color: theme.colors.text,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    fontSize: 13,
+  },
+  addBtn: { width: 52, paddingHorizontal: 0 },
+  goalPicker: {
+    paddingHorizontal: theme.spacing.md,
+    marginBottom: 8,
+    maxHeight: 40,
+  },
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: theme.colors.surfaceLight,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  chipActive: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary + '22',
+  },
+  chipText: { color: theme.colors.text, fontSize: 12, maxWidth: 140 },
+  list: { padding: theme.spacing.md, paddingTop: 0 },
+  taskRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  taskMain: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  taskContent: { flex: 1 },
+  taskTitle: { color: theme.colors.text, fontSize: 16 },
+  completed: {
+    textDecorationLine: 'line-through',
+    color: theme.colors.textMuted,
+  },
+  goalTag: { color: theme.colors.primaryLight, fontSize: 12, marginTop: 2 },
+  dueTag: { color: theme.colors.textMuted, fontSize: 11, marginTop: 2 },
+  streak: { fontSize: 12, color: theme.colors.warning },
+  modalBg: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalBox: {
+    backgroundColor: theme.colors.surfaceLight,
+    borderRadius: theme.radius.lg,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  modalTitle: { color: theme.colors.text, fontSize: 18, fontWeight: '700', marginBottom: 12 },
+  modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 12 },
+});
+

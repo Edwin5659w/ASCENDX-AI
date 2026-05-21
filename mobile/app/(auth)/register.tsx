@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Link } from 'expo-router';
 import { AuthScreenShell } from '@/src/components/brand/AuthScreenShell';
+import { formatApiError } from '@/src/api/client';
 import { useAuth } from '@/src/context/AuthContext';
 import { Button } from '@/src/components/ui/Button';
 import { ValidatedInput } from '@/src/components/auth/ValidatedInput';
@@ -42,7 +43,7 @@ export default function RegisterScreen() {
     try {
       await register(name.trim().replace(/\s+/g, ' '), email.trim().toLowerCase(), password);
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : 'Error al registrarse');
+      setSubmitError(formatApiError(e));
     } finally {
       setLoading(false);
     }

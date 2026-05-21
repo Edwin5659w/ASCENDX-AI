@@ -89,7 +89,7 @@ export const goalsApi = {
 
 export const tasksApi = {
   list: () => apiRequest<Task[]>('/tasks'),
-  create: (data: { title: string; goalId?: string }) =>
+  create: (data: { title: string; goalId?: string | null; dueDate?: string }) =>
     apiRequest<Task>('/tasks', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: Partial<Task>) =>
     apiRequest<Task>(`/tasks/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
@@ -140,4 +140,6 @@ export const aiApi = {
       body: JSON.stringify({ message }),
     }),
   insights: () => apiRequest<AIInsight[]>('/ai/insights'),
+  chatHistory: () => apiRequest<ChatMessage[]>('/ai/chat-history'),
+  clearChatHistory: () => apiRequest<{ ok: boolean }>('/ai/chat-history', { method: 'DELETE' }),
 };

@@ -1,6 +1,28 @@
 import * as SecureStore from 'expo-secure-store';
 import { API_URL } from '../config/api';
 
+const NETWORK_ERROR_HINT =
+  `Sin conexión al servidor (${API_URL}). ` +
+  'Comprueba: (1) backend activo con `cd backend && npm run dev`, ' +
+  '(2) PC y teléfono en la misma red WiFi, ' +
+  '(3) firewall de Windows permite Node en red privada, ' +
+  '(4) reinicia Expo con `npx expo start -c` tras cambiar mobile/.env.';
+
+/** Mensaje legible para fallos de red (Expo fetch en iOS: "Unknown error: Could not connect..."). */
+export function formatApiError(error: unknown): string {
+  if (error instanceof Error) {
+    const msg = error.message;
+    if (
+      /could not connect|network request failed|failed to connect|sin conexión/i.test(msg) ||
+      /^unknown error/i.test(msg)
+    ) {
+      return NETWORK_ERROR_HINT;
+    }
+    return msg;
+  }
+  return 'Error en la solicitud';
+}
+
 const TOKEN_KEY = 'ascendx_access_token';
 const REFRESH_KEY = 'ascendx_refresh_token';
 
@@ -93,10 +115,8 @@ export async function apiRequest<T>(
   let res: Response;
   try {
     res = await doFetch(token);
-  } catch {
-    throw new Error(
-      `Sin conexión al servidor (${API_URL}). Activa el backend (npm run dev) y configura EXPO_PUBLIC_API_URL en mobile/.env con la IP de tu PC.`,
-    );
+  } catch (err) {
+    throw new Error(formatApiError(err));
   }
 
   if (res.status === 401 && token && !isPublic) {
@@ -106,9 +126,9 @@ export async function apiRequest<T>(
     }
     try {
       res = await doFetch(token);
-    } catch {
+    } catch (err) {
       await notifySessionExpired();
-      throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
+      throw new Error(formatApiError(err));
     }
   }
 
@@ -133,6 +153,15 @@ export async function apiRequest<T>(
   }
 
   return undefined as T;
+}
+
+export async function checkApiHealth(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/health`, { method: 'GET' });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 export { API_URL };

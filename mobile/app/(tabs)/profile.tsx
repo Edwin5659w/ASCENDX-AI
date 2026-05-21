@@ -9,7 +9,7 @@ import { Card } from '@/src/components/ui/Card';
 import { Button } from '@/src/components/ui/Button';
 import { Input } from '@/src/components/ui/Input';
 import { theme } from '@/constants/theme';
-import { API_URL } from '@/src/api/client';
+import { API_URL, checkApiHealth, formatApiError } from '@/src/api/client';
 import { userApi } from '@/src/api/services';
 
 Notifications.setNotificationHandler({
@@ -28,6 +28,7 @@ export default function ProfileScreen() {
   const [testPushBusy, setTestPushBusy] = useState(false);
   const [name, setName] = useState(user?.name ?? '');
   const [savingName, setSavingName] = useState(false);
+  const [apiCheckBusy, setApiCheckBusy] = useState(false);
 
   useEffect(() => {
     setName(user?.name ?? '');
@@ -45,6 +46,22 @@ export default function ProfileScreen() {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo guardar');
     } finally {
       setSavingName(false);
+    }
+  };
+
+  const testApiConnection = async () => {
+    setApiCheckBusy(true);
+    try {
+      const ok = await checkApiHealth();
+      if (ok) {
+        Alert.alert('Conexión OK', `El backend responde en:\n${API_URL}`);
+      } else {
+        Alert.alert('Error', `El servidor no respondió correctamente en ${API_URL}`);
+      }
+    } catch (e) {
+      Alert.alert('Sin conexión', formatApiError(e));
+    } finally {
+      setApiCheckBusy(false);
     }
   };
 
@@ -170,6 +187,13 @@ export default function ProfileScreen() {
       </Card>
 
       <Text style={styles.apiLabel}>API: {API_URL}</Text>
+      <Button
+        title="Probar conexión al backend"
+        variant="secondary"
+        onPress={testApiConnection}
+        loading={apiCheckBusy}
+        style={styles.apiTestBtn}
+      />
 
       <Button title="Cerrar sesión" variant="secondary" onPress={handleLogout} style={styles.logout} />
     </View>
@@ -245,9 +269,14 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     fontSize: 11,
     marginTop: 24,
+    textAlign: 'center',
+  },
+  apiTestBtn: {
+    width: '100%',
+    marginTop: 12,
   },
   logout: {
     width: '100%',
-    marginTop: 24,
+    marginTop: 16,
   },
 });

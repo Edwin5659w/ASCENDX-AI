@@ -15,12 +15,14 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { habitsApi } from '@/src/api/services';
 import { Button } from '@/src/components/ui/Button';
 import { EmptyState } from '@/src/components/EmptyState';
+import { MethodologyHint } from '@/src/components/MethodologyHint';
 import type { Habit } from '@/src/types/api';
 import { theme } from '@/constants/theme';
 
 export default function HabitsScreen() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [name, setName] = useState('');
+  const [frequency, setFrequency] = useState<'DAILY' | 'WEEKLY'>('DAILY');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [renameFor, setRenameFor] = useState<Habit | null>(null);
@@ -53,7 +55,7 @@ export default function HabitsScreen() {
     }
     setLoading(true);
     try {
-      await habitsApi.create({ name: name.trim(), frequency: 'DAILY' });
+      await habitsApi.create({ name: name.trim(), frequency });
       setName('');
       await load();
     } catch (e) {
@@ -113,16 +115,33 @@ export default function HabitsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.addRow}>
-        <TextInput
-          style={styles.input}
-          placeholder="Nuevo hábito..."
-          placeholderTextColor={theme.colors.textMuted}
-          value={name}
-          onChangeText={setName}
-          onSubmitEditing={handleCreate}
-        />
-        <Button title="+" onPress={handleCreate} loading={loading} style={styles.addBtn} />
+      <MethodologyHint module="habits" />
+      <View style={styles.addSection}>
+        <View style={styles.freqRow}>
+          <Button
+            title="Diario"
+            variant={frequency === 'DAILY' ? 'primary' : 'secondary'}
+            onPress={() => setFrequency('DAILY')}
+            style={styles.freqBtn}
+          />
+          <Button
+            title="Semanal"
+            variant={frequency === 'WEEKLY' ? 'primary' : 'secondary'}
+            onPress={() => setFrequency('WEEKLY')}
+            style={styles.freqBtn}
+          />
+        </View>
+        <View style={styles.addRow}>
+          <TextInput
+            style={styles.input}
+            placeholder="Nuevo hábito..."
+            placeholderTextColor={theme.colors.textMuted}
+            value={name}
+            onChangeText={setName}
+            onSubmitEditing={handleCreate}
+          />
+          <Button title="+" onPress={handleCreate} loading={loading} style={styles.addBtn} />
+        </View>
       </View>
 
       <FlatList
@@ -185,9 +204,15 @@ export default function HabitsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
+  addSection: {
+    padding: theme.spacing.md,
+    paddingBottom: 0,
+    gap: 8,
+  },
+  freqRow: { flexDirection: 'row', gap: 8 },
+  freqBtn: { flex: 1 },
   addRow: {
     flexDirection: 'row',
-    padding: theme.spacing.md,
     gap: 8,
     alignItems: 'center',
   },
