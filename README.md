@@ -41,7 +41,8 @@ npm run dev        # http://localhost:5173
 ```bash
 cd mobile
 cp .env.example .env
-# EXPO_PUBLIC_API_URL → IP de tu PC o 10.0.2.2:4000 (emulador Android)
+# En Expo Go la IP se detecta desde Metro (no suele hacer falta .env)
+# Si falla: EXPO_PUBLIC_API_URL=http://TU_IP:4000 y npx expo start -c
 npm install
 npm start
 ```
@@ -57,7 +58,7 @@ npm start
 | Tareas | `CRUD /tasks` |
 | Hábitos | `CRUD /habits`, `POST /habits/:id/complete` |
 | Finanzas | `CRUD /finance`, `GET /finance/summary` |
-| IA | `GET /ai/context`, `/daily-plan`, `/insights`, `POST /ai/chat` |
+| IA | `GET /ai/context`, `/daily-plan`, `/insights`, `/chat-history`, `DELETE /chat-history`, `POST /ai/chat` |
 
 ## Usuario demo (desarrollo)
 
@@ -112,6 +113,8 @@ Incluye validadores, utilidades de dinero/fechas, contexto IA y pruebas de integ
 ## Defensa universitaria
 
 Ver **[docs/GUIA-DEFENSA.md](docs/GUIA-DEFENSA.md)** — guion de demo, preguntas del jurado y checklist del día.
+
+Sobre la sugerencia de «Trading» del profesor: **[docs/TRADING.md](docs/TRADING.md)** — tracking vs. trading financiero y cuándo tiene sentido cada uno.
 
 ## Scripts SQL manual
 
