@@ -4,6 +4,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AuthTextField } from '../components/auth/AuthTextField';
 import { AuthLayout } from '../components/brand/AuthLayout';
+import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
 import { validateLoginEmail, validateLoginPassword } from '@shared/validators/auth.rules';
 
 export function Login() {
@@ -97,6 +98,11 @@ export function Login() {
           className="w-full brand-btn-primary text-white font-semibold py-3 rounded-lg disabled:cursor-not-allowed">
           {loading ? 'Entrando...' : 'Entrar'}
         </button>
+
+        <GoogleSignInButton
+          onSuccess={(u) => navigate(u.onboardingDone ? '/dashboard' : '/onboarding')}
+          onError={(msg) => setSubmitError(msg)}
+        />
 
         <p className="text-center text-sm">
           <Link to="/forgot-password" className="text-cyan-400/90 hover:text-cyan-300 transition-colors">

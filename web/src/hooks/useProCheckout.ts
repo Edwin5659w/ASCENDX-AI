@@ -10,7 +10,7 @@ export function useProCheckout() {
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  const startCheckout = async () => {
+  const startCheckout = async (interval: 'month' | 'year' = 'month') => {
     if (!isAuthenticated) {
       navigate('/register?plan=pro');
       return;
@@ -26,7 +26,7 @@ export function useProCheckout() {
         showToast('Pagos no disponibles aún. Configura Stripe en el servidor o contacta soporte.', 'error');
         return;
       }
-      const { url } = await billingApi.checkout();
+      const { url } = await billingApi.checkout(interval);
       window.location.href = url;
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'No se pudo iniciar el pago', 'error');

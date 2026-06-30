@@ -17,6 +17,8 @@ export interface User {
   subscriptionStatus?: 'NONE' | 'ACTIVE' | 'PAST_DUE' | 'CANCELED';
   subscriptionPeriodEnd?: string | null;
   emailOptIn?: boolean;
+  themePreference?: 'dark' | 'light';
+  proTrialEndsAt?: string | null;
   createdAt: string;
   updatedAt?: string;
 }
@@ -57,6 +59,10 @@ export interface UserStats {
   level: number;
   longestStreak: number;
   financeBalance: number;
+  ascendScore?: number;
+  ascendLabel?: string;
+  ascendTips?: string[];
+  morningRitualDone?: boolean;
   badges: UserBadgeDto[];
   planUsage?: PlanUsage;
   firstStepsBonus?: { xpGained: number; message: string } | null;

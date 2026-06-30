@@ -10,6 +10,7 @@ import {
   Sun,
   CheckCircle2,
   Circle,
+  Dumbbell,
 } from 'lucide-react';
 import {
   ONBOARDING_TEMPLATES,
@@ -30,13 +31,15 @@ type WizardStep = OnboardingStepId;
 
 const focusKeys = Object.keys(ONBOARDING_TEMPLATES) as OnboardingFocus[];
 
-const FOCUS_ICONS = {
+const FOCUS_ICONS: Record<OnboardingFocus, typeof BookOpen> = {
   ESTUDIO: BookOpen,
   SALUD: Heart,
   FINANZAS: Wallet,
   TRABAJO: Briefcase,
   PERSONAL: Sun,
-} as const;
+  EMPRENDEDOR: Rocket,
+  FITNESS: Dumbbell,
+};
 
 function ProgressBar({ step }: { step: WizardStep }) {
   const current = onboardingStepIndex(step);

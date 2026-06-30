@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Copy, Crown, Download, RefreshCw, Shield, Trash2, Trophy, Users } from 'lucide-react';
+import { Copy, Crown, Download, RefreshCw, Shield, Trash2, Trophy, Users, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Card } from '../components/Card';
 import { ProfileSkeleton } from '../components/ProfileSkeleton';
 import { userApi, billingApi } from '../api/services';
 import { useToast } from '../context/ToastContext';
 import { useProCheckout } from '../hooks/useProCheckout';
+import { AccountabilityPanel } from '../components/AccountabilityPanel';
+import { useTheme } from '../context/ThemeContext';
+import { useLocale } from '../context/LocaleContext';
 import { DEFAULT_CURRENCY, SUPPORTED_CURRENCIES } from '@shared/currencies';
 import type { ReferralInfo } from '../types';
 
@@ -31,6 +34,8 @@ export function Profile() {
   const [billingConfigured, setBillingConfigured] = useState(false);
   const [exporting, setExporting] = useState(false);
   const { startCheckout, openPortal, loading: billingLoading } = useProCheckout();
+  const { theme, toggleTheme } = useTheme();
+  const { locale, setLocale } = useLocale();
   const appVersion = '1.2.0';
 
   useEffect(() => {
@@ -299,6 +304,36 @@ export function Profile() {
         </div>
       </Link>
 
+      <AccountabilityPanel />
+
+      <Card className="mb-4 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          {theme === 'dark' ? <Moon size={18} className="text-violet-400" /> : <Sun size={18} className="text-amber-400" />}
+          <span className="text-white text-sm font-medium">Tema {theme === 'dark' ? 'oscuro' : 'claro'}</span>
+        </div>
+        <button type="button" onClick={toggleTheme} className="text-violet-400 text-sm font-medium">
+          Cambiar
+        </button>
+      </Card>
+
+      <Card className="mb-4 flex items-center justify-between gap-4">
+        <span className="text-white text-sm font-medium">Idioma</span>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setLocale('es')}
+            className={`px-3 py-1 rounded-lg text-xs ${locale === 'es' ? 'bg-violet-600 text-white' : 'border border-white/10 text-zinc-400'}`}>
+            ES
+          </button>
+          <button
+            type="button"
+            onClick={() => setLocale('en')}
+            className={`px-3 py-1 rounded-lg text-xs ${locale === 'en' ? 'bg-violet-600 text-white' : 'border border-white/10 text-zinc-400'}`}>
+            EN
+          </button>
+        </div>
+      </Card>
+
       <Card className="mb-4">
         <button
           type="button"
@@ -309,18 +344,17 @@ export function Profile() {
         </button>
       </Card>
 
-      {user.plan === 'PRO' && (
-        <Card className="mb-4">
-          <button
-            type="button"
-            onClick={() => void exportData()}
-            disabled={exporting}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-cyan-500/30 text-cyan-300 text-sm font-medium hover:bg-cyan-500/10 disabled:opacity-50">
-            <Download size={16} />
-            {exporting ? 'Exportando...' : 'Exportar mis datos (JSON)'}
-          </button>
-        </Card>
-      )}
+      <Card className="mb-4">
+        <button
+          type="button"
+          onClick={() => void exportData()}
+          disabled={exporting}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-cyan-500/30 text-cyan-300 text-sm font-medium hover:bg-cyan-500/10 disabled:opacity-50">
+          <Download size={16} />
+          {exporting ? 'Exportando...' : 'Exportar mis datos (JSON)'}
+        </button>
+        <p className="text-zinc-600 text-xs text-center mt-2">Disponible para todos los usuarios (GDPR)</p>
+      </Card>
 
       {referral && (
         <Card className="mb-4 space-y-3">

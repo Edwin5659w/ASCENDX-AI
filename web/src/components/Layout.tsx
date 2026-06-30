@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -6,9 +7,12 @@ import {
   User,
   LogOut,
   Flame,
+  Search,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { BrandLogo } from './brand/BrandLogo';
+import { CommandPalette } from './CommandPalette';
+import { SkipLink } from './SkipLink';
 
 const nav = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Inicio' },
@@ -47,9 +51,23 @@ function NavItems({ compact }: { compact?: boolean }) {
 
 export function Layout() {
   const { user, logout } = useAuth();
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-[#0a0a0f] flex-col lg:flex-row">
+      <SkipLink />
+      <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
       <aside className="hidden lg:flex w-64 border-r border-white/10 bg-[#14141f] p-4 flex-col shrink-0">
         <div className="mb-8 px-2">
           <BrandLogo size="sm" />
@@ -57,6 +75,14 @@ export function Layout() {
         </div>
         <nav className="flex-1 space-y-1">
           <NavItems />
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-zinc-400 hover:bg-white/5 hover:text-white w-full mt-2">
+            <Search size={18} />
+            Buscar
+            <kbd className="ml-auto text-[10px] text-zinc-600">⌘K</kbd>
+          </button>
         </nav>
         <div className="border-t border-white/10 pt-4 mt-4">
           <p className="text-sm text-white font-medium truncate px-2">{user?.name}</p>
@@ -94,7 +120,7 @@ export function Layout() {
         </nav>
       </header>
 
-      <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 pb-8">
+      <main id="main-content" className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 pb-8">
         <Outlet />
       </main>
     </div>

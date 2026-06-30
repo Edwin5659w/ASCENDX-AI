@@ -77,10 +77,17 @@ export function Pricing() {
             </ul>
             <button
               type="button"
-              onClick={() => void startCheckout()}
+              onClick={() => void startCheckout('month')}
               disabled={loading}
               className="block w-full text-center brand-btn-primary py-3 rounded-xl text-white font-semibold disabled:opacity-50">
-              {loading ? 'Redirigiendo...' : isAuthenticated ? 'Suscribirme a Pro' : 'Crear cuenta y suscribirme'}
+              {loading ? 'Redirigiendo...' : isAuthenticated ? `Pro mensual — $${PLAN_PRICING.PRO.price}/mes` : 'Crear cuenta y suscribirme'}
+            </button>
+            <button
+              type="button"
+              onClick={() => void startCheckout('year')}
+              disabled={loading}
+              className="block w-full text-center mt-3 py-3 rounded-xl border border-violet-500/40 text-violet-300 font-semibold hover:bg-violet-500/10 disabled:opacity-50">
+              Pro anual — ${PLAN_PRICING.PRO_ANNUAL.price}/año ({PLAN_PRICING.PRO_ANNUAL.savings})
             </button>
             <p className="text-zinc-600 text-xs text-center mt-3">
               {stripeReady

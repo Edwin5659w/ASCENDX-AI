@@ -3,11 +3,41 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ASCENDX AI — Life OS</title>
+    <meta name="theme-color" content="#0a0a0f" />
+    <title>ASCENDX AI — Life OS con mentor IA</title>
+    <meta name="description" content="Objetivos, tareas, hábitos y finanzas unificados. Mentor IA con tus datos reales. Gratis para empezar." />
+    <meta property="og:title" content="ASCENDX AI — Tu ascenso personal" />
+    <meta property="og:description" content="Life OS en español con metodologías SMART, GTD y coaching IA." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://ascendx.ai" />
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      (function () {
+        var key = localStorage.getItem('ascendx_cookie_consent');
+        if (key !== '1') return;
+        var ph = '%VITE_POSTHOG_KEY%';
+        var ga = '%VITE_GA_MEASUREMENT_ID%';
+        if (ph && ph.indexOf('VITE_') === -1) {
+          /* PostHog snippet placeholder — set VITE_POSTHOG_KEY at build */
+        }
+        if (ga && ga.indexOf('VITE_') === -1) {
+          var s = document.createElement('script');
+          s.async = true;
+          s.src = 'https://www.googletagmanager.com/gtag/js?id=' + ga;
+          document.head.appendChild(s);
+          window.dataLayer = window.dataLayer || [];
+          function gtag() { dataLayer.push(arguments); }
+          window.gtag = gtag;
+          gtag('js', new Date());
+          gtag('config', ga);
+        }
+      })();
+    </script>
   </body>
 </html>

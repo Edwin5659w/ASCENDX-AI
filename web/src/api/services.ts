@@ -27,6 +27,15 @@ export const authApi = {
     saveTokens(data.accessToken, data.refreshToken);
     return data;
   },
+  loginWithGoogle: async (idToken: string, referralCode?: string) => {
+    const data = await apiRequest<AuthResponse>('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ idToken, referralCode: referralCode || undefined }),
+      public: true,
+    });
+    saveTokens(data.accessToken, data.refreshToken);
+    return data;
+  },
   login: async (email: string, password: string) => {
     const data = await apiRequest<AuthResponse>('/auth/login', {
       method: 'POST',
@@ -77,10 +86,28 @@ export const userApi = {
     tradingJournalEnabled?: boolean;
     dailyFocus?: string;
     emailOptIn?: boolean;
+    themePreference?: 'dark' | 'light';
   }) =>
     apiRequest<User>('/user/me', { method: 'PATCH', body: JSON.stringify(data) }),
   completeOnboarding: () => apiRequest<User>('/user/onboarding-complete', { method: 'POST' }),
   completeProductTour: () => apiRequest<User>('/user/product-tour-complete', { method: 'POST' }),
+  completeMorningRitual: () => apiRequest<{ ok: boolean }>('/user/morning-ritual-complete', { method: 'POST' }),
+  search: (q: string) =>
+    apiRequest<{
+      goals: { id: string; title: string }[];
+      tasks: { id: string; title: string; completed: boolean }[];
+      habits: { id: string; name: string }[];
+    }>(`/user/search?q=${encodeURIComponent(q)}`),
+  accountabilityCode: () => apiRequest<{ code: string }>('/user/accountability/code'),
+  accountabilityPartners: () =>
+    apiRequest<{ id: string; name: string; ascendScore: number; ascendLabel: string }[]>(
+      '/user/accountability/partners',
+    ),
+  linkAccountability: (code: string) =>
+    apiRequest<{ partnerName: string; partnerId: string }>('/user/accountability/link', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    }),
   setupOnboarding: (data: {
     focus: string;
     goalTitle: string;
@@ -140,7 +167,11 @@ export const userApi = {
 
 export const billingApi = {
   status: () => apiRequest<import('../types').BillingStatus>('/billing/status'),
-  checkout: () => apiRequest<{ url: string }>('/billing/checkout', { method: 'POST' }),
+  checkout: (interval: 'month' | 'year' = 'month') =>
+    apiRequest<{ url: string }>('/billing/checkout', {
+      method: 'POST',
+      body: JSON.stringify({ interval }),
+    }),
   portal: () => apiRequest<{ url: string }>('/billing/portal', { method: 'POST' }),
   syncSession: (sessionId: string) =>
     apiRequest<{ user: User }>('/billing/sync-session', {

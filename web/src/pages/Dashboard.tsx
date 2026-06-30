@@ -8,6 +8,7 @@ import {
   Wallet,
   RefreshCw,
   Sparkles,
+  Sunrise,
 } from 'lucide-react';
 import { Card } from '../components/Card';
 import { DashboardSkeleton } from '../components/ui/DashboardSkeleton';
@@ -18,6 +19,9 @@ import { DailyFocus } from '../components/dashboard/DailyFocus';
 import { WeeklyRecap } from '../components/dashboard/WeeklyRecap';
 import { UpgradeBanner } from '../components/dashboard/UpgradeBanner';
 import { AIMentorCard } from '../components/dashboard/AIMentorCard';
+import { AscensoScoreCard } from '../components/dashboard/AscensoScoreCard';
+import { MorningRitualModal } from '../components/dashboard/MorningRitualModal';
+import { PomodoroTimer } from '../components/dashboard/PomodoroTimer';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { usePendingProCheckout } from '../hooks/usePendingProCheckout';
@@ -51,6 +55,7 @@ export function Dashboard() {
   const [contextLevel, setContextLevel] = useState<AIContextLevel>('empty');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [ritualOpen, setRitualOpen] = useState(false);
   const prevBadgesRef = useRef<Set<string>>(new Set());
   const dailyBonusShownRef = useRef(false);
 
@@ -186,6 +191,28 @@ export function Dashboard() {
       </div>
 
       <UpgradeBanner planUsage={stats?.planUsage} />
+      {user?.proTrialEndsAt && new Date(user.proTrialEndsAt) > new Date() ? (
+        <div className="mb-4 rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-3 text-sm text-violet-200">
+          Pro de prueba activo hasta{' '}
+          {new Date(user.proTrialEndsAt).toLocaleDateString('es', { day: 'numeric', month: 'long' })}
+        </div>
+      ) : null}
+      {stats?.ascendScore != null ? (
+        <div className="mb-4">
+          <AscensoScoreCard score={stats.ascendScore} label={stats.ascendLabel ?? ''} tips={stats.ascendTips} />
+        </div>
+      ) : null}
+      {!stats?.morningRitualDone ? (
+        <button
+          type="button"
+          onClick={() => setRitualOpen(true)}
+          className="mb-4 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-200 text-sm font-medium hover:bg-amber-500/15">
+          <Sunrise size={18} />
+          Empezar ritual matutino (2 min)
+        </button>
+      ) : null}
+      <MorningRitualModal open={ritualOpen} onClose={() => setRitualOpen(false)} />
+      <PomodoroTimer />
       {user?.plan !== 'PRO' ? <ProTeaserStrip /> : null}
       <AIMentorCard
         contextLevel={contextLevel}

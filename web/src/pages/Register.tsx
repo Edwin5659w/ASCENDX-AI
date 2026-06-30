@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { AuthTextField } from '../components/auth/AuthTextField';
 import { AuthLayout } from '../components/brand/AuthLayout';
+import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
 import { PasswordStrength } from '../components/auth/PasswordStrength';
 import { RETENTION_MESSAGES } from '@shared/retention';
 import { setPendingProCheckout } from '../lib/pending-pro-checkout';
@@ -174,6 +175,16 @@ export function Register() {
             className="w-full brand-btn-primary disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg">
             {loading ? 'Creando cuenta...' : 'Crear cuenta'}
           </button>
+
+          <GoogleSignInButton
+            label="signup"
+            referralCode={referralCode || undefined}
+            onSuccess={(u) => {
+              if (wantsPro) setPendingProCheckout();
+              navigate(u.onboardingDone ? '/dashboard' : '/onboarding');
+            }}
+            onError={(msg) => setSubmitError(msg)}
+          />
 
           <p className="text-center text-zinc-500 text-sm">
             ¿Ya tienes cuenta?{' '}

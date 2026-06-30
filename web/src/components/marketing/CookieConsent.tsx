@@ -8,7 +8,7 @@ export function CookieConsent() {
 
   useEffect(() => {
     try {
-      setVisible(localStorage.getItem(STORAGE_KEY) !== '1');
+      setVisible(localStorage.getItem(STORAGE_KEY) !== '1' && localStorage.getItem(STORAGE_KEY) !== 'essential');
     } catch {
       setVisible(true);
     }
@@ -17,6 +17,15 @@ export function CookieConsent() {
   const accept = () => {
     try {
       localStorage.setItem(STORAGE_KEY, '1');
+    } catch {
+      /* ignore */
+    }
+    setVisible(false);
+  };
+
+  const reject = () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, 'essential');
     } catch {
       /* ignore */
     }
@@ -39,9 +48,15 @@ export function CookieConsent() {
         <div className="flex gap-2 shrink-0">
           <button
             type="button"
+            onClick={reject}
+            className="px-4 py-2 rounded-lg border border-white/15 text-zinc-400 text-sm hover:text-white">
+            Solo esenciales
+          </button>
+          <button
+            type="button"
             onClick={accept}
             className="brand-btn-primary px-4 py-2 rounded-lg text-white text-sm font-semibold">
-            Aceptar
+            Aceptar todo
           </button>
         </div>
       </div>
