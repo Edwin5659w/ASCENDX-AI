@@ -28,10 +28,12 @@ import { Card } from '../components/Card';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { EmptyState } from '../components/ui/EmptyState';
 import { FinanceSkeleton } from '../components/ui/FinanceSkeleton';
+import { LoadMoreButton } from '../components/ui/LoadMoreButton';
 import { TradingJournal } from '../components/TradingJournal';
 import { financeApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
 import { useMoneyFormat } from '../hooks/useMoneyFormat';
+import { usePaginatedList } from '../hooks/usePaginatedList';
 import { useToast } from '../context/ToastContext';
 import { MethodologyStrip } from '../components/MethodologyStrip';
 import type { FinanceRecord, FinanceSummary } from '../types';
@@ -58,13 +60,21 @@ export function Finance() {
   const { formatMoney, currency } = useMoneyFormat();
   const showTrading = user?.plan === 'PRO' && user?.tradingJournalEnabled === true;
   const [financeTab, setFinanceTab] = useState<FinanceTab>('cashflow');
-  const [records, setRecords] = useState<FinanceRecord[]>([]);
+  const fetchRecords = useCallback((page: number, limit: number) => financeApi.list(page, limit), []);
+  const {
+    items: records,
+    loading: recordsLoading,
+    loadingMore,
+    hasMore,
+    refresh,
+    loadMore,
+  } = usePaginatedList<FinanceRecord>(fetchRecords);
   const [summary, setSummary] = useState<FinanceSummary | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(true);
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [note, setNote] = useState('');
   const [type, setType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE');
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -73,22 +83,24 @@ export function Finance() {
 
   const categoryPresets = type === 'INCOME' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const loadSummary = useCallback(async () => {
     try {
-      const [list, sum] = await Promise.all([financeApi.list(), financeApi.summary()]);
-      setRecords(list);
-      setSummary(sum);
+      setSummary(await financeApi.summary());
     } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Error al cargar finanzas', 'error');
+      showToast(e instanceof Error ? e.message : 'Error al cargar resumen', 'error');
     } finally {
-      setLoading(false);
+      setSummaryLoading(false);
     }
   }, [showToast]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    void loadSummary();
+  }, [loadSummary]);
+
+  const reload = useCallback(async () => {
+    await refresh();
+    await loadSummary();
+  }, [refresh, loadSummary]);
 
   const resetForm = () => {
     setAmount('');
@@ -129,7 +141,7 @@ export function Finance() {
         showToast('Registro guardado', 'success');
       }
       resetForm();
-      await load();
+      await reload();
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'No se pudo guardar', 'error');
     } finally {
@@ -143,7 +155,7 @@ export function Finance() {
       await financeApi.remove(deleteId);
       showToast('Movimiento eliminado', 'success');
       setDeleteId(null);
-      await load();
+      await reload();
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'No se pudo eliminar', 'error');
     }
@@ -181,7 +193,7 @@ export function Finance() {
   const balancePositive = (summary?.balance ?? 0) >= 0;
   const hasChartData = (summary?.income ?? 0) > 0 || (summary?.expense ?? 0) > 0;
 
-  if (loading) return <FinanceSkeleton />;
+  if (recordsLoading || summaryLoading) return <FinanceSkeleton />;
 
   return (
     <div className="pb-8">
@@ -556,6 +568,7 @@ export function Finance() {
             })}
           </ul>
         )}
+        <LoadMoreButton hasMore={hasMore} loading={loadingMore} onLoadMore={loadMore} />
       </Card>
       </>
       ) : null}

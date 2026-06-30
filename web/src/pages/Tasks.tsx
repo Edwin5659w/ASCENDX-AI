@@ -3,9 +3,11 @@ import { CheckCircle, Circle, Pencil, Trash2, X } from 'lucide-react';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ListPageSkeleton } from '../components/ui/ListPageSkeleton';
+import { LoadMoreButton } from '../components/ui/LoadMoreButton';
 import { goalsApi, tasksApi } from '../api/services';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
+import { usePaginatedList } from '../hooks/usePaginatedList';
 import { applyGamificationFeedback } from '../lib/gamification-feedback';
 import { MethodologyStrip } from '../components/MethodologyStrip';
 import type { Goal, Task } from '../types';
@@ -13,12 +15,19 @@ import type { Goal, Task } from '../types';
 export function Tasks() {
   const { showToast } = useToast();
   const { refreshUser } = useAuth();
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const fetchTasks = useCallback((page: number, limit: number) => tasksApi.list(page, limit), []);
+  const {
+    items: tasks,
+    loading,
+    loadingMore,
+    hasMore,
+    refresh,
+    loadMore,
+  } = usePaginatedList<Task>(fetchTasks);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [title, setTitle] = useState('');
   const [goalId, setGoalId] = useState('');
   const [dueDate, setDueDate] = useState('');
-  const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editTask, setEditTask] = useState<Task | null>(null);
@@ -27,22 +36,18 @@ export function Tasks() {
   const [editDueDate, setEditDueDate] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [taskList, goalList] = await Promise.all([tasksApi.list(), goalsApi.list()]);
-      setTasks(taskList);
-      setGoals(goalList);
-    } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Error al cargar tareas', 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, [showToast]);
-
   useEffect(() => {
-    load();
-  }, [load]);
+    goalsApi
+      .list()
+      .then((g) => setGoals(Array.isArray(g) ? g : g.items))
+      .catch(() => {});
+  }, []);
+
+  const reload = useCallback(async () => {
+    await refresh();
+    const g = await goalsApi.list();
+    setGoals(Array.isArray(g) ? g : g.items);
+  }, [refresh]);
 
   const create = async () => {
     if (!title.trim()) return;
@@ -57,7 +62,7 @@ export function Tasks() {
       setGoalId('');
       setDueDate('');
       showToast('Tarea creada', 'success');
-      await load();
+      await reload();
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'No se pudo crear', 'error');
     } finally {
@@ -69,7 +74,7 @@ export function Tasks() {
     try {
       const updated = await tasksApi.update(task.id, { completed: !task.completed });
       applyGamificationFeedback(updated.gamification, showToast, refreshUser);
-      await load();
+      await reload();
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'No se pudo actualizar', 'error');
     }
@@ -93,7 +98,7 @@ export function Tasks() {
       });
       showToast('Tarea actualizada', 'success');
       setEditTask(null);
-      await load();
+      await reload();
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'No se pudo guardar', 'error');
     } finally {
@@ -107,7 +112,7 @@ export function Tasks() {
       await tasksApi.remove(deleteId);
       showToast('Tarea eliminada', 'success');
       setDeleteId(null);
-      await load();
+      await reload();
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'No se pudo eliminar', 'error');
     }
@@ -217,6 +222,7 @@ export function Tasks() {
           />
         )}
       </ul>
+      <LoadMoreButton hasMore={hasMore} loading={loadingMore} onLoadMore={loadMore} />
 
       {editTask && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">

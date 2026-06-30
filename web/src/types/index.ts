@@ -92,6 +92,8 @@ export interface BillingStatus {
   subscriptionPeriodEnd: string | null;
   billingConfigured: boolean;
   hasStripeCustomer: boolean;
+  iapConfigured?: boolean;
+  subscriptionProvider?: string | null;
 }
 
 export interface WeeklyRecapResult {

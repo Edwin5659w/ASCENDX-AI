@@ -7,9 +7,11 @@ import { Card } from '../components/Card';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ListPageSkeleton } from '../components/ui/ListPageSkeleton';
+import { LoadMoreButton } from '../components/ui/LoadMoreButton';
 import { Skeleton } from '../components/ui/Skeleton';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
+import { usePaginatedList } from '../hooks/usePaginatedList';
 import { applyGamificationFeedback } from '../lib/gamification-feedback';
 import type { Habit, PlanUsage } from '../types';
 
@@ -47,9 +49,9 @@ function streakLabel(milestone: number | null | undefined, streak: number) {
 export function Habits() {
   const { showToast } = useToast();
   const { refreshUser } = useAuth();
-  const [habits, setHabits] = useState<Habit[]>([]);
+  const fetchHabits = useCallback((page: number, limit: number) => habitsApi.list(page, limit), []);
+  const { items: habits, loading, loadingMore, hasMore, refresh, loadMore } = usePaginatedList<Habit>(fetchHabits);
   const [planUsage, setPlanUsage] = useState<PlanUsage | null>(null);
-  const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
   const [frequency, setFrequency] = useState<'DAILY' | 'WEEKLY'>('DAILY');
   const [creating, setCreating] = useState(false);
@@ -60,22 +62,18 @@ export function Habits() {
   const [reminderHour, setReminderHour] = useState('8');
   const [reminderMinute, setReminderMinute] = useState('0');
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [list, usage] = await Promise.all([habitsApi.list(), userApi.plan()]);
-      setHabits(list);
-      setPlanUsage(usage);
-    } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Error al cargar hábitos', 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, [showToast]);
-
   useEffect(() => {
-    load();
-  }, [load]);
+    userApi.plan().then(setPlanUsage).catch(() => {});
+  }, []);
+
+  const reload = useCallback(async () => {
+    await refresh();
+    try {
+      setPlanUsage(await userApi.plan());
+    } catch {
+      /* ignore */
+    }
+  }, [refresh]);
 
   const create = async () => {
     if (name.trim().length < 1) {
@@ -87,7 +85,7 @@ export function Habits() {
       await habitsApi.create({ name: name.trim(), frequency });
       setName('');
       showToast('Hábito creado', 'success');
-      await load();
+      await reload();
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'No se pudo crear', 'error');
     } finally {
@@ -103,7 +101,7 @@ export function Habits() {
     try {
       const updated = await habitsApi.complete(habit.id);
       applyGamificationFeedback(updated.gamification, showToast, refreshUser);
-      await load();
+      await reload();
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'No se pudo completar', 'error');
     }
@@ -115,7 +113,7 @@ export function Habits() {
       await habitsApi.update(renameFor.id, { name: renameText.trim() });
       showToast('Hábito actualizado', 'success');
       setRenameFor(null);
-      await load();
+      await reload();
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'No se pudo renombrar', 'error');
     }
@@ -143,7 +141,7 @@ export function Habits() {
       });
       showToast(enabled ? 'Recordatorio guardado (solo móvil local)' : 'Recordatorio desactivado', 'success');
       setReminderFor(null);
-      await load();
+      await reload();
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'No se pudo guardar', 'error');
     }
@@ -155,7 +153,7 @@ export function Habits() {
       await habitsApi.remove(deleteId);
       showToast('Hábito eliminado', 'success');
       setDeleteId(null);
-      await load();
+      await reload();
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'No se pudo eliminar', 'error');
     }
@@ -276,6 +274,8 @@ export function Habits() {
           />
         )}
       </div>
+
+      <LoadMoreButton hasMore={hasMore} loading={loadingMore} onLoadMore={loadMore} />
 
       {reminderFor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">

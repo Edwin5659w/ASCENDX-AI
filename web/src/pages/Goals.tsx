@@ -4,21 +4,23 @@ import { Card } from '../components/Card';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ListPageSkeleton } from '../components/ui/ListPageSkeleton';
+import { LoadMoreButton } from '../components/ui/LoadMoreButton';
 import { goalsApi, userApi } from '../api/services';
 import { PlanUsageBar } from '../components/PlanUsageBar';
 import { MethodologyStrip } from '../components/MethodologyStrip';
 import { useToast } from '../context/ToastContext';
+import { usePaginatedList } from '../hooks/usePaginatedList';
 import type { Goal, PlanUsage } from '../types';
 
 const priorityColor = { LOW: 'text-zinc-400', MEDIUM: 'text-cyan-400', HIGH: 'text-red-400' };
 
 export function Goals() {
   const { showToast } = useToast();
-  const [goals, setGoals] = useState<Goal[]>([]);
+  const fetchGoals = useCallback((page: number, limit: number) => goalsApi.list(page, limit), []);
+  const { items: goals, loading, loadingMore, hasMore, refresh, loadMore } = usePaginatedList<Goal>(fetchGoals);
   const [planUsage, setPlanUsage] = useState<PlanUsage | null>(null);
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('MEDIUM');
-  const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editGoal, setEditGoal] = useState<Goal | null>(null);
@@ -27,22 +29,18 @@ export function Goals() {
   const [editDeadline, setEditDeadline] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [list, usage] = await Promise.all([goalsApi.list(), userApi.plan()]);
-      setGoals(list);
-      setPlanUsage(usage);
-    } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Error al cargar objetivos', 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, [showToast]);
-
   useEffect(() => {
-    load();
-  }, [load]);
+    userApi.plan().then(setPlanUsage).catch(() => {});
+  }, []);
+
+  const reload = useCallback(async () => {
+    await refresh();
+    try {
+      setPlanUsage(await userApi.plan());
+    } catch {
+      /* ignore */
+    }
+  }, [refresh]);
 
   const create = async () => {
     if (title.trim().length < 3) {
@@ -54,7 +52,7 @@ export function Goals() {
       await goalsApi.create({ title: title.trim(), priority });
       setTitle('');
       showToast('Objetivo creado', 'success');
-      await load();
+      await reload();
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'No se pudo crear', 'error');
     } finally {
@@ -80,7 +78,7 @@ export function Goals() {
       });
       showToast('Objetivo actualizado', 'success');
       setEditGoal(null);
-      await load();
+      await reload();
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'No se pudo guardar', 'error');
     } finally {
@@ -94,7 +92,7 @@ export function Goals() {
       await goalsApi.remove(deleteId);
       showToast('Objetivo eliminado', 'success');
       setDeleteId(null);
-      await load();
+      await reload();
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'No se pudo eliminar', 'error');
     }
@@ -186,6 +184,7 @@ export function Goals() {
           />
         )}
       </div>
+      <LoadMoreButton hasMore={hasMore} loading={loadingMore} onLoadMore={loadMore} />
 
       {editGoal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
