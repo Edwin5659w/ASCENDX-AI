@@ -3,6 +3,7 @@ import { requireAuth } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { sendSuccess, sendMessage } from '../utils/response';
 import { habitService } from '../services/habit.service';
+import { parseListQuery } from '../utils/pagination';
 import {
   createHabitSchema,
   updateHabitSchema,
@@ -15,7 +16,8 @@ router.use(requireAuth);
 
 router.get('/', async (req, res, next) => {
   try {
-    const habits = await habitService.list(req.user!.userId);
+    const pagination = parseListQuery(req.query as Record<string, unknown>);
+    const habits = await habitService.list(req.user!.userId, pagination ?? undefined);
     sendSuccess(res, habits);
   } catch (e) {
     next(e);

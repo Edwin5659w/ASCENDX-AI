@@ -3,6 +3,7 @@ import { requireAuth } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { sendSuccess, sendMessage } from '../utils/response';
 import { taskService } from '../services/task.service';
+import { parseListQuery } from '../utils/pagination';
 import {
   createTaskSchema,
   updateTaskSchema,
@@ -16,7 +17,8 @@ router.use(requireAuth);
 router.get('/', async (req, res, next) => {
   try {
     const goalId = typeof req.query.goalId === 'string' ? req.query.goalId : undefined;
-    const tasks = await taskService.list(req.user!.userId, goalId);
+    const pagination = parseListQuery(req.query as Record<string, unknown>);
+    const tasks = await taskService.list(req.user!.userId, goalId, pagination ?? undefined);
     sendSuccess(res, tasks);
   } catch (e) {
     next(e);

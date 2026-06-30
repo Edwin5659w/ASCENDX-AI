@@ -3,6 +3,7 @@ import { requireAuth } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { sendSuccess, sendMessage } from '../utils/response';
 import { goalService } from '../services/goal.service';
+import { parseListQuery } from '../utils/pagination';
 import {
   createGoalSchema,
   updateGoalSchema,
@@ -15,7 +16,8 @@ router.use(requireAuth);
 
 router.get('/', async (req, res, next) => {
   try {
-    const goals = await goalService.list(req.user!.userId);
+    const pagination = parseListQuery(req.query as Record<string, unknown>);
+    const goals = await goalService.list(req.user!.userId, pagination ?? undefined);
     sendSuccess(res, goals);
   } catch (e) {
     next(e);

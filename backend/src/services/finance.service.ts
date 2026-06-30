@@ -5,6 +5,7 @@ import { roundMoney, toMoneyNumber } from '../utils/money';
 import type { z } from 'zod';
 import type { createFinanceSchema, updateFinanceSchema } from '@ascendx/shared/validators/finance.validator';
 import type { FinanceSummaryFull } from '@ascendx/shared/finance-helpers';
+import { buildPaginatedResult } from '@ascendx/shared/pagination';
 
 type CreateFinanceInput = z.infer<typeof createFinanceSchema>;
 type UpdateFinanceInput = z.infer<typeof updateFinanceSchema>;
@@ -57,12 +58,20 @@ function buildMonthly(records: FinanceRecord[]): FinanceSummaryFull['monthly'] {
 }
 
 export const financeService = {
-  async list(userId: string) {
-    const rows = await prisma.financeRecord.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-    });
-    return rows.map(mapRecord);
+  async list(userId: string, pagination?: { page: number; limit: number }) {
+    const where = { userId };
+    const orderBy = { createdAt: 'desc' as const };
+    if (!pagination) {
+      const rows = await prisma.financeRecord.findMany({ where, orderBy });
+      return rows.map(mapRecord);
+    }
+    const { page, limit } = pagination;
+    const skip = (page - 1) * limit;
+    const [rows, total] = await Promise.all([
+      prisma.financeRecord.findMany({ where, orderBy, skip, take: limit }),
+      prisma.financeRecord.count({ where }),
+    ]);
+    return buildPaginatedResult(rows.map(mapRecord), total, page, limit);
   },
 
   async getById(userId: string, id: string) {

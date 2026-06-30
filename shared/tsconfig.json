@@ -34,7 +34,8 @@
     "checkout-intent.ts",
     "plan-marketing.ts",
     "currencies.ts",
-    "i18n/**/*"
+    "i18n/**/*",
+    "pagination.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }

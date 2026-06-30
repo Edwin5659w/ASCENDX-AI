@@ -13,6 +13,7 @@ import { pushService } from './push.service';
 import { planService } from './plan.service';
 import { getPlanLimits } from '@ascendx/shared/plans';
 import { XP, RETENTION_MESSAGES } from '@ascendx/shared/retention';
+import { buildPaginatedResult } from '@ascendx/shared/pagination';
 import type { z } from 'zod';
 import type { createHabitSchema, updateHabitSchema } from '@ascendx/shared/validators/habit.validator';
 
@@ -76,12 +77,21 @@ async function enrichHabits<T extends { id: string; frequency: string; streak: n
 }
 
 export const habitService = {
-  async list(userId: string) {
-    const habits = await prisma.habit.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-    });
-    return enrichHabits(userId, habits);
+  async list(userId: string, pagination?: { page: number; limit: number }) {
+    const where = { userId };
+    const orderBy = { createdAt: 'desc' as const };
+    if (!pagination) {
+      const habits = await prisma.habit.findMany({ where, orderBy });
+      return enrichHabits(userId, habits);
+    }
+    const { page, limit } = pagination;
+    const skip = (page - 1) * limit;
+    const [habits, total] = await Promise.all([
+      prisma.habit.findMany({ where, orderBy, skip, take: limit }),
+      prisma.habit.count({ where }),
+    ]);
+    const items = await enrichHabits(userId, habits);
+    return buildPaginatedResult(items, total, page, limit);
   },
 
   async getById(userId: string, id: string) {

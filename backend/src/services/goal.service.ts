@@ -2,6 +2,7 @@ import { prisma } from '../lib/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { planService } from './plan.service';
 import { getPlanLimits } from '@ascendx/shared/plans';
+import { buildPaginatedResult } from '@ascendx/shared/pagination';
 import type { z } from 'zod';
 import type { createGoalSchema, updateGoalSchema } from '@ascendx/shared/validators/goal.validator';
 
@@ -9,12 +10,20 @@ type CreateGoalInput = z.infer<typeof createGoalSchema>;
 type UpdateGoalInput = z.infer<typeof updateGoalSchema>;
 
 export const goalService = {
-  async list(userId: string) {
-    return prisma.goal.findMany({
-      where: { userId },
-      include: { tasks: true },
-      orderBy: { createdAt: 'desc' },
-    });
+  async list(userId: string, pagination?: { page: number; limit: number }) {
+    const where = { userId };
+    const include = { tasks: true };
+    const orderBy = { createdAt: 'desc' as const };
+    if (!pagination) {
+      return prisma.goal.findMany({ where, include, orderBy });
+    }
+    const { page, limit } = pagination;
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.goal.findMany({ where, include, orderBy, skip, take: limit }),
+      prisma.goal.count({ where }),
+    ]);
+    return buildPaginatedResult(items, total, page, limit);
   },
 
   async getById(userId: string, id: string) {

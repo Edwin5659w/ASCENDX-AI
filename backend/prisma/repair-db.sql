@@ -67,6 +67,7 @@ END $$;
 
 -- Premium features (2025-06-21)
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "googleId" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "appleId" TEXT;
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "termsAcceptedAt" TIMESTAMP(3);
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "themePreference" TEXT NOT NULL DEFAULT 'dark';
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "accountabilityCode" TEXT;
@@ -75,6 +76,7 @@ ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "proTrialEndsAt" TIMESTAMP(3);
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "emailOptIn" BOOLEAN NOT NULL DEFAULT true;
 
 CREATE UNIQUE INDEX IF NOT EXISTS "User_googleId_key" ON "User"("googleId");
+CREATE UNIQUE INDEX IF NOT EXISTS "User_appleId_key" ON "User"("appleId");
 CREATE UNIQUE INDEX IF NOT EXISTS "User_accountabilityCode_key" ON "User"("accountabilityCode");
 
 ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "isRecurring" BOOLEAN NOT NULL DEFAULT false;

@@ -32,7 +32,8 @@
     "./checkout-intent": "./dist/checkout-intent.js",
     "./plan-marketing": "./dist/plan-marketing.js",
     "./currencies": "./dist/currencies.js",
-    "./i18n": "./dist/i18n/index.js"
+    "./i18n": "./dist/i18n/index.js",
+    "./pagination": "./dist/pagination.js"
   },
   "dependencies": {
     "zod": "^3.24.1"

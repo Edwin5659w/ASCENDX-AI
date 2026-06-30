@@ -3,6 +3,7 @@ import { requireAuth } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { sendSuccess, sendMessage } from '../utils/response';
 import { financeService } from '../services/finance.service';
+import { parseListQuery } from '../utils/pagination';
 import {
   createFinanceSchema,
   updateFinanceSchema,
@@ -15,7 +16,8 @@ router.use(requireAuth);
 
 router.get('/', async (req, res, next) => {
   try {
-    const records = await financeService.list(req.user!.userId);
+    const pagination = parseListQuery(req.query as Record<string, unknown>);
+    const records = await financeService.list(req.user!.userId, pagination ?? undefined);
     sendSuccess(res, records);
   } catch (e) {
     next(e);

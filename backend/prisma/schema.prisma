@@ -75,6 +75,7 @@ model User {
   subscriptionPeriodEnd DateTime?
   emailOptIn            Boolean   @default(true)
   googleId              String?   @unique
+  appleId               String?   @unique
   termsAcceptedAt       DateTime?
   themePreference       String    @default("dark")
   accountabilityCode    String?   @unique

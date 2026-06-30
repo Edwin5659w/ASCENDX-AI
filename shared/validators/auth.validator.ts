@@ -72,5 +72,11 @@ export const googleAuthSchema = z.object({
   referralCode: z.string().trim().toUpperCase().max(12).optional(),
 });
 
+export const appleAuthSchema = z.object({
+  identityToken: z.string().min(10, 'Token de Apple inválido'),
+  fullName: z.string().trim().min(2).max(50).optional(),
+  referralCode: z.string().trim().toUpperCase().max(12).optional(),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;

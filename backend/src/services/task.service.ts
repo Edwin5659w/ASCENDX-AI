@@ -2,6 +2,7 @@ import { prisma } from '../lib/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { userService } from './user.service';
 import { XP, RETENTION_MESSAGES } from '@ascendx/shared/retention';
+import { buildPaginatedResult } from '@ascendx/shared/pagination';
 import type { z } from 'zod';
 import type { createTaskSchema, updateTaskSchema } from '@ascendx/shared/validators/task.validator';
 
@@ -9,12 +10,20 @@ type CreateTaskInput = z.infer<typeof createTaskSchema>;
 type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
 
 export const taskService = {
-  async list(userId: string, goalId?: string) {
-    return prisma.task.findMany({
-      where: { userId, ...(goalId ? { goalId } : {}) },
-      include: { goal: { select: { id: true, title: true } } },
-      orderBy: { createdAt: 'desc' },
-    });
+  async list(userId: string, goalId?: string, pagination?: { page: number; limit: number }) {
+    const where = { userId, ...(goalId ? { goalId } : {}) };
+    const include = { goal: { select: { id: true, title: true } } };
+    const orderBy = { createdAt: 'desc' as const };
+    if (!pagination) {
+      return prisma.task.findMany({ where, include, orderBy });
+    }
+    const { page, limit } = pagination;
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.task.findMany({ where, include, orderBy, skip, take: limit }),
+      prisma.task.count({ where }),
+    ]);
+    return buildPaginatedResult(items, total, page, limit);
   },
 
   async getById(userId: string, id: string) {
