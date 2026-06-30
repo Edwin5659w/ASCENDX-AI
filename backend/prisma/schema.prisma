@@ -73,6 +73,7 @@ model User {
   stripeSubscriptionId  String?   @unique
   subscriptionStatus    SubscriptionStatus @default(NONE)
   subscriptionPeriodEnd DateTime?
+  subscriptionProvider  String?
   emailOptIn            Boolean   @default(true)
   googleId              String?   @unique
   appleId               String?   @unique

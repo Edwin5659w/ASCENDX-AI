@@ -30,7 +30,7 @@ import aiRoutes from './routes/ai.routes';
 
 import publicRoutes from './routes/public.routes';
 
-import billingRoutes, { handleStripeWebhook } from './routes/billing.routes';
+import billingRoutes, { handleStripeWebhook, handleRevenueCatWebhook } from './routes/billing.routes';
 
 
 
@@ -71,6 +71,32 @@ export function createApp() {
       try {
 
         const result = await handleStripeWebhook(req.body as Buffer, req.headers['stripe-signature'] as string | undefined);
+
+        res.json(result);
+
+      } catch (e) {
+
+        next(e);
+
+      }
+
+    },
+
+  );
+
+
+
+  app.post(
+
+    '/billing/revenuecat/webhook',
+
+    express.json({ limit: '64kb' }),
+
+    async (req, res, next) => {
+
+      try {
+
+        const result = await handleRevenueCatWebhook(req.body, req.headers.authorization as string | undefined);
 
         res.json(result);
 

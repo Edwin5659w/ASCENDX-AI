@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { sendSuccess } from '../utils/response';
 import { billingService, syncSubscriptionFromSession } from '../services/billing.service';
+import { revenueCatService } from '../services/revenuecat.service';
 import { AppError } from '../middleware/errorHandler';
 
 const router = Router();
@@ -44,8 +45,21 @@ router.post('/sync-session', requireAuth, async (req, res, next) => {
   }
 });
 
+router.post('/revenuecat/sync', requireAuth, async (req, res, next) => {
+  try {
+    const user = await revenueCatService.syncUserEntitlements(req.user!.userId);
+    sendSuccess(res, { user });
+  } catch (e) {
+    next(e);
+  }
+});
+
 export default router;
 
 export async function handleStripeWebhook(rawBody: Buffer, signature: string | undefined) {
   return billingService.handleWebhook(rawBody, signature);
+}
+
+export async function handleRevenueCatWebhook(body: unknown, authHeader: string | undefined) {
+  return revenueCatService.handleWebhook(body, authHeader);
 }

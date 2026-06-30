@@ -43,6 +43,7 @@ export const billingService = {
         subscriptionStatus: true,
         subscriptionPeriodEnd: true,
         stripeCustomerId: true,
+        subscriptionProvider: true,
       },
     });
     if (!user) throw new AppError(404, 'Usuario no encontrado');
@@ -52,6 +53,8 @@ export const billingService = {
       subscriptionPeriodEnd: user.subscriptionPeriodEnd,
       billingConfigured: this.isConfigured(),
       hasStripeCustomer: Boolean(user.stripeCustomerId),
+      iapConfigured: Boolean(env.REVENUECAT_SECRET_API_KEY),
+      subscriptionProvider: user.subscriptionProvider,
     };
   },
 
@@ -120,7 +123,12 @@ export const billingService = {
     return { url: session.url };
   },
 
-  async activatePro(userId: string, subscriptionId: string, periodEnd: Date | null) {
+  async activatePro(
+    userId: string,
+    subscriptionId: string,
+    periodEnd: Date | null,
+    provider: 'STRIPE' | 'REVENUECAT' = 'STRIPE',
+  ) {
     const before = await prisma.user.findUnique({
       where: { id: userId },
       select: { plan: true, name: true, email: true, emailOptIn: true },
@@ -131,9 +139,12 @@ export const billingService = {
       where: { id: userId },
       data: {
         plan: 'PRO',
-        stripeSubscriptionId: subscriptionId,
+        subscriptionProvider: provider,
         subscriptionStatus: 'ACTIVE',
         subscriptionPeriodEnd: periodEnd,
+        ...(provider === 'STRIPE'
+          ? { stripeSubscriptionId: subscriptionId }
+          : { stripeSubscriptionId: null }),
         ...(wasPro ? {} : { streakShields: { increment: 2 } }),
       },
     });
@@ -141,6 +152,15 @@ export const billingService = {
     if (!wasPro && before?.emailOptIn) {
       void emailService.sendProWelcome(before.email, before.name);
     }
+  },
+
+  async deactivateProIfProvider(userId: string, provider: 'STRIPE' | 'REVENUECAT') {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { subscriptionProvider: true },
+    });
+    if (user?.subscriptionProvider && user.subscriptionProvider !== provider) return;
+    await this.deactivatePro(userId);
   },
 
   async deactivatePro(userId: string) {
@@ -155,6 +175,7 @@ export const billingService = {
         subscriptionStatus: 'CANCELED',
         stripeSubscriptionId: null,
         subscriptionPeriodEnd: null,
+        subscriptionProvider: null,
       },
     });
     if (user?.emailOptIn && user.plan === 'PRO') {
