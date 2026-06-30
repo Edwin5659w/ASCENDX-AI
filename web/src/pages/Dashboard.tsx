@@ -22,6 +22,7 @@ import { AIMentorCard } from '../components/dashboard/AIMentorCard';
 import { AscensoScoreCard } from '../components/dashboard/AscensoScoreCard';
 import { MorningRitualModal } from '../components/dashboard/MorningRitualModal';
 import { PomodoroTimer } from '../components/dashboard/PomodoroTimer';
+import { WelcomeModal, useWelcomeModal } from '../components/dashboard/WelcomeModal';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { usePendingProCheckout } from '../hooks/usePendingProCheckout';
@@ -56,6 +57,7 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [ritualOpen, setRitualOpen] = useState(false);
+  const { open: welcomeOpen, close: closeWelcome } = useWelcomeModal();
   const prevBadgesRef = useRef<Set<string>>(new Set());
   const dailyBonusShownRef = useRef(false);
 
@@ -167,6 +169,7 @@ export function Dashboard() {
           void refreshUser();
         }}
       />
+      {welcomeOpen ? <WelcomeModal userName={user?.name} onDismiss={closeWelcome} /> : null}
       <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white mb-1">{greeting} 👋</h1>

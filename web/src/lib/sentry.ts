@@ -1,5 +1,16 @@
+import * as Sentry from '@sentry/react';
+
 export function initSentry() {
   const dsn = import.meta.env.VITE_SENTRY_DSN;
   if (!dsn || import.meta.env.DEV) return;
-  console.info('[sentry] DSN configurado — instala @sentry/react para captura automática');
+
+  Sentry.init({
+    dsn,
+    environment: import.meta.env.MODE,
+    integrations: [Sentry.browserTracingIntegration()],
+    tracesSampleRate: 0.1,
+    sendDefaultPii: false,
+  });
 }
+
+export { Sentry };

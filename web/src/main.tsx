@@ -9,9 +9,11 @@ import { LocaleProvider } from './context/LocaleContext';
 import { BrandSplash } from './components/brand/BrandSplash';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { initSentry } from './lib/sentry';
+import { loadAnalyticsScripts } from './lib/analytics';
 import './index.css';
 
 initSentry();
+loadAnalyticsScripts();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

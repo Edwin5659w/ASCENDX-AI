@@ -26,6 +26,7 @@ import { userApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { BrandLogo } from '../components/brand/BrandLogo';
+import { markWelcomePending } from '../components/dashboard/WelcomeModal';
 
 type WizardStep = OnboardingStepId;
 
@@ -102,6 +103,7 @@ export function Onboarding() {
       });
       await refreshUser();
       showToast(`¡Configuración rápida lista! +50 XP`, 'success');
+      markWelcomePending();
       navigate('/dashboard', { replace: true });
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'Error al guardar', 'error');
@@ -140,6 +142,7 @@ export function Onboarding() {
       });
       await refreshUser();
       showToast('¡Tu espacio está listo! +50 XP de bienvenida', 'success');
+      markWelcomePending();
       navigate('/dashboard', { replace: true });
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'No se pudo guardar', 'error');

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { loadAnalyticsScripts } from '../../lib/analytics';
 
 const STORAGE_KEY = 'ascendx_cookie_consent';
 
@@ -20,6 +21,7 @@ export function CookieConsent() {
     } catch {
       /* ignore */
     }
+    loadAnalyticsScripts();
     setVisible(false);
   };
 
