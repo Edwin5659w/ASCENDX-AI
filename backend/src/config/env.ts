@@ -20,6 +20,15 @@ const envSchema = z.object({
   RESEND_FROM: z.string().min(1).optional(),
   /** Opcional: token de acceso Expo para límites/envío en producción */
   EXPO_ACCESS_TOKEN: z.string().optional(),
+  /** Stripe — opcional en dev; obligatorio en producción con pagos */
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  STRIPE_PRO_PRICE_ID: z.string().optional(),
+  /** Cron de emails de retención (09:00 UTC) */
+  RETENTION_CRON_ENABLED: z
+    .string()
+    .optional()
+    .transform((v) => v !== 'false' && v !== '0'),
 });
 
 const parsed = envSchema.safeParse(process.env);

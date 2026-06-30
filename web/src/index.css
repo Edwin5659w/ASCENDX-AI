@@ -118,3 +118,99 @@ body {
 .brand-logo-breathe {
   animation: brand-pulse-glow 4s ease-in-out infinite;
 }
+
+/* —— Product tour (estilo Duolingo) —— */
+@keyframes tour-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes tour-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes tour-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes tour-bullet-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes tour-sparkle-spin {
+  0%,
+  100% {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: rotate(15deg) scale(1.15);
+    opacity: 0.85;
+  }
+}
+
+@keyframes tour-cta-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 24px 4px rgba(124, 58, 237, 0.25);
+  }
+}
+
+.tour-overlay-enter {
+  animation: tour-fade-in 0.35s ease-out;
+}
+
+.tour-step-enter {
+  animation: tour-pop-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.tour-icon-bounce {
+  animation: tour-bounce 2.2s ease-in-out infinite;
+}
+
+.tour-bullet-enter {
+  animation: tour-bullet-in 0.4s ease-out backwards;
+}
+
+.tour-sparkle {
+  animation: tour-sparkle-spin 1.5s ease-in-out infinite;
+}
+
+.tour-cta-pulse {
+  animation: tour-cta-glow 2.5s ease-in-out infinite;
+}
+
+.tour-progress-glow {
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.35);
+}
+
+.tour-bubble {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}

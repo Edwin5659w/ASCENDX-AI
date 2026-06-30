@@ -4,39 +4,39 @@ import { AppError } from '../middleware/errorHandler';
 import { badgeService } from './badge.service';
 import { pushService } from './push.service';
 import type { OnboardingSetupInput } from '@ascendx/shared/validators/onboarding.validator';
-import { startOfDayUTC } from '../utils/date';
+import { startOfDayUTC, daysAgoUTC } from '../utils/date';
+import { USER_PROFILE_SELECT } from '../constants/user-select';
 import { roundMoney, toMoneyNumber } from '../utils/money';
+import { buildWeeklyRecap } from '@ascendx/shared/weekly-recap';
+import { getPlanLimits } from '@ascendx/shared/plans';
+import { XP, RETENTION_MESSAGES } from '@ascendx/shared/retention';
+import { buildFirstSteps, isFirstStepsComplete } from '@ascendx/shared/first-steps';
+import { planService } from './plan.service';
 
 export const userService = {
   async getMe(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        xp: true,
-        level: true,
-        onboardingDone: true,
-        pushToken: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: USER_PROFILE_SELECT,
     });
 
     if (!user) throw new AppError(404, 'Usuario no encontrado');
-    return user;
+
+    const dailyBonus = await userService.claimDailyLoginBonus(userId);
+
+    return dailyBonus ? { ...user, dailyBonus } : user;
   },
 
   async getStats(userId: string) {
     const today = startOfDayUTC();
-    const [user, goals, tasks, habits, finance, habitsCompletedToday] = await Promise.all([
+    const [user, goals, tasks, habits, finance, habitsCompletedToday, referralCount] = await Promise.all([
       prisma.user.findUnique({ where: { id: userId }, select: { xp: true, level: true } }),
       prisma.goal.count({ where: { userId } }),
       prisma.task.findMany({ where: { userId }, select: { completed: true, streakCount: true } }),
       prisma.habit.findMany({ where: { userId }, select: { streak: true } }),
       prisma.financeRecord.findMany({ where: { userId }, select: { type: true, amount: true } }),
       prisma.habitCompletion.count({ where: { userId, completedDate: today } }),
+      prisma.user.count({ where: { referredById: userId } }),
     ]);
 
     if (!user) throw new AppError(404, 'Usuario no encontrado');
@@ -70,9 +70,40 @@ export const userService = {
       totalXp: statsCore.totalXp,
       level: statsCore.level,
       longestStreak: statsCore.longestStreak,
+      financeRecordsCount: statsCore.financeRecordsCount,
+      referralCount,
     });
 
-    return { ...statsCore, badges };
+    const planUsage = await planService.getUsageSummary(userId);
+
+    let firstStepsBonus: { xpGained: number; message: string } | null = null;
+    const userFlags = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { firstStepsRewardClaimed: true },
+    });
+    if (userFlags && !userFlags.firstStepsRewardClaimed) {
+      const steps = buildFirstSteps({
+        totalGoals: statsCore.totalGoals,
+        totalTasks: statsCore.totalTasks,
+        completedTasks: statsCore.completedTasks,
+        activeHabits: statsCore.activeHabits,
+        habitsCompletedToday: statsCore.habitsCompletedToday,
+        financeRecordsCount: statsCore.financeRecordsCount,
+      });
+      if (isFirstStepsComplete(steps)) {
+        await userService.addXp(userId, XP.FIRST_STEPS_COMPLETE);
+        await prisma.user.update({
+          where: { id: userId },
+          data: { firstStepsRewardClaimed: true },
+        });
+        firstStepsBonus = {
+          xpGained: XP.FIRST_STEPS_COMPLETE,
+          message: RETENTION_MESSAGES.firstStepsComplete(XP.FIRST_STEPS_COMPLETE),
+        };
+      }
+    }
+
+    return { ...statsCore, badges, planUsage, firstStepsBonus };
   },
 
   async sendTestPushNotification(userId: string) {
@@ -180,7 +211,7 @@ export const userService = {
 
       const user = await tx.user.update({
         where: { id: userId },
-        data: { onboardingDone: true },
+        data: { onboardingDone: true, xp: { increment: XP.ONBOARDING_COMPLETE } },
         select: {
           id: true,
           name: true,
@@ -194,30 +225,80 @@ export const userService = {
         },
       });
 
-      return { user, goal, tasks, habit };
+      const leveled = Math.floor(user.xp / 100) + 1;
+      const finalUser =
+        leveled > user.level
+          ? await tx.user.update({
+              where: { id: userId },
+              data: { level: leveled },
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                xp: true,
+                level: true,
+                onboardingDone: true,
+                pushToken: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+            })
+          : user;
+
+      return {
+        user: finalUser,
+        goal,
+        tasks,
+        habit,
+        gamification: {
+          xpGained: XP.ONBOARDING_COMPLETE,
+          leveledUp: leveled > user.level,
+          level: leveled > user.level ? leveled : user.level,
+          xp: finalUser.xp,
+          message: RETENTION_MESSAGES.onboardingDone(XP.ONBOARDING_COMPLETE),
+        },
+      };
     });
   },
 
-  async updateProfile(userId: string, data: { name?: string; onboardingDone?: boolean; pushToken?: string | null }) {
-    const payload: { name?: string; onboardingDone?: boolean; pushToken?: string | null } = { ...data };
+  async updateProfile(
+    userId: string,
+    data: {
+      name?: string;
+      onboardingDone?: boolean;
+      productTourDone?: boolean;
+      pushToken?: string | null;
+      preferredCurrency?: string;
+      tradingJournalEnabled?: boolean;
+      dailyFocus?: string;
+      emailOptIn?: boolean;
+    },
+  ) {
+    const payload: {
+      name?: string;
+      onboardingDone?: boolean;
+      productTourDone?: boolean;
+      pushToken?: string | null;
+      preferredCurrency?: string;
+      tradingJournalEnabled?: boolean;
+      dailyFocus?: string;
+      dailyFocusDate?: Date;
+      emailOptIn?: boolean;
+    } = { ...data };
     if (payload.pushToken !== undefined) {
       payload.pushToken = payload.pushToken && payload.pushToken.length > 0 ? payload.pushToken : null;
+    }
+    if (payload.dailyFocus !== undefined) {
+      payload.dailyFocusDate = startOfDayUTC();
+    }
+    if (data.tradingJournalEnabled === true) {
+      await planService.assertCanEnableTrading(userId);
     }
 
     return prisma.user.update({
       where: { id: userId },
       data: payload,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        xp: true,
-        level: true,
-        onboardingDone: true,
-        pushToken: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: USER_PROFILE_SELECT,
     });
   },
 
@@ -234,5 +315,165 @@ export const userService = {
     await prisma.user.update({ where: { id: userId }, data: { password } });
     await prisma.refreshToken.deleteMany({ where: { userId } });
     return { message: 'Contraseña actualizada' };
+  },
+
+  async claimDailyLoginBonus(userId: string) {
+    const today = startOfDayUTC();
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { lastDailyBonusDate: true, level: true },
+    });
+    if (!user) throw new AppError(404, 'Usuario no encontrado');
+
+    const last = user.lastDailyBonusDate
+      ? startOfDayUTC(user.lastDailyBonusDate)
+      : null;
+    if (last && last.getTime() === today.getTime()) {
+      return null;
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { lastDailyBonusDate: today },
+    });
+    const result = await userService.addXp(userId, XP.DAILY_LOGIN);
+    return {
+      xpGained: XP.DAILY_LOGIN,
+      leveledUp: result.leveledUp,
+      level: result.level,
+      xp: result.xp,
+      dailyBonus: true,
+      message: RETENTION_MESSAGES.dailyBonus(XP.DAILY_LOGIN),
+    };
+  },
+
+  async getWeeklyRecap(userId: string) {
+    const plan = await planService.getUserPlan(userId);
+    const limits = getPlanLimits(plan);
+    if (!limits.weeklyRecap) {
+      throw new AppError(403, 'El resumen semanal es una función Pro. Mejora tu plan en Perfil.');
+    }
+
+    const weekStart = daysAgoUTC(7);
+    const [tasksCompleted, tasksCreated, habitsCompleted, activeHabits, goals, finance, user] =
+      await Promise.all([
+        prisma.task.count({
+          where: { userId, completed: true, updatedAt: { gte: weekStart } },
+        }),
+        prisma.task.count({ where: { userId, createdAt: { gte: weekStart } } }),
+        prisma.habitCompletion.count({
+          where: { userId, completedDate: { gte: weekStart } },
+        }),
+        prisma.habit.count({ where: { userId } }),
+        prisma.goal.findMany({ where: { userId }, select: { progress: true } }),
+        prisma.financeRecord.findMany({ where: { userId }, select: { type: true, amount: true } }),
+        prisma.user.findUnique({ where: { id: userId }, select: { xp: true, level: true } }),
+      ]);
+
+    const habits = await prisma.habit.findMany({ where: { userId }, select: { streak: true } });
+    const longestStreak = Math.max(0, ...habits.map((h) => h.streak));
+    const goalsProgress = goals.reduce((sum, g) => sum + g.progress, 0);
+
+    const financeBalance = finance.reduce((acc, r) => {
+      const amt = toMoneyNumber(r.amount);
+      return r.type === 'INCOME' ? acc + amt : acc - amt;
+    }, 0);
+
+    return buildWeeklyRecap({
+      tasksCompleted,
+      tasksCreated,
+      habitsCompleted,
+      activeHabits,
+      xpGained: Math.min(user?.xp ?? 0, 200),
+      longestStreak,
+      goalsProgress,
+      financeBalance: roundMoney(financeBalance),
+    });
+  },
+
+  async getReferralInfo(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { referralCode: true },
+    });
+    if (!user) throw new AppError(404, 'Usuario no encontrado');
+
+    const referralCount = await prisma.user.count({ where: { referredById: userId } });
+    return {
+      referralCode: user.referralCode,
+      referralCount,
+      bonusXp: 50,
+      shareMessage: `Únete a ASCENDX AI con mi código ${user.referralCode} y ambos ganamos +50 XP. Tu Life OS con mentor IA.`,
+    };
+  },
+
+  async upgradeToPro(userId: string) {
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { plan: 'PRO', streakShields: { increment: 2 } },
+      select: USER_PROFILE_SELECT,
+    });
+    return user;
+  },
+
+  async deleteAccount(userId: string, password: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { password: true },
+    });
+    if (!user) throw new AppError(404, 'Usuario no encontrado');
+
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) throw new AppError(401, 'Contraseña incorrecta');
+
+    await prisma.user.delete({ where: { id: userId } });
+    return { ok: true as const };
+  },
+
+  async exportUserData(userId: string) {
+    const plan = await planService.getUserPlan(userId);
+    const limits = getPlanLimits(plan);
+    if (!limits.exportData) {
+      throw new AppError(403, 'La exportación de datos es exclusiva de Pro.');
+    }
+
+    const [profile, goals, tasks, habits, finance, trades, insights] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          xp: true,
+          level: true,
+          plan: true,
+          referralCode: true,
+          createdAt: true,
+        },
+      }),
+      prisma.goal.findMany({ where: { userId } }),
+      prisma.task.findMany({ where: { userId } }),
+      prisma.habit.findMany({ where: { userId }, include: { completions: true } }),
+      prisma.financeRecord.findMany({ where: { userId } }),
+      prisma.trade.findMany({ where: { userId } }),
+      prisma.aIInsight.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: 500,
+      }),
+    ]);
+
+    if (!profile) throw new AppError(404, 'Usuario no encontrado');
+
+    return {
+      exportedAt: new Date().toISOString(),
+      profile,
+      goals,
+      tasks,
+      habits,
+      finance,
+      trades,
+      aiInsights: insights,
+    };
   },
 };

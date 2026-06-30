@@ -3,13 +3,16 @@ import { CheckCircle, Circle, Pencil, Trash2, X } from 'lucide-react';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ListPageSkeleton } from '../components/ui/ListPageSkeleton';
-import { MethodologyHint } from '../components/MethodologyHint';
 import { goalsApi, tasksApi } from '../api/services';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
+import { applyGamificationFeedback } from '../lib/gamification-feedback';
+import { MethodologyStrip } from '../components/MethodologyStrip';
 import type { Goal, Task } from '../types';
 
 export function Tasks() {
   const { showToast } = useToast();
+  const { refreshUser } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [title, setTitle] = useState('');
@@ -64,7 +67,8 @@ export function Tasks() {
 
   const toggle = async (task: Task) => {
     try {
-      await tasksApi.update(task.id, { completed: !task.completed });
+      const updated = await tasksApi.update(task.id, { completed: !task.completed });
+      applyGamificationFeedback(updated.gamification, showToast, refreshUser);
       await load();
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'No se pudo actualizar', 'error');
@@ -114,10 +118,11 @@ export function Tasks() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-white mb-2">Tareas</h1>
-      <MethodologyHint module="tasks" />
+      <MethodologyStrip module="tasks" />
 
       <div className="flex flex-col gap-2 mb-6">
         <input
+          id="task-title-input"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && create()}
@@ -201,6 +206,14 @@ export function Tasks() {
             icon={CheckCircle}
             title="Sin tareas"
             description="Añade tareas, vincúlalas a un objetivo y pon fecha para que la IA detecte prioridades."
+            action={
+              <button
+                type="button"
+                onClick={() => document.getElementById('task-title-input')?.focus()}
+                className="px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium">
+                Crear mi primera tarea
+              </button>
+            }
           />
         )}
       </ul>

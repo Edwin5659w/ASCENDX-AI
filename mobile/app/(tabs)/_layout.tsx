@@ -35,8 +35,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="goals"
         options={{
+          href: null,
           title: 'Objetivos',
-          tabBarIcon: ({ color }) => <TabIcon name="bullseye" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -63,8 +63,15 @@ export default function TabLayout() {
       <Tabs.Screen
         name="finance"
         options={{
+          href: null,
           title: 'Finanzas',
-          tabBarIcon: ({ color }) => <TabIcon name="money" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="achievements"
+        options={{
+          href: null,
+          title: 'Logros',
         }}
       />
       <Tabs.Screen

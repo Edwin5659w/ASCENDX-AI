@@ -2,11 +2,16 @@ import { useEffect, useState } from 'react';
 import {
   Alert,
   Platform,
+  Pressable,
   ScrollView,
+  Share,
   StyleSheet,
+  Switch,
   Text,
   View,
 } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import { useRouter } from 'expo-router';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
@@ -17,7 +22,10 @@ import { Button } from '@/src/components/ui/Button';
 import { Input } from '@/src/components/ui/Input';
 import { theme } from '@/constants/theme';
 import { API_URL, checkApiHealth, formatApiError } from '@/src/api/client';
-import { userApi } from '@/src/api/services';
+import { userApi, billingApi } from '@/src/api/services';
+import { DEFAULT_CURRENCY, SUPPORTED_CURRENCIES } from '../../../shared/currencies';
+import type { ReferralInfo } from '@/src/types/api';
+import { useToast } from '@/src/context/ToastContext';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -30,10 +38,16 @@ Notifications.setNotificationHandler({
 });
 
 const APP_VERSION =
-  Constants.expoConfig?.version ?? Constants.manifest2?.extra?.expoClient?.version ?? '1.0.0';
+  Constants.expoConfig?.version ?? Constants.manifest2?.extra?.expoClient?.version ?? '1.1.0';
+
+const PRICING_URL = process.env.EXPO_PUBLIC_WEB_URL
+  ? `${process.env.EXPO_PUBLIC_WEB_URL}/pricing`
+  : 'https://ascendx.ai/pricing';
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { user, logout, refreshUser } = useAuth();
+  const { showToast } = useToast();
   const [pushBusy, setPushBusy] = useState(false);
   const [testPushBusy, setTestPushBusy] = useState(false);
   const [name, setName] = useState(user?.name ?? '');
@@ -43,10 +57,57 @@ export default function ProfileScreen() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
+  const [currency, setCurrency] = useState(user?.preferredCurrency ?? DEFAULT_CURRENCY);
+  const [savingCurrency, setSavingCurrency] = useState(false);
+  const [tradingEnabled, setTradingEnabled] = useState(user?.tradingJournalEnabled ?? false);
+  const [savingTrading, setSavingTrading] = useState(false);
+  const [referral, setReferral] = useState<ReferralInfo | null>(null);
+  const [upgrading, setUpgrading] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [emailOptIn, setEmailOptIn] = useState(user?.emailOptIn ?? true);
+  const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    userApi.referral().then(setReferral).catch(() => {});
+  }, []);
 
   useEffect(() => {
     setName(user?.name ?? '');
-  }, [user?.name]);
+    setCurrency(user?.preferredCurrency ?? DEFAULT_CURRENCY);
+    setTradingEnabled(user?.tradingJournalEnabled ?? false);
+    setEmailOptIn(user?.emailOptIn ?? true);
+  }, [user?.name, user?.preferredCurrency, user?.tradingJournalEnabled, user?.emailOptIn]);
+
+  const saveCurrency = async (code: string) => {
+    if (code === user?.preferredCurrency) return;
+    setCurrency(code);
+    setSavingCurrency(true);
+    try {
+      await userApi.updateProfile({ preferredCurrency: code });
+      await refreshUser();
+      Alert.alert('Listo', 'Moneda actualizada en toda la app');
+    } catch (e) {
+      setCurrency(user?.preferredCurrency ?? DEFAULT_CURRENCY);
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo guardar la moneda');
+    } finally {
+      setSavingCurrency(false);
+    }
+  };
+
+  const toggleTradingJournal = async (value: boolean) => {
+    setTradingEnabled(value);
+    setSavingTrading(true);
+    try {
+      await userApi.updateProfile({ tradingJournalEnabled: value });
+      await refreshUser();
+    } catch (e) {
+      setTradingEnabled(user?.tradingJournalEnabled ?? false);
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo actualizar');
+    } finally {
+      setSavingTrading(false);
+    }
+  };
 
   const saveName = async () => {
     const trimmed = name.trim();
@@ -169,6 +230,114 @@ export default function ProfileScreen() {
     }
   };
 
+  const toggleEmailOptIn = async (value: boolean) => {
+    setEmailOptIn(value);
+    try {
+      await userApi.updateProfile({ emailOptIn: value });
+      await refreshUser();
+      showToast(value ? 'Emails activados' : 'Emails desactivados', 'success');
+    } catch (e) {
+      setEmailOptIn(user?.emailOptIn ?? true);
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo guardar');
+    }
+  };
+
+  const upgradePro = async () => {
+    setUpgrading(true);
+    try {
+      const status = await billingApi.status();
+      if (status.plan === 'PRO') {
+        showToast('Ya tienes Pro activo', 'info');
+        return;
+      }
+      if (!status.billingConfigured) {
+        Alert.alert('Pagos', 'Los pagos aún no están disponibles. Visita la web para más info.');
+        await WebBrowser.openBrowserAsync(PRICING_URL);
+        return;
+      }
+      const { url } = await billingApi.checkout();
+      await WebBrowser.openBrowserAsync(url);
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo activar Pro');
+    } finally {
+      setUpgrading(false);
+    }
+  };
+
+  const manageSubscription = async () => {
+    setUpgrading(true);
+    try {
+      const { url } = await billingApi.portal();
+      await WebBrowser.openBrowserAsync(url);
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo abrir el portal');
+    } finally {
+      setUpgrading(false);
+    }
+  };
+
+  const exportData = async () => {
+    setExporting(true);
+    try {
+      const data = await userApi.exportData();
+      await Share.share({ message: JSON.stringify(data, null, 2), title: 'ASCENDX export' });
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo exportar');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const replayTour = async () => {
+    try {
+      await userApi.updateProfile({ productTourDone: false });
+      await refreshUser();
+      router.push('/(tabs)' as never);
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo reiniciar el tour');
+    }
+  };
+
+  const shareReferral = async () => {
+    if (!referral) return;
+    try {
+      await Share.share({ message: referral.shareMessage, title: 'ASCENDX AI' });
+    } catch {
+      /* cancelado */
+    }
+  };
+
+  const deleteAccount = () => {
+    if (!deletePassword) {
+      Alert.alert('Confirmación', 'Ingresa tu contraseña para eliminar la cuenta');
+      return;
+    }
+    Alert.alert(
+      'Eliminar cuenta',
+      'Se borrarán todos tus datos permanentemente. ¿Continuar?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: () => {
+            void (async () => {
+              setDeleting(true);
+              try {
+                await userApi.deleteAccount(deletePassword);
+                await logout();
+              } catch (e) {
+                Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo eliminar');
+              } finally {
+                setDeleting(false);
+              }
+            })();
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
       <View style={styles.avatar}>
@@ -177,10 +346,153 @@ export default function ProfileScreen() {
       <Text style={styles.name}>{user?.name}</Text>
       <Text style={styles.email}>{user?.email}</Text>
       <Text style={styles.version}>ASCENDX v{APP_VERSION}</Text>
+      {user?.plan === 'PRO' ? (
+        <View style={styles.proBadge}>
+          <FontAwesome name="star" size={12} color={theme.colors.primaryLight} />
+          <Text style={styles.proBadgeText}> Plan Pro</Text>
+        </View>
+      ) : (
+        <Text style={styles.freeBadge}>Plan Gratis</Text>
+      )}
+
+      {user?.subscriptionStatus === 'PAST_DUE' ? (
+        <Card style={styles.pastDueCard}>
+          <Text style={styles.pastDueTitle}>Pago pendiente</Text>
+          <Text style={styles.prefsHint}>
+            No pudimos cobrar tu suscripción Pro. Actualiza tu método de pago en Stripe.
+          </Text>
+          <Button title="Actualizar pago" variant="secondary" onPress={manageSubscription} loading={upgrading} />
+        </Card>
+      ) : null}
+
+      {user?.plan === 'PRO' ? (
+        <Card style={styles.proCard}>
+          <Text style={styles.sectionTitle}>Membresía Pro activa</Text>
+          {user.subscriptionPeriodEnd ? (
+            <Text style={styles.prefsHint}>
+              Renueva el {new Date(user.subscriptionPeriodEnd).toLocaleDateString('es')}
+            </Text>
+          ) : null}
+          <Button title="Gestionar suscripción" variant="secondary" onPress={manageSubscription} loading={upgrading} />
+        </Card>
+      ) : (
+        <Card style={styles.proCard}>
+          <Text style={styles.sectionTitle}>Pasa a Pro — $4.99/mes</Text>
+          <Text style={styles.prefsHint}>
+            100 mensajes IA/día, resumen semanal, diario de trading y más objetivos.
+          </Text>
+          <Button title="Suscribirme a Pro" onPress={upgradePro} loading={upgrading} />
+          <Pressable style={styles.pricingLink} onPress={() => void WebBrowser.openBrowserAsync(PRICING_URL)}>
+            <Text style={styles.pricingLinkText}>Ver planes en web →</Text>
+          </Pressable>
+        </Card>
+      )}
+
+      {referral && (
+        <Card style={styles.referralCard}>
+          <Text style={styles.sectionTitle}>Invita amigos</Text>
+          <Text style={styles.prefsHint}>
+            Comparte tu código. Ambos ganan +{referral.bonusXp} XP.
+          </Text>
+          <Text style={styles.refCode}>{referral.referralCode}</Text>
+          <Text style={styles.refCount}>{referral.referralCount} invitado(s)</Text>
+          <Button title="Compartir invitación" variant="secondary" onPress={shareReferral} />
+        </Card>
+      )}
+
+      {(user?.streakShields ?? 0) > 0 && (
+        <Card style={styles.shieldsCard}>
+          <View style={styles.shieldsRow}>
+            <FontAwesome name="shield" size={22} color={theme.colors.warning} />
+            <View>
+              <Text style={styles.shieldsTitle}>{user?.streakShields} escudo(s) de racha</Text>
+              <Text style={styles.prefsHint}>Protegen tu racha si faltas un día</Text>
+            </View>
+          </View>
+        </Card>
+      )}
+
+      <Pressable
+        style={styles.achievementsLink}
+        onPress={() => router.push('/(tabs)/achievements' as never)}>
+        <FontAwesome name="trophy" size={16} color={theme.colors.warning} />
+        <Text style={styles.achievementsLinkText}>Ver mis logros</Text>
+      </Pressable>
+
+      <Button title="Ver tour del producto de nuevo" variant="secondary" onPress={replayTour} />
+
+      {user?.plan === 'PRO' ? (
+        <Button title="Exportar mis datos (JSON)" variant="secondary" onPress={exportData} loading={exporting} />
+      ) : null}
 
       <Card style={styles.nameCard}>
         <Input label="Nombre completo" value={name} onChangeText={setName} autoCapitalize="words" />
         <Button title="Guardar nombre" onPress={saveName} loading={savingName} />
+      </Card>
+
+      <Card style={styles.prefsCard}>
+        <Text style={styles.sectionTitle}>Moneda principal</Text>
+        <Text style={styles.prefsHint}>
+          Todos los montos (finanzas, balance, ventas) se muestran en esta moneda. Por defecto: peso
+          colombiano.
+        </Text>
+        {savingCurrency ? (
+          <Text style={styles.prefsHint}>Guardando…</Text>
+        ) : null}
+        <View style={styles.currencyGrid}>
+          {SUPPORTED_CURRENCIES.map((c) => (
+            <Pressable
+              key={c.code}
+              style={[styles.currencyChip, currency === c.code && styles.currencyChipActive]}
+              onPress={() => void saveCurrency(c.code)}
+              disabled={savingCurrency}>
+              <Text
+                style={[
+                  styles.currencyChipText,
+                  currency === c.code && styles.currencyChipTextActive,
+                ]}>
+                {c.code}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </Card>
+
+      <Card style={styles.prefsCard}>
+        {user?.plan === 'PRO' ? (
+          <View style={styles.switchRow}>
+            <View style={styles.switchCopy}>
+              <Text style={styles.sectionTitle}>Diario de trading</Text>
+              <Text style={styles.prefsHint}>
+                Registro manual de operaciones (opcional). Visible en Finanzas si lo activas.
+              </Text>
+            </View>
+            <Switch
+              value={tradingEnabled}
+              onValueChange={(v) => void toggleTradingJournal(v)}
+              disabled={savingTrading}
+              trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+              thumbColor={theme.colors.text}
+            />
+          </View>
+        ) : (
+          <Text style={styles.prefsHint}>El diario de trading está incluido en Pro.</Text>
+        )}
+      </Card>
+
+      <Card style={styles.prefsCard}>
+        <View style={styles.switchRow}>
+          <View style={styles.switchCopy}>
+            <Text style={styles.sectionTitle}>Emails de tips</Text>
+            <Text style={styles.prefsHint}>Rachas, recordatorios y novedades</Text>
+          </View>
+          <Switch
+            value={emailOptIn}
+            onValueChange={(v) => void toggleEmailOptIn(v)}
+            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            thumbColor={theme.colors.text}
+          />
+        </View>
       </Card>
 
       <Card style={styles.passwordCard}>
@@ -255,7 +567,35 @@ export default function ProfileScreen() {
         </>
       ) : null}
 
+      <Card style={styles.dangerCard}>
+        <Text style={styles.dangerTitle}>Zona de peligro</Text>
+        <Text style={styles.prefsHint}>Eliminar cuenta borra todos tus datos (GDPR).</Text>
+        <Input
+          label="Contraseña para confirmar"
+          value={deletePassword}
+          onChangeText={setDeletePassword}
+          secureTextEntry
+        />
+        <Button
+          title={deleting ? 'Eliminando...' : 'Eliminar mi cuenta'}
+          variant="secondary"
+          onPress={deleteAccount}
+          loading={deleting}
+        />
+      </Card>
+
       <Button title="Cerrar sesión" variant="secondary" onPress={handleLogout} style={styles.logout} />
+      <View style={styles.legalRow}>
+        <Pressable onPress={() => void WebBrowser.openBrowserAsync(`${PRICING_URL.replace('/pricing', '/privacy')}`)}>
+          <Text style={styles.legalLink}>Privacidad</Text>
+        </Pressable>
+        <Pressable onPress={() => void WebBrowser.openBrowserAsync(`${PRICING_URL.replace('/pricing', '/terms')}`)}>
+          <Text style={styles.legalLink}>Términos</Text>
+        </Pressable>
+        <Pressable onPress={() => void WebBrowser.openBrowserAsync('mailto:hola@ascendx.ai')}>
+          <Text style={styles.legalLink}>Soporte</Text>
+        </Pressable>
+      </View>
     </ScrollView>
   );
 }
@@ -281,7 +621,78 @@ const styles = StyleSheet.create({
   name: { color: theme.colors.text, fontSize: 24, fontWeight: '700', marginTop: 16 },
   email: { color: theme.colors.textMuted, fontSize: 15, marginTop: 4 },
   version: { color: theme.colors.textMuted, fontSize: 12, marginTop: 8 },
+  proBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: theme.colors.primary + '33',
+  },
+  proBadgeText: { color: theme.colors.primaryLight, fontSize: 12, fontWeight: '600' },
+  freeBadge: { color: theme.colors.textMuted, fontSize: 12, marginTop: 8 },
+  proCard: { width: '100%', marginTop: 16, borderColor: 'rgba(139, 92, 246, 0.35)', borderWidth: 1 },
+  pastDueCard: {
+    width: '100%',
+    marginTop: 16,
+    borderColor: 'rgba(245, 158, 11, 0.4)',
+    borderWidth: 1,
+    backgroundColor: 'rgba(245, 158, 11, 0.08)',
+  },
+  pastDueTitle: { color: theme.colors.warning, fontWeight: '700', fontSize: 15, marginBottom: 6 },
+  pricingLink: { marginTop: 12, alignItems: 'center' },
+  pricingLinkText: { color: theme.colors.primaryLight, fontSize: 13 },
+  referralCard: { width: '100%', marginTop: 16 },
+  refCode: {
+    color: theme.colors.accent,
+    fontSize: 22,
+    fontWeight: '700',
+    letterSpacing: 2,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    marginVertical: 8,
+    textAlign: 'center',
+  },
+  refCount: { color: theme.colors.textMuted, fontSize: 12, marginBottom: 12, textAlign: 'center' },
+  shieldsCard: { width: '100%', marginTop: 16 },
+  shieldsRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  shieldsTitle: { color: theme.colors.text, fontWeight: '600', fontSize: 14 },
+  achievementsLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 12,
+    paddingVertical: 10,
+  },
+  achievementsLinkText: { color: theme.colors.primaryLight, fontWeight: '600', fontSize: 14 },
+  dangerCard: {
+    width: '100%',
+    marginTop: 16,
+    borderColor: 'rgba(248, 113, 113, 0.35)',
+    borderWidth: 1,
+  },
+  dangerTitle: { color: theme.colors.danger, fontWeight: '600', marginBottom: 8 },
   nameCard: { width: '100%', marginTop: 20 },
+  prefsCard: { width: '100%', marginTop: 16 },
+  prefsHint: { color: theme.colors.textMuted, fontSize: 13, lineHeight: 18, marginBottom: 12 },
+  currencyGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  currencyChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: theme.radius.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
+  },
+  currencyChipActive: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary + '22',
+  },
+  currencyChipText: { color: theme.colors.textMuted, fontWeight: '600', fontSize: 13 },
+  currencyChipTextActive: { color: theme.colors.primaryLight },
+  switchRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  switchCopy: { flex: 1 },
   passwordCard: { width: '100%', marginTop: 16, gap: 4 },
   sectionTitle: { color: theme.colors.text, fontWeight: '600', marginBottom: 8 },
   statsCard: { width: '100%', marginTop: 16 },
@@ -302,4 +713,6 @@ const styles = StyleSheet.create({
   apiLabel: { color: theme.colors.textMuted, fontSize: 11, marginTop: 24, textAlign: 'center' },
   apiTestBtn: { width: '100%', marginTop: 12 },
   logout: { width: '100%', marginTop: 16 },
+  legalRow: { flexDirection: 'row', gap: 20, marginTop: 12, marginBottom: 24 },
+  legalLink: { color: theme.colors.textMuted, fontSize: 12 },
 });

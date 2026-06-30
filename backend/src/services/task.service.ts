@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { userService } from './user.service';
+import { XP, RETENTION_MESSAGES } from '@ascendx/shared/retention';
 import type { z } from 'zod';
 import type { createTaskSchema, updateTaskSchema } from '@ascendx/shared/validators/task.validator';
 
@@ -43,8 +44,25 @@ export const taskService = {
 
     const task = await prisma.task.update({ where: { id }, data });
 
+    let gamification: {
+      xpGained: number;
+      leveledUp: boolean;
+      level: number;
+      xp: number;
+      message?: string;
+    } | null = null;
+
     if (data.completed !== undefined && data.completed !== existing.completed) {
-      if (data.completed) await userService.addXp(userId, 10);
+      if (data.completed) {
+        const xpResult = await userService.addXp(userId, XP.TASK_COMPLETE);
+        gamification = {
+          xpGained: XP.TASK_COMPLETE,
+          leveledUp: xpResult.leveledUp,
+          level: xpResult.level,
+          xp: xpResult.xp,
+          message: RETENTION_MESSAGES.taskComplete(XP.TASK_COMPLETE),
+        };
+      }
       if (existing.goalId) {
         const goalTasks = await prisma.task.findMany({ where: { goalId: existing.goalId } });
         const completed = goalTasks.filter((t) => (t.id === id ? data.completed : t.completed)).length;
@@ -53,7 +71,7 @@ export const taskService = {
       }
     }
 
-    return task;
+    return gamification ? { ...task, gamification } : task;
   },
 
   async remove(userId: string, id: string) {

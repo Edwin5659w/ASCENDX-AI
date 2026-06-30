@@ -1,4 +1,9 @@
+import { DEFAULT_CURRENCY, getCurrencyLocale, type CurrencyCode } from './currencies';
+
 export const EXPENSE_CATEGORIES = [
+  'Inventario / mercancía',
+  'Envíos y logística',
+  'Publicidad',
   'Comida',
   'Transporte',
   'Vivienda',
@@ -14,7 +19,11 @@ export const EXPENSE_CATEGORIES = [
 export const INCOME_CATEGORIES = [
   'Salario',
   'Freelance',
-  'Ventas',
+  'Ventas — productos',
+  'Ventas — servicios',
+  'Ventas online',
+  'Cobros a clientes',
+  'Comisiones',
   'Inversiones',
   'Regalo',
   'Reembolso',
@@ -59,21 +68,45 @@ export interface FinanceSummaryFull {
   topExpenseCategory: string | null;
 }
 
-export function formatMoney(amount: number, locale = 'es-CO'): string {
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(amount);
+export function formatMoney(
+  amount: number,
+  currency: string = DEFAULT_CURRENCY,
+  locale?: string,
+): string {
+  const loc = locale ?? getCurrencyLocale(currency);
+  const fractionDigits = currency === 'JPY' ? 0 : 2;
+  try {
+    return new Intl.NumberFormat(loc, {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: fractionDigits,
+    }).format(amount);
+  } catch {
+    return new Intl.NumberFormat(getCurrencyLocale(DEFAULT_CURRENCY), {
+      style: 'currency',
+      currency: DEFAULT_CURRENCY,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  }
 }
 
-export function formatMoneyCompact(amount: number): string {
-  if (Math.abs(amount) >= 1000) {
-    return `$${(amount / 1000).toFixed(1)}k`;
+/** Formato corto para gráficos (ej. $1.2M en COP/USD según moneda). */
+export function formatMoneyCompact(amount: number, currency: string = DEFAULT_CURRENCY): string {
+  const sample = formatMoney(0, currency);
+  const symbol = sample.replace(/[\d\s.,\-]/g, '').trim() || '$';
+  const abs = Math.abs(amount);
+  if (abs >= 1_000_000) {
+    return `${symbol}${(amount / 1_000_000).toFixed(1)}M`;
   }
-  return `$${amount.toFixed(amount % 1 === 0 ? 0 : 2)}`;
+  if (abs >= 1000) {
+    return `${symbol}${(amount / 1000).toFixed(1)}k`;
+  }
+  return formatMoney(amount, currency);
 }
+
+export type { CurrencyCode };
 
 export function isOnboardingFinanceRecord(category: string, amount: number): boolean {
   return category === 'Onboarding' && amount <= 0.01;

@@ -7,8 +7,12 @@ import {
   yesterdayUTC,
   startOfWeekUTC,
   previousWeekStartUTC,
+  daysAgoUTC,
 } from '../utils/date';
 import { pushService } from './push.service';
+import { planService } from './plan.service';
+import { getPlanLimits } from '@ascendx/shared/plans';
+import { XP, RETENTION_MESSAGES } from '@ascendx/shared/retention';
 import type { z } from 'zod';
 import type { createHabitSchema, updateHabitSchema } from '@ascendx/shared/validators/habit.validator';
 
@@ -88,6 +92,17 @@ export const habitService = {
   },
 
   async create(userId: string, data: CreateHabitInput) {
+    const plan = await planService.getUserPlan(userId);
+    const limits = getPlanLimits(plan);
+    const count = await prisma.habit.count({ where: { userId } });
+    if (count >= limits.maxHabits) {
+      throw new AppError(
+        402,
+        plan === 'FREE'
+          ? `Límite de ${limits.maxHabits} hábitos en plan Gratis. Pasa a Pro para más.`
+          : `Límite de ${limits.maxHabits} hábitos alcanzado.`,
+      );
+    }
     const habit = await prisma.habit.create({ data: { ...data, userId } });
     return { ...habit, completedToday: false };
   },
@@ -119,6 +134,7 @@ export const habitService = {
     }
 
     let newStreak = 1;
+    let streakShieldUsed = false;
     if (habit.lastCompletedAt) {
       if (habit.frequency === 'WEEKLY') {
         const lastWeek = startOfWeekUTC(habit.lastCompletedAt);
@@ -129,8 +145,24 @@ export const habitService = {
       } else {
         const lastDay = startOfDayUTC(habit.lastCompletedAt);
         const yday = yesterdayUTC();
+        const twoDaysAgo = daysAgoUTC(2);
         if (isSameDayUTC(lastDay, yday)) {
           newStreak = habit.streak + 1;
+        } else if (isSameDayUTC(lastDay, twoDaysAgo)) {
+          const owner = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { streakShields: true },
+          });
+          if (owner && owner.streakShields > 0) {
+            await prisma.user.update({
+              where: { id: userId },
+              data: { streakShields: { decrement: 1 } },
+            });
+            newStreak = habit.streak + 1;
+            streakShieldUsed = true;
+          } else {
+            newStreak = 1;
+          }
         } else if (!isSameDayUTC(lastDay, periodStart)) {
           newStreak = 1;
         }
@@ -147,7 +179,7 @@ export const habitService = {
       });
     });
 
-    await userService.addXp(userId, 15);
+    const xpResult = await userService.addXp(userId, XP.HABIT_COMPLETE);
 
     void pushService
       .sendToUser(userId, {
@@ -157,7 +189,26 @@ export const habitService = {
       })
       .catch((err) => console.warn('[ascendx] push hábito:', err));
 
-    return { ...updated, completedToday: true };
+    const xpState = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { xp: true, level: true },
+    });
+
+    return {
+      ...updated,
+      completedToday: true,
+      streakShieldUsed,
+      gamification: {
+        xpGained: XP.HABIT_COMPLETE,
+        leveledUp: xpResult.leveledUp,
+        level: xpResult.level,
+        xp: xpResult.xp,
+        streakShieldUsed,
+        message: streakShieldUsed
+          ? `${RETENTION_MESSAGES.habitComplete(XP.HABIT_COMPLETE, updated.streak)} · ${RETENTION_MESSAGES.streakShield}`
+          : RETENTION_MESSAGES.habitComplete(XP.HABIT_COMPLETE, updated.streak),
+      },
+    };
   },
 
   async remove(userId: string, id: string) {

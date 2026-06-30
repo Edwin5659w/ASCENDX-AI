@@ -1,4 +1,5 @@
 import { Lock, Medal, Sparkles } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Card } from './Card';
 import type { User, UserStats } from '../types';
 
@@ -24,9 +25,10 @@ function fallbackBadges(user: User, stats: UserStats | null) {
 interface GamificationPanelProps {
   user: User | null;
   stats: UserStats | null;
+  compact?: boolean;
 }
 
-export function GamificationPanel({ user, stats }: GamificationPanelProps) {
+export function GamificationPanel({ user, stats, compact = false }: GamificationPanelProps) {
   if (!user) return null;
 
   const { pct, toNext } = xpProgress(user.xp);
@@ -39,8 +41,8 @@ export function GamificationPanel({ user, stats }: GamificationPanelProps) {
 
   return (
     <Card className="mb-8 border-violet-500/20 bg-gradient-to-br from-violet-950/40 to-transparent">
-      <div className="flex items-start justify-between gap-4 mb-4">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
+        <div className="flex items-center gap-2 flex-1 min-w-[180px]">
           <Sparkles className="text-violet-400" size={22} />
           <div>
             <h2 className="text-lg font-semibold text-white">Tu progreso</h2>
@@ -52,18 +54,23 @@ export function GamificationPanel({ user, stats }: GamificationPanelProps) {
           <p className="text-zinc-500 text-xs">XP total</p>
         </div>
       </div>
+      <Link to="/achievements" className="text-xs text-violet-400 hover:underline mb-4 inline-block">
+        Ver todos los logros →
+      </Link>
 
       <div className="mb-2 flex justify-between text-xs text-zinc-400">
         <span>Progreso al nivel {level + 1}</span>
         <span>{toNext} XP para subir</span>
       </div>
-      <div className="h-3 rounded-full bg-zinc-800 overflow-hidden mb-6">
+      <div className={`h-3 rounded-full bg-zinc-800 overflow-hidden ${compact ? 'mb-0' : 'mb-6'}`}>
         <div
           className="h-full rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-500 transition-all duration-500"
           style={{ width: `${pct}%` }}
         />
       </div>
 
+      {!compact && (
+        <>
       <p className="text-zinc-400 text-xs font-medium uppercase tracking-wide mb-3">Logros</p>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {badges.map((b) => (
@@ -91,6 +98,8 @@ export function GamificationPanel({ user, stats }: GamificationPanelProps) {
           </div>
         ))}
       </div>
+        </>
+      )}
     </Card>
   );
 }

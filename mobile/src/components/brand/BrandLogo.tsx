@@ -1,16 +1,6 @@
-import { useEffect } from 'react';
-import { Image, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
+import Svg, { Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
+import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { theme } from '@/constants/theme';
-
-const logoSource = require('@/assets/brand/logo-full.png');
 
 type BrandLogoSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -29,53 +19,46 @@ interface BrandLogoProps {
   breathe?: boolean;
 }
 
-export function BrandLogo({ size = 'md', style, animate = false, breathe = false }: BrandLogoProps) {
-  const opacity = useSharedValue(animate ? 0 : 1);
-  const translateY = useSharedValue(animate ? 14 : 0);
-  const scale = useSharedValue(animate ? 0.94 : 1);
-  const breatheScale = useSharedValue(1);
+function Monogram({ size }: { size: number }) {
+  const h = Math.min(size, 56);
+  const w = h * 0.85;
+  return (
+    <Svg width={w} height={h} viewBox="0 0 48 56">
+      <Defs>
+        <LinearGradient id="grad" x1="0%" y1="100%" x2="100%" y2="0%">
+          <Stop offset="0%" stopColor="#8A2BE2" />
+          <Stop offset="35%" stopColor="#C026D3" />
+          <Stop offset="70%" stopColor="#00A3FF" />
+          <Stop offset="100%" stopColor="#00E5FF" />
+        </LinearGradient>
+      </Defs>
+      <Rect x="4" y="8" width="28" height="4" rx="2" fill="url(#grad)" opacity="0.9" />
+      <Rect x="4" y="18" width="20" height="4" rx="2" fill="url(#grad)" opacity="0.75" />
+      <Rect x="4" y="28" width="24" height="4" rx="2" fill="url(#grad)" opacity="0.85" />
+      <Path d="M28 8 L40 28 L34 28 L38 44 L24 24 L30 24 L22 8 Z" fill="url(#grad)" />
+    </Svg>
+  );
+}
 
-  useEffect(() => {
-    if (!animate) return;
-    opacity.value = withTiming(1, { duration: 550, easing: Easing.out(Easing.cubic) });
-    translateY.value = withTiming(0, { duration: 550, easing: Easing.out(Easing.cubic) });
-    scale.value = withTiming(1, { duration: 550, easing: Easing.out(Easing.cubic) });
-  }, [animate, opacity, translateY, scale]);
-
-  useEffect(() => {
-    if (!breathe) return;
-    breatheScale.value = withRepeat(
-      withSequence(
-        withTiming(1.02, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-      ),
-      -1,
-      false,
-    );
-  }, [breathe, breatheScale]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [
-      { translateY: translateY.value },
-      { scale: scale.value * breatheScale.value },
-    ],
-  }));
-
+export function BrandLogo({ size = 'md', style }: BrandLogoProps) {
   const h = heights[size];
+  const showText = size !== 'xs';
 
   return (
-    <Animated.View style={[styles.wrap, animatedStyle, style]}>
-      <Image
-        source={logoSource}
-        style={{ height: h, width: h * 2.1 }}
-        resizeMode="contain"
-        accessibilityLabel="ASCENDX AI"
-      />
-    </Animated.View>
+    <View style={[styles.row, style]}>
+      <Monogram size={h} />
+      {showText && (
+        <View>
+          <Text style={[styles.title, { fontSize: Math.max(14, h * 0.22) }]}>ASCENDX</Text>
+          <Text style={[styles.sub, { fontSize: Math.max(10, h * 0.12) }]}>AI</Text>
+        </View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { alignItems: 'center' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  title: { color: theme.colors.primaryLight, fontWeight: '800', letterSpacing: -0.5 },
+  sub: { color: theme.colors.accent, fontWeight: '600' },
 });

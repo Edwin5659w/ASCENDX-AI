@@ -1,10 +1,8 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard,
-  Target,
   CheckSquare,
   MessageCircle,
-  Wallet,
   User,
   LogOut,
   Flame,
@@ -13,11 +11,9 @@ import { useAuth } from '../context/AuthContext';
 import { BrandLogo } from './brand/BrandLogo';
 
 const nav = [
-  { to: '/', icon: LayoutDashboard, label: 'Inicio' },
-  { to: '/goals', icon: Target, label: 'Objetivos' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Inicio' },
   { to: '/tasks', icon: CheckSquare, label: 'Tareas' },
   { to: '/habits', icon: Flame, label: 'Hábitos' },
-  { to: '/finance', icon: Wallet, label: 'Finanzas' },
   { to: '/chat', icon: MessageCircle, label: 'Mentor' },
   { to: '/profile', icon: User, label: 'Perfil' },
 ];
@@ -29,10 +25,10 @@ function NavItems({ compact }: { compact?: boolean }) {
         <NavLink
           key={to}
           to={to}
-          end={to === '/'}
+          end={to === '/dashboard'}
           className={({ isActive }) =>
             compact
-              ? `flex flex-col items-center gap-0.5 px-2 py-1 min-w-[56px] rounded-lg text-[10px] transition-colors ${
+              ? `flex flex-col items-center gap-0.5 px-3 py-1 min-w-[64px] rounded-lg text-[11px] transition-colors ${
                   isActive ? 'text-cyan-300' : 'text-zinc-500'
                 }`
               : `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
@@ -42,7 +38,7 @@ function NavItems({ compact }: { compact?: boolean }) {
                 }`
           }>
           <Icon size={compact ? 20 : 18} />
-          <span className={compact ? 'truncate max-w-[56px]' : undefined}>{label}</span>
+          <span className={compact ? 'truncate max-w-[64px]' : undefined}>{label}</span>
         </NavLink>
       ))}
     </>
@@ -81,7 +77,9 @@ export function Layout() {
         <div className="flex items-center justify-between mb-2 px-1">
           <div className="flex items-center gap-2">
             <BrandLogo size="xs" />
-            <p className="text-[10px] text-zinc-500">Nv. {user?.level} · {user?.xp} XP</p>
+            <p className="text-[10px] text-zinc-500">
+              Nv. {user?.level} · {user?.xp} XP
+            </p>
           </div>
           <button
             type="button"

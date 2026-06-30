@@ -1,5 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { AppError } from '../middleware/errorHandler';
+import { planService } from './plan.service';
+import { getPlanLimits } from '@ascendx/shared/plans';
 import type { z } from 'zod';
 import type { createGoalSchema, updateGoalSchema } from '@ascendx/shared/validators/goal.validator';
 
@@ -25,6 +27,17 @@ export const goalService = {
   },
 
   async create(userId: string, data: CreateGoalInput) {
+    const plan = await planService.getUserPlan(userId);
+    const limits = getPlanLimits(plan);
+    const count = await prisma.goal.count({ where: { userId } });
+    if (count >= limits.maxGoals) {
+      throw new AppError(
+        402,
+        plan === 'FREE'
+          ? `Límite de ${limits.maxGoals} objetivos en plan Gratis. Pasa a Pro para más.`
+          : `Límite de ${limits.maxGoals} objetivos alcanzado.`,
+      );
+    }
     return prisma.goal.create({ data: { ...data, userId } });
   },
 

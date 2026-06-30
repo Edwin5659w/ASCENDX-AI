@@ -28,15 +28,16 @@ import { Card } from '../components/Card';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { EmptyState } from '../components/ui/EmptyState';
 import { FinanceSkeleton } from '../components/ui/FinanceSkeleton';
-import { MethodologyHint } from '../components/MethodologyHint';
 import { TradingJournal } from '../components/TradingJournal';
 import { financeApi } from '../api/services';
+import { useAuth } from '../context/AuthContext';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import { useToast } from '../context/ToastContext';
+import { MethodologyStrip } from '../components/MethodologyStrip';
 import type { FinanceRecord, FinanceSummary } from '../types';
 import {
   CATEGORY_CHART_COLORS,
   EXPENSE_CATEGORIES,
-  formatMoney,
   INCOME_CATEGORIES,
   isOnboardingFinanceRecord,
 } from '@shared/finance-helpers';
@@ -53,6 +54,9 @@ const tooltipStyle = {
 
 export function Finance() {
   const { showToast } = useToast();
+  const { user } = useAuth();
+  const { formatMoney, currency } = useMoneyFormat();
+  const showTrading = user?.plan === 'PRO' && user?.tradingJournalEnabled === true;
   const [financeTab, setFinanceTab] = useState<FinanceTab>('cashflow');
   const [records, setRecords] = useState<FinanceRecord[]>([]);
   const [summary, setSummary] = useState<FinanceSummary | null>(null);
@@ -184,33 +188,36 @@ export function Finance() {
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-2">
         <h1 className="text-2xl font-bold text-white">Finanzas</h1>
         <p className="text-zinc-500 text-xs max-w-md">
-          Control de flujo de caja personal. No constituye asesoría financiera ni de inversión.
+          Control de flujo de caja para tu negocio o finanzas personales ({currency}). No constituye
+          asesoría financiera ni de inversión.
         </p>
       </div>
-      <MethodologyHint module="finance" />
+      <MethodologyStrip module="finance" />
 
-      <div className="flex gap-2 mb-6">
-        <button
-          type="button"
-          onClick={() => setFinanceTab('cashflow')}
-          className={`flex-1 py-2 rounded-lg text-sm font-medium ${
-            financeTab === 'cashflow' ? 'bg-violet-600 text-white' : 'bg-white/5 text-zinc-400'
-          }`}>
-          Presupuesto
-        </button>
-        <button
-          type="button"
-          onClick={() => setFinanceTab('trading')}
-          className={`flex-1 py-2 rounded-lg text-sm font-medium ${
-            financeTab === 'trading' ? 'bg-violet-600 text-white' : 'bg-white/5 text-zinc-400'
-          }`}>
-          Diario trading
-        </button>
-      </div>
+      {showTrading ? (
+        <div className="flex gap-2 mb-6">
+          <button
+            type="button"
+            onClick={() => setFinanceTab('cashflow')}
+            className={`flex-1 py-2 rounded-lg text-sm font-medium ${
+              financeTab === 'cashflow' ? 'bg-violet-600 text-white' : 'bg-white/5 text-zinc-400'
+            }`}>
+            Presupuesto
+          </button>
+          <button
+            type="button"
+            onClick={() => setFinanceTab('trading')}
+            className={`flex-1 py-2 rounded-lg text-sm font-medium ${
+              financeTab === 'trading' ? 'bg-violet-600 text-white' : 'bg-white/5 text-zinc-400'
+            }`}>
+            Diario trading
+          </button>
+        </div>
+      ) : null}
 
-      {financeTab === 'trading' ? <TradingJournal /> : null}
+      {showTrading && financeTab === 'trading' ? <TradingJournal /> : null}
 
-      {financeTab === 'cashflow' ? (
+      {(!showTrading || financeTab === 'cashflow') ? (
       <>
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">

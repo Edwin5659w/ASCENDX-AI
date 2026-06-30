@@ -2,14 +2,21 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { RotateCcw, Send, Sparkles } from 'lucide-react';
 import { aiApi, type AIContextLevel } from '../api/services';
+import { isAiLimitError } from '../api/client';
 import { Card } from '../components/Card';
 import { ChatMessageBubble, ChatTypingIndicator } from '../components/chat/ChatMessageBubble';
 import { ChatSkeleton } from '../components/ChatSkeleton';
-import { MethodologyHint } from '../components/MethodologyHint';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { SuggestedPrompts } from '../components/SuggestedPrompts';
+import { AIUsageBar } from '../components/ai/AIUsageBar';
+import { AILimitModal } from '../components/ai/AILimitModal';
 import { useToast } from '../context/ToastContext';
+import { useProCheckout } from '../hooks/useProCheckout';
 import { CONTEXT_LEVEL_LABELS, insightTypeLabel } from '@shared/chat-helpers';
+import type { AIUsage } from '@shared/ai-prompts';
+import { AI_UPSELL_PROMPTS } from '@shared/ai-prompts';
+import { MethodologyStrip } from '../components/MethodologyStrip';
+import { Link } from 'react-router-dom';
 
 interface Message {
   id: string;
@@ -45,6 +52,9 @@ export function Chat() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [clearOpen, setClearOpen] = useState(false);
+  const [aiUsage, setAiUsage] = useState<AIUsage | null>(null);
+  const [limitModalOpen, setLimitModalOpen] = useState(false);
+  const { startCheckout, loading: upgrading } = useProCheckout();
   const bottomRef = useRef<HTMLDivElement>(null);
   const prefillHandled = useRef(false);
 
@@ -60,6 +70,7 @@ export function Chat() {
         setInsights(ins);
         setSuggestedPrompts(ctx.suggestedPrompts);
         setContextLevel(ctx.contextLevel);
+        if (ctx.aiUsage) setAiUsage(ctx.aiUsage);
         if (history.length > 0) {
           setMessages(history);
         } else {
@@ -95,9 +106,11 @@ export function Chat() {
       setLoading(true);
       scrollBottom();
       try {
-        const { reply, suggestedPrompts: nextPrompts, contextLevel: level } = await aiApi.chat(text);
+        const { reply, suggestedPrompts: nextPrompts, contextLevel: level, aiUsage: nextUsage } =
+          await aiApi.chat(text);
         setSuggestedPrompts(nextPrompts);
         setContextLevel(level);
+        if (nextUsage) setAiUsage(nextUsage);
         setMessages((m) => [
           ...m,
           {
@@ -108,6 +121,19 @@ export function Chat() {
           },
         ]);
       } catch (e) {
+        if (isAiLimitError(e)) {
+          setLimitModalOpen(true);
+          if (e.details && typeof e.details.used === 'number') {
+            setAiUsage({
+              used: e.details.used as number,
+              limit: e.details.limit as number,
+              remaining: 0,
+              plan: (e.details.plan as 'FREE' | 'PRO') ?? 'FREE',
+            });
+          }
+          setMessages((m) => m.filter((msg) => msg.id !== userMsg.id));
+          return;
+        }
         setMessages((m) => [
           ...m,
           {
@@ -149,8 +175,20 @@ export function Chat() {
     return <ChatSkeleton />;
   }
 
+  const atLimit = aiUsage ? aiUsage.remaining <= 0 : false;
+  const displayPrompts = [
+    ...suggestedPrompts,
+    ...(aiUsage?.plan === 'FREE' && contextLevel === 'ready' ? [...AI_UPSELL_PROMPTS] : []),
+  ];
+
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] max-w-4xl">
+      <AILimitModal
+        open={limitModalOpen}
+        onClose={() => setLimitModalOpen(false)}
+        onUpgrade={() => void startCheckout()}
+        upgrading={upgrading}
+      />
       <div className="flex flex-wrap items-center justify-between gap-2 mb-2 shrink-0">
         <div className="flex items-center gap-2 flex-wrap">
           <h1 className="text-2xl font-bold text-white">Mentor IA</h1>
@@ -168,9 +206,47 @@ export function Chat() {
         </button>
       </div>
 
-      <div className="shrink-0 mb-2">
-        <MethodologyHint module="ai" />
+
+      <MethodologyStrip module="ai" />
+
+      <div className="shrink-0 mb-3">
+        <AIUsageBar
+          usage={aiUsage}
+          onUpgrade={() => void startCheckout()}
+        />
       </div>
+
+      {messages.length <= 1 && contextLevel !== 'ready' && (
+        <Card className="mb-3 shrink-0 border-violet-500/25 bg-violet-500/5">
+          <div className="flex items-start gap-3">
+            <Sparkles className="text-violet-400 shrink-0 mt-0.5" size={20} />
+            <div>
+              <p className="text-white font-medium text-sm mb-1">Empieza con el mentor</p>
+              <p className="text-zinc-500 text-xs leading-relaxed mb-3">
+                {contextLevel === 'empty'
+                  ? 'Aún no hay datos en tu perfil. Pide un plan de 25 minutos o crea tu primer objetivo.'
+                  : 'Completa tu perfil para respuestas más precisas. El mentor usa solo lo que registras.'}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => void sendText('Dame un plan de 25 minutos para hoy')}
+                  disabled={loading || atLimit}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-violet-600/30 text-violet-200 border border-violet-500/30 hover:bg-violet-600/40 disabled:opacity-50">
+                  Plan 25 min
+                </button>
+                {contextLevel === 'empty' ? (
+                  <Link
+                    to="/goals"
+                    className="text-xs px-3 py-1.5 rounded-lg border border-white/10 text-zinc-400 hover:text-white">
+                    Crear objetivo
+                  </Link>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {insights.length > 0 && (
         <Card className="mb-3 shrink-0">
@@ -200,7 +276,11 @@ export function Chat() {
       </div>
 
       <div className="shrink-0 border-t border-white/10 pt-3">
-        <SuggestedPrompts prompts={suggestedPrompts} onSelect={(p) => void sendText(p)} disabled={loading} />
+        <SuggestedPrompts
+          prompts={displayPrompts}
+          onSelect={(p) => void sendText(p)}
+          disabled={loading || atLimit}
+        />
         <div className="flex gap-2 items-end">
           <div className="flex-1 relative">
             <textarea
@@ -212,17 +292,22 @@ export function Chat() {
                   send();
                 }
               }}
-              placeholder="Escribe a tu mentor... (Enter envía, Shift+Enter nueva línea)"
+              placeholder={
+                atLimit
+                  ? 'Límite alcanzado — activa Pro para seguir chateando'
+                  : 'Escribe a tu mentor... (Enter envía, Shift+Enter nueva línea)'
+              }
               rows={2}
               maxLength={4000}
-              className="w-full bg-[#1c1c2e] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-violet-500 resize-none"
+              disabled={atLimit}
+              className="w-full bg-[#1c1c2e] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-violet-500 resize-none disabled:opacity-50"
             />
             <span className="absolute right-3 bottom-2 text-[10px] text-zinc-600">{input.length}/4000</span>
           </div>
           <button
             type="button"
             onClick={send}
-            disabled={loading || !input.trim()}
+            disabled={loading || !input.trim() || atLimit}
             className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white p-3 rounded-xl shrink-0 mb-5">
             <Send size={20} />
           </button>

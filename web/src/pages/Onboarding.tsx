@@ -90,9 +90,16 @@ export function Onboarding() {
   const skip = async () => {
     setLoading(true);
     try {
-      await userApi.completeOnboarding();
+      const t = ONBOARDING_TEMPLATES.PERSONAL;
+      await userApi.setupOnboarding({
+        focus: 'PERSONAL',
+        goalTitle: t.goalTitle,
+        taskTitles: [...t.taskTitles],
+        habitName: t.habitName,
+      });
       await refreshUser();
-      navigate('/', { replace: true });
+      showToast(`¡Configuración rápida lista! +50 XP`, 'success');
+      navigate('/dashboard', { replace: true });
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'Error al guardar', 'error');
     } finally {
@@ -129,8 +136,8 @@ export function Onboarding() {
         initialFinance,
       });
       await refreshUser();
-      showToast('¡Tu espacio está listo!', 'success');
-      navigate('/', { replace: true });
+      showToast('¡Tu espacio está listo! +50 XP de bienvenida', 'success');
+      navigate('/dashboard', { replace: true });
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'No se pudo guardar', 'error');
     } finally {
@@ -176,7 +183,7 @@ export function Onboarding() {
               onClick={skip}
               disabled={loading}
               className="w-full mt-3 text-zinc-500 text-sm hover:text-zinc-300 py-2 disabled:opacity-50">
-              {loading ? 'Omitiendo...' : 'Omitir por ahora'}
+              {loading ? 'Configurando...' : 'Configuración rápida (30 seg) →'}
             </button>
           </>
         )}

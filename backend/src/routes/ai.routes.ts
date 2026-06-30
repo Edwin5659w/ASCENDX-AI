@@ -22,6 +22,14 @@ router.get('/daily-plan', async (req, res, next) => {
   }
 });
 
+router.get('/usage', async (req, res, next) => {
+  try {
+    sendSuccess(res, await openaiService.getUsage(req.user!.userId));
+  } catch (e) {
+    next(e);
+  }
+});
+
 router.get('/context', async (req, res, next) => {
   try {
     const meta = await openaiService.getContextMeta(req.user!.userId);

@@ -8,6 +8,8 @@ export interface StatsForBadges {
   totalXp: number;
   level: number;
   longestStreak: number;
+  financeRecordsCount: number;
+  referralCount: number;
 }
 
 export interface BadgeWithStatus {
@@ -21,10 +23,16 @@ export interface BadgeWithStatus {
 const RULES: Record<string, (c: StatsForBadges) => boolean> = {
   FIRST_TASK: (c) => c.completedTasks >= 1,
   STREAK_7: (c) => c.longestStreak >= 7,
+  STREAK_30: (c) => c.longestStreak >= 30,
   GOALS_3: (c) => c.totalGoals >= 3,
+  TASKS_10: (c) => c.completedTasks >= 10,
   LEVEL_5: (c) => c.level >= 5,
+  LEVEL_10: (c) => c.level >= 10,
   STEEL: (c) => c.activeHabits >= 3 && c.longestStreak >= 3,
   XP_500: (c) => c.totalXp >= 500,
+  XP_1000: (c) => c.totalXp >= 1000,
+  FINANCE_START: (c) => c.financeRecordsCount >= 5,
+  REFERRER: (c) => c.referralCount >= 1,
 };
 
 export const badgeService = {

@@ -8,6 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/src/context/AuthContext';
+import { ToastProvider } from '@/src/context/ToastContext';
 import { BrandSplash } from '@/src/components/brand/BrandSplash';
 import { theme } from '@/constants/theme';
 
@@ -52,10 +53,12 @@ export default function RootLayout() {
     <>
       {!splashDone ? <BrandSplash onFinish={onSplashFinish} /> : null}
       <AuthProvider>
-        <ThemeProvider value={ascendxDark}>
-          <StatusBar style="light" />
-          <RootNavigator />
-        </ThemeProvider>
+        <ToastProvider>
+          <ThemeProvider value={ascendxDark}>
+            <StatusBar style="light" />
+            <RootNavigator />
+          </ThemeProvider>
+        </ToastProvider>
       </AuthProvider>
     </>
   );

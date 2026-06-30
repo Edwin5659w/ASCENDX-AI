@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CURRENCY_CODES, isValidCurrency } from '../currencies';
 import { passwordSchema } from './auth.validator';
 
 const fullNameSchema = z
@@ -11,7 +12,23 @@ const fullNameSchema = z
 export const updateProfileSchema = z.object({
   name: fullNameSchema.optional(),
   onboardingDone: z.boolean().optional(),
+  productTourDone: z.boolean().optional(),
   pushToken: z.string().max(512).optional(),
+  preferredCurrency: z
+    .string()
+    .refine(isValidCurrency, `Moneda no soportada. Usa: ${CURRENCY_CODES.join(', ')}`)
+    .optional(),
+  tradingJournalEnabled: z.boolean().optional(),
+  dailyFocus: z.string().trim().max(120, 'Máximo 120 caracteres').optional(),
+  emailOptIn: z.boolean().optional(),
+});
+
+export const dailyFocusSchema = z.object({
+  focus: z.string().trim().min(3, 'Mínimo 3 caracteres').max(120, 'Máximo 120 caracteres'),
+});
+
+export const deleteAccountSchema = z.object({
+  password: z.string().min(1, 'Contraseña obligatoria'),
 });
 
 export const changePasswordSchema = z.object({

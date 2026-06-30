@@ -1,0 +1,23 @@
+/** Campos públicos del usuario (auth, perfil, /user/me). */
+export const USER_PROFILE_SELECT = {
+  id: true,
+  name: true,
+  email: true,
+  xp: true,
+  level: true,
+  plan: true,
+  referralCode: true,
+  streakShields: true,
+  dailyFocus: true,
+  dailyFocusDate: true,
+  onboardingDone: true,
+  productTourDone: true,
+  pushToken: true,
+  preferredCurrency: true,
+  tradingJournalEnabled: true,
+  subscriptionStatus: true,
+  subscriptionPeriodEnd: true,
+  emailOptIn: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;

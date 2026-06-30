@@ -45,13 +45,9 @@ import {
 } from '../../../shared/onboarding-helpers';
 
 import { userApi } from '@/src/api/services';
-
 import { useAuth } from '@/src/context/AuthContext';
-
 import { BrandLogo } from '@/src/components/brand/BrandLogo';
-
 import { OnboardingProgress } from '@/src/components/onboarding/OnboardingProgress';
-
 import { theme } from '@/constants/theme';
 
 
@@ -130,27 +126,22 @@ export default function OnboardingScreen() {
 
 
   const skip = async () => {
-
     setLoading(true);
-
     try {
-
-      await userApi.completeOnboarding();
-
+      const t = ONBOARDING_TEMPLATES.PERSONAL;
+      await userApi.setupOnboarding({
+        focus: 'PERSONAL',
+        goalTitle: t.goalTitle,
+        taskTitles: [...t.taskTitles],
+        habitName: t.habitName,
+      });
       await refreshUser();
-
       router.replace('/(tabs)');
-
     } catch (e) {
-
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo continuar');
-
     } finally {
-
       setLoading(false);
-
     }
-
   };
 
 
@@ -301,7 +292,9 @@ export default function OnboardingScreen() {
 
             <Pressable onPress={skip} disabled={loading} style={styles.skip}>
 
-              <Text style={styles.skipText}>{loading ? 'Omitiendo...' : 'Omitir por ahora'}</Text>
+              <Text style={styles.skipText}>
+                {loading ? 'Configurando...' : 'Configuración rápida (30 seg) →'}
+              </Text>
 
             </Pressable>
 

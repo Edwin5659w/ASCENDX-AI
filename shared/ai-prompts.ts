@@ -1,5 +1,21 @@
 export type AIContextLevel = 'empty' | 'partial' | 'ready';
 
+export interface AIUsage {
+  used: number;
+  limit: number;
+  remaining: number;
+  plan: 'FREE' | 'PRO';
+}
+
+export function buildAIUsage(used: number, limit: number, plan: 'FREE' | 'PRO'): AIUsage {
+  return {
+    used,
+    limit,
+    remaining: Math.max(0, limit - used),
+    plan,
+  };
+}
+
 export const EMPTY_DAILY_PLAN = `Tu espacio ASCENDX aún está vacío — empecemos con bases sólidas:
 
 1. Define UN objetivo claro (estudio, salud, finanzas o trabajo).
@@ -28,10 +44,17 @@ export const AI_SUGGESTED_PROMPTS: Record<AIContextLevel, string[]> = {
   ready: [
     'Planifica mi día con mis tareas actuales',
     'Detecta en qué estoy procrastinando',
-    '¿Cómo equilibro estudio y finanzas esta semana?',
-    'Motívame para completar lo más importante hoy',
+    'Dame un plan Pomodoro de 25 min para mi tarea más urgente',
+    '¿Qué debería priorizar para subir de nivel esta semana?',
   ],
 };
+
+/** Prompts que empujan valor Pro sin ser agresivos */
+export const AI_UPSELL_PROMPTS = [
+  'Resume mi semana y dime en qué mejorar (Pro)',
+  'Analiza mis finanzas y hábitos juntos',
+  'Crea un plan de 7 días basado en mis datos',
+] as const;
 
 export function getSuggestedPrompts(level: AIContextLevel): string[] {
   return AI_SUGGESTED_PROMPTS[level];

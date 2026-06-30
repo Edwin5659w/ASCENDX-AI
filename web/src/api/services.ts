@@ -1,4 +1,6 @@
-import { apiRequest, saveTokens, clearTokens, getRefreshToken } from './client';
+import { apiRequest, saveTokens, clearTokens, getRefreshToken, getAccessToken } from './client';
+
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
 import type {
   AuthResponse,
   User,
@@ -10,13 +12,16 @@ import type {
   TradeSummary,
   FinanceRecord,
   FinanceSummary,
+  WeeklyRecapResult,
+  ReferralInfo,
+  PlanUsage,
 } from '../types';
 
 export const authApi = {
-  register: async (name: string, email: string, password: string) => {
+  register: async (name: string, email: string, password: string, referralCode?: string) => {
     const data = await apiRequest<AuthResponse>('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, referralCode: referralCode || undefined }),
       public: true,
     });
     saveTokens(data.accessToken, data.refreshToken);
@@ -63,9 +68,19 @@ export const authApi = {
 export const userApi = {
   me: () => apiRequest<User>('/user/me'),
   stats: () => apiRequest<UserStats>('/user/stats'),
-  updateProfile: (data: { name?: string; onboardingDone?: boolean; pushToken?: string }) =>
+  updateProfile: (data: {
+    name?: string;
+    onboardingDone?: boolean;
+    productTourDone?: boolean;
+    pushToken?: string;
+    preferredCurrency?: string;
+    tradingJournalEnabled?: boolean;
+    dailyFocus?: string;
+    emailOptIn?: boolean;
+  }) =>
     apiRequest<User>('/user/me', { method: 'PATCH', body: JSON.stringify(data) }),
   completeOnboarding: () => apiRequest<User>('/user/onboarding-complete', { method: 'POST' }),
+  completeProductTour: () => apiRequest<User>('/user/product-tour-complete', { method: 'POST' }),
   setupOnboarding: (data: {
     focus: string;
     goalTitle: string;
@@ -81,6 +96,56 @@ export const userApi = {
     apiRequest<{ message: string }>('/user/change-password', {
       method: 'POST',
       body: JSON.stringify({ currentPassword, newPassword }),
+    }),
+  weeklyRecap: () => apiRequest<WeeklyRecapResult>('/user/weekly-recap'),
+  referral: () => apiRequest<ReferralInfo>('/user/referral'),
+  plan: () => apiRequest<PlanUsage>('/user/plan'),
+  setDailyFocus: (focus: string) =>
+    apiRequest<User>('/user/daily-focus', {
+      method: 'POST',
+      body: JSON.stringify({ focus }),
+    }),
+  upgradePro: () => apiRequest<User>('/user/upgrade-pro', { method: 'POST' }),
+  deleteAccount: (password: string) =>
+    apiRequest<{ ok: boolean }>('/user/account', {
+      method: 'DELETE',
+      body: JSON.stringify({ password }),
+    }),
+  exportData: async () => {
+    const token = getAccessToken();
+    const res = await fetch(`${API_BASE}/user/export`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) {
+      let message = 'Error al exportar datos';
+      try {
+        const body = (await res.json()) as { error?: string };
+        if (body.error) message = body.error;
+      } catch {
+        /* raw response */
+      }
+      throw new Error(message);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ascendx-export-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  },
+};
+
+export const billingApi = {
+  status: () => apiRequest<import('../types').BillingStatus>('/billing/status'),
+  checkout: () => apiRequest<{ url: string }>('/billing/checkout', { method: 'POST' }),
+  portal: () => apiRequest<{ url: string }>('/billing/portal', { method: 'POST' }),
+  syncSession: (sessionId: string) =>
+    apiRequest<{ user: User }>('/billing/sync-session', {
+      method: 'POST',
+      body: JSON.stringify({ sessionId }),
     }),
 };
 
@@ -150,6 +215,7 @@ export type AIContextLevel = 'empty' | 'partial' | 'ready';
 export interface AIContextMeta {
   contextLevel: AIContextLevel;
   suggestedPrompts: string[];
+  aiUsage?: import('@shared/ai-prompts').AIUsage;
 }
 
 export const aiApi = {
@@ -160,6 +226,7 @@ export const aiApi = {
       contextLevel: AIContextLevel;
       suggestedPrompts: string[];
     }>('/ai/daily-plan'),
+  usage: () => apiRequest<import('@shared/ai-prompts').AIUsage>('/ai/usage'),
   context: () => apiRequest<AIContextMeta>('/ai/context'),
   chat: (message: string) =>
     apiRequest<{ reply: string } & AIContextMeta>('/ai/chat', {
@@ -172,4 +239,12 @@ export const aiApi = {
       '/ai/chat-history',
     ),
   clearChatHistory: () => apiRequest<{ ok: boolean }>('/ai/chat-history', { method: 'DELETE' }),
+};
+
+export const publicApi = {
+  stats: () =>
+    apiRequest<{ users: number; tasksCompleted: number; habitsCompleted: number; tagline: string }>(
+      '/public/stats',
+      { public: true },
+    ),
 };

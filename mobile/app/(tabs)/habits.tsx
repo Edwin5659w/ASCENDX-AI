@@ -12,13 +12,17 @@ import {
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { habitsApi } from '@/src/api/services';
+import { habitsApi, userApi } from '@/src/api/services';
 import { Button } from '@/src/components/ui/Button';
 import { EmptyState } from '@/src/components/EmptyState';
-import { MethodologyHint } from '@/src/components/MethodologyHint';
 import { HabitWeekStrip } from '@/src/components/HabitWeekStrip';
+import { PlanUsageBar } from '@/src/components/PlanUsageBar';
+import { MethodologyStrip } from '@/src/components/MethodologyStrip';
 import { syncHabitReminders } from '@/src/lib/habit-reminders';
-import type { Habit } from '@/src/types/api';
+import { useAuth } from '@/src/context/AuthContext';
+import { useToast } from '@/src/context/ToastContext';
+import { applyGamificationFeedback } from '@/src/lib/gamification-feedback';
+import type { Habit, PlanUsage } from '@/src/types/api';
 import { theme } from '@/constants/theme';
 
 function streakBadge(milestone: number | null | undefined, streak: number) {
@@ -30,7 +34,10 @@ function streakBadge(milestone: number | null | undefined, streak: number) {
 }
 
 export default function HabitsScreen() {
+  const { refreshUser } = useAuth();
+  const { showToast } = useToast();
   const [habits, setHabits] = useState<Habit[]>([]);
+  const [planUsage, setPlanUsage] = useState<PlanUsage | null>(null);
   const [name, setName] = useState('');
   const [frequency, setFrequency] = useState<'DAILY' | 'WEEKLY'>('DAILY');
   const [loading, setLoading] = useState(false);
@@ -43,8 +50,9 @@ export default function HabitsScreen() {
 
   const load = useCallback(async () => {
     try {
-      const list = await habitsApi.list();
+      const [list, usage] = await Promise.all([habitsApi.list(), userApi.plan()]);
       setHabits(list);
+      setPlanUsage(usage);
       await syncHabitReminders(list);
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudieron cargar hábitos');
@@ -98,8 +106,8 @@ export default function HabitsScreen() {
       return;
     }
     try {
-      await habitsApi.complete(habit.id);
-      Alert.alert('¡Bien!', 'Hábito completado. +15 XP');
+      const updated = await habitsApi.complete(habit.id);
+      applyGamificationFeedback(updated.gamification, showToast, refreshUser);
       await load();
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo completar');
@@ -172,7 +180,8 @@ export default function HabitsScreen() {
 
   return (
     <View style={styles.container}>
-      <MethodologyHint module="habits" />
+      <MethodologyStrip module="habits" />
+      <PlanUsageBar usage={planUsage} metric="habits" />
       {stats.total > 0 ? (
         <View style={styles.statsBar}>
           <View style={styles.stat}>

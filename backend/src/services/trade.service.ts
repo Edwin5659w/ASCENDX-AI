@@ -1,5 +1,7 @@
+import type { Trade } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { AppError } from '../middleware/errorHandler';
+import { planService } from './plan.service';
 import { roundMoney, toMoneyNumber } from '../utils/money';
 import type { z } from 'zod';
 import type { createTradeSchema, updateTradeSchema } from '@ascendx/shared/validators/trade.validator';
@@ -7,17 +9,18 @@ import type { createTradeSchema, updateTradeSchema } from '@ascendx/shared/valid
 type CreateTradeInput = z.infer<typeof createTradeSchema>;
 type UpdateTradeInput = z.infer<typeof updateTradeSchema>;
 
-function mapTrade<T extends { quantity: unknown; price: unknown; pnl: unknown | null }>(row: T) {
+function mapTrade(row: Trade) {
   return {
     ...row,
-    quantity: toMoneyNumber(row.quantity as { toString(): string }),
-    price: toMoneyNumber(row.price as { toString(): string }),
-    pnl: row.pnl != null ? toMoneyNumber(row.pnl as { toString(): string }) : null,
+    quantity: toMoneyNumber(row.quantity),
+    price: toMoneyNumber(row.price),
+    pnl: row.pnl != null ? toMoneyNumber(row.pnl) : null,
   };
 }
 
 export const tradeService = {
   async list(userId: string) {
+    await planService.assertTradingAccess(userId);
     const rows = await prisma.trade.findMany({
       where: { userId },
       orderBy: { tradedAt: 'desc' },
@@ -26,6 +29,7 @@ export const tradeService = {
   },
 
   async summary(userId: string) {
+    await planService.assertTradingAccess(userId);
     const trades = await prisma.trade.findMany({
       where: { userId },
       select: { pnl: true, side: true },
@@ -56,6 +60,7 @@ export const tradeService = {
   },
 
   async create(userId: string, data: CreateTradeInput) {
+    await planService.assertTradingAccess(userId);
     const row = await prisma.trade.create({
       data: {
         userId,

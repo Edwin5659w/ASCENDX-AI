@@ -26,3 +26,9 @@ export function previousWeekStartUTC(from: Date = new Date()): Date {
   w.setUTCDate(w.getUTCDate() - 7);
   return w;
 }
+
+export function daysAgoUTC(days: number, from: Date = new Date()): Date {
+  const d = startOfDayUTC(from);
+  d.setUTCDate(d.getUTCDate() - days);
+  return d;
+}

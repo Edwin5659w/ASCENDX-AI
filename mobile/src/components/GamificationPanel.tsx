@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Card } from '@/src/components/ui/Card';
@@ -9,9 +10,11 @@ import { theme } from '@/constants/theme';
 interface GamificationPanelProps {
   user: User | null;
   stats: UserStats | null;
+  compact?: boolean;
 }
 
-export function GamificationPanel({ user, stats }: GamificationPanelProps) {
+export function GamificationPanel({ user, stats, compact = false }: GamificationPanelProps) {
+  const router = useRouter();
   if (!user) return null;
 
   const { pct, toNext } = xpProgress(user.xp);
@@ -37,11 +40,15 @@ export function GamificationPanel({ user, stats }: GamificationPanelProps) {
         </View>
       </View>
 
+      <Pressable onPress={() => router.push('/(tabs)/achievements' as never)}>
+        <Text style={styles.viewAll}>Ver todos los logros →</Text>
+      </Pressable>
+
       <View style={styles.progressLabels}>
         <Text style={styles.progressHint}>Progreso al nivel {level + 1}</Text>
         <Text style={styles.progressHint}>{toNext} XP para subir</Text>
       </View>
-      <View style={styles.xpTrack}>
+      <View style={[styles.xpTrack, compact && styles.xpTrackCompact]}>
         <LinearGradient
           colors={[theme.colors.primary, theme.colors.brandMagenta]}
           start={{ x: 0, y: 0 }}
@@ -50,6 +57,8 @@ export function GamificationPanel({ user, stats }: GamificationPanelProps) {
         />
       </View>
 
+      {!compact ? (
+        <>
       <Text style={styles.badgesTitle}>LOGROS</Text>
       <View style={styles.badgeGrid}>
         {badges.map((b) => (
@@ -76,6 +85,8 @@ export function GamificationPanel({ user, stats }: GamificationPanelProps) {
           </View>
         ))}
       </View>
+        </>
+      ) : null}
     </Card>
   );
 }
@@ -101,6 +112,12 @@ const styles = StyleSheet.create({
   xpBlock: { alignItems: 'flex-end' },
   xpValue: { color: theme.colors.primaryLight, fontSize: 24, fontWeight: '700' },
   xpLabel: { color: theme.colors.textMuted, fontSize: 11 },
+  viewAll: {
+    color: theme.colors.primaryLight,
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: theme.spacing.sm,
+  },
   progressLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -114,6 +131,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: theme.spacing.lg,
   },
+  xpTrackCompact: { marginBottom: 0 },
   xpFill: { height: '100%', borderRadius: 5 },
   badgesTitle: {
     color: theme.colors.textMuted,

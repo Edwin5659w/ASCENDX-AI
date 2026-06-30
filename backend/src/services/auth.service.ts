@@ -7,7 +7,11 @@ import { AppError } from '../middleware/errorHandler';
 import type { RegisterInput, LoginInput } from '@ascendx/shared/validators/auth.validator';
 import type { AuthPayload } from '../middleware/auth';
 import { emailService } from './email.service';
+import { retentionService } from './retention.service';
+import { USER_PROFILE_SELECT } from '../constants/user-select';
 import { expiresAtFromJwt } from '../utils/jwt';
+import { generateReferralCode } from '../utils/referral';
+import { REFERRAL_BONUS_XP } from '@ascendx/shared/plans';
 
 const SALT_ROUNDS = 12;
 
@@ -40,10 +44,47 @@ export const authService = {
     const existing = await prisma.user.findUnique({ where: { email: input.email } });
     if (existing) throw new AppError(409, 'El email ya está registrado');
 
+    let referredById: string | undefined;
+    const refCode = input.referralCode?.trim().toUpperCase();
+    if (refCode) {
+      const referrer = await prisma.user.findUnique({ where: { referralCode: refCode } });
+      if (!referrer) throw new AppError(400, 'Código de referido inválido');
+      referredById = referrer.id;
+    }
+
     const hashed = await bcrypt.hash(input.password, SALT_ROUNDS);
+    let referralCode = generateReferralCode(input.name);
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const taken = await prisma.user.findUnique({ where: { referralCode } });
+      if (!taken) break;
+      referralCode = generateReferralCode(input.name);
+    }
+
     const user = await prisma.user.create({
-      data: { name: input.name, email: input.email, password: hashed },
-      select: { id: true, name: true, email: true, xp: true, level: true, onboardingDone: true, createdAt: true },
+      data: {
+        name: input.name,
+        email: input.email,
+        password: hashed,
+        referralCode,
+        referredById,
+      },
+      select: USER_PROFILE_SELECT,
+    });
+
+    if (referredById) {
+      await prisma.user.update({
+        where: { id: referredById },
+        data: { xp: { increment: REFERRAL_BONUS_XP } },
+      });
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { xp: { increment: REFERRAL_BONUS_XP } },
+      });
+    }
+
+    const refreshed = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: USER_PROFILE_SELECT,
     });
 
     const payload: AuthPayload = { userId: user.id, email: user.email };
@@ -53,11 +94,21 @@ export const authService = {
     await revokeUserRefreshTokens(user.id);
     await storeRefreshToken(user.id, refreshToken);
 
-    return { user, accessToken, refreshToken };
+    void retentionService.sendWelcome(user.id, user.email, user.name);
+
+    return {
+      user: refreshed ?? user,
+      accessToken,
+      refreshToken,
+      referralBonus: referredById ? REFERRAL_BONUS_XP : 0,
+    };
   },
 
   async login(input: LoginInput) {
-    const user = await prisma.user.findUnique({ where: { email: input.email } });
+    const user = await prisma.user.findUnique({
+      where: { email: input.email },
+      select: { ...USER_PROFILE_SELECT, password: true },
+    });
     if (!user) throw new AppError(401, 'Credenciales inválidas');
 
     const valid = await bcrypt.compare(input.password, user.password);
@@ -70,16 +121,9 @@ export const authService = {
     await revokeUserRefreshTokens(user.id);
     await storeRefreshToken(user.id, refreshToken);
 
+    const { password: _pw, ...profile } = user;
     return {
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        xp: user.xp,
-        level: user.level,
-        onboardingDone: user.onboardingDone,
-        createdAt: user.createdAt,
-      },
+      user: profile,
       accessToken,
       refreshToken,
     };

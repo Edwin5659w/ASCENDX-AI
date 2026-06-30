@@ -37,17 +37,49 @@ enum TradeSide {
   SELL
 }
 
+enum Plan {
+  FREE
+  PRO
+}
+
+enum SubscriptionStatus {
+  NONE
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
 model User {
-  id               String   @id @default(uuid())
-  name             String
-  email            String   @unique
-  password         String
-  xp               Int      @default(0)
-  level            Int      @default(1)
-  onboardingDone   Boolean  @default(false)
-  pushToken        String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                    String    @id @default(uuid())
+  name                  String
+  email                 String    @unique
+  password              String
+  xp                    Int       @default(0)
+  level                 Int       @default(1)
+  plan                  Plan      @default(FREE)
+  referralCode          String    @unique
+  referredById          String?
+  streakShields         Int       @default(1)
+  dailyFocus            String?
+  dailyFocusDate        DateTime? @db.Date
+  lastDailyBonusDate    DateTime? @db.Date
+  firstStepsRewardClaimed Boolean @default(false)
+  onboardingDone        Boolean   @default(false)
+  productTourDone       Boolean   @default(false)
+  pushToken             String?
+  preferredCurrency     String    @default("COP")
+  tradingJournalEnabled Boolean   @default(false)
+  stripeCustomerId      String?   @unique
+  stripeSubscriptionId  String?   @unique
+  subscriptionStatus    SubscriptionStatus @default(NONE)
+  subscriptionPeriodEnd DateTime?
+  emailOptIn            Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  referredBy       User?  @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals        User[] @relation("UserReferrals")
+  emailLogs        EmailLog[]
 
   goals            Goal[]
   habits           Habit[]
@@ -59,6 +91,17 @@ model User {
   userBadges       UserBadge[]
   tasks            Task[]
   trades           Trade[]
+}
+
+model EmailLog {
+  id        String   @id @default(uuid())
+  userId    String
+  template  String
+  sentAt    DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, template])
+  @@index([sentAt])
 }
 
 model RefreshToken {

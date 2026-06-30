@@ -35,7 +35,7 @@ export function Login() {
     setLoading(true);
     try {
       await login(email.trim().toLowerCase(), password);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setSubmitError(
         err instanceof Error ? err.message : 'Correo o contraseña incorrectos',

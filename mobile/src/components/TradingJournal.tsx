@@ -16,6 +16,7 @@ import { Card } from '@/src/components/ui/Card';
 import { EmptyState } from '@/src/components/EmptyState';
 import type { Trade, TradeSummary } from '@/src/types/api';
 import { theme } from '@/constants/theme';
+import { useMoneyFormat } from '@/src/hooks/useMoneyFormat';
 import {
   TRADE_EMOTION_TAGS,
   TRADING_DISCLAIMER,
@@ -23,6 +24,7 @@ import {
 } from '../../../shared/trading-helpers';
 
 export function TradingJournal() {
+  const { formatMoney } = useMoneyFormat();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [summary, setSummary] = useState<TradeSummary | null>(null);
   const [symbol, setSymbol] = useState('');
@@ -120,7 +122,7 @@ export function TradingJournal() {
               ]}
             >
               {summary.totalPnl >= 0 ? '+' : ''}
-              {summary.totalPnl.toFixed(2)}
+              {formatMoney(summary.totalPnl)}
             </Text>
           </View>
           <Text style={styles.wl}>
@@ -143,13 +145,13 @@ export function TradingJournal() {
             <View style={styles.tradeMain}>
               <Text style={styles.symbol}>{t.symbol}</Text>
               <Text style={styles.meta}>
-                {formatTradeSide(t.side)} · {t.quantity} @ {t.price}
+                {formatTradeSide(t.side)} · {t.quantity} @ {formatMoney(t.price)}
               </Text>
               {t.emotionTag ? <Text style={styles.emotion}>{t.emotionTag}</Text> : null}
               {t.pnl != null ? (
                 <Text style={[styles.pnl, t.pnl >= 0 ? styles.positive : styles.negative]}>
                   P&L: {t.pnl >= 0 ? '+' : ''}
-                  {t.pnl.toFixed(2)}
+                  {formatMoney(t.pnl)}
                 </Text>
               ) : null}
             </View>

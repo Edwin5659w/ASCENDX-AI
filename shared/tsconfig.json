@@ -21,7 +21,12 @@
     "chat-helpers.ts",
     "dashboard-helpers.ts",
     "onboarding-helpers.ts",
-    "trading-helpers.ts"
+    "trading-helpers.ts",
+    "plans.ts",
+    "weekly-recap.ts",
+    "retention.ts",
+    "retention-playbook.ts",
+    "email-content.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }

@@ -5,6 +5,7 @@ import { EmptyState } from './ui/EmptyState';
 import { tradesApi } from '../api/services';
 import { useToast } from '../context/ToastContext';
 import type { Trade, TradeSummary } from '../types';
+import { useMoneyFormat } from '../hooks/useMoneyFormat';
 import {
   TRADE_EMOTION_TAGS,
   TRADING_DISCLAIMER,
@@ -13,6 +14,7 @@ import {
 
 export function TradingJournal() {
   const { showToast } = useToast();
+  const { formatMoney } = useMoneyFormat();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [summary, setSummary] = useState<TradeSummary | null>(null);
   const [symbol, setSymbol] = useState('');
@@ -94,7 +96,7 @@ export function TradingJournal() {
             <p className="text-zinc-500 text-xs">P&L total</p>
             <p className={`font-bold text-lg ${summary.totalPnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
               {summary.totalPnl >= 0 ? '+' : ''}
-              {summary.totalPnl.toFixed(2)}
+              {formatMoney(summary.totalPnl)}
             </p>
           </div>
           <div>
@@ -191,13 +193,13 @@ export function TradingJournal() {
               <div>
                 <p className="text-white font-semibold">{t.symbol}</p>
                 <p className="text-zinc-500 text-sm">
-                  {formatTradeSide(t.side)} · {t.quantity} @ {t.price}
+                  {formatTradeSide(t.side)} · {t.quantity} @ {formatMoney(t.price)}
                 </p>
                 {t.emotionTag ? <p className="text-violet-400 text-xs mt-1">{t.emotionTag}</p> : null}
                 {t.pnl != null ? (
                   <p className={`text-sm mt-1 font-medium ${t.pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                     P&L: {t.pnl >= 0 ? '+' : ''}
-                    {t.pnl.toFixed(2)}
+                    {formatMoney(t.pnl)}
                   </p>
                 ) : null}
               </div>

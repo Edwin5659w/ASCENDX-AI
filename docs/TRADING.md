@@ -45,7 +45,8 @@ ASCENDX registra **finanzas personales** (ingresos y gastos) y un **diario de tr
 
 - **API:** `GET/POST/PATCH/DELETE /trades`, `GET /trades/summary`
 - **Modelo:** `Trade` (symbol, side BUY/SELL, quantity, price, pnl opcional, emotionTag, note, tradedAt)
-- **UI:** pestaña «Diario trading» en Finanzas (móvil y web) con disclaimer
+- **UI:** pestaña «Diario trading» en Finanzas (móvil y web) **solo si el usuario la activa en Perfil** (`tradingJournalEnabled`)
+- **Por defecto desactivado:** orientado a ventas/negocio; el diario es para bolsa/cripto, no para ventas del negocio
 - **Hábitos:** heatmap 7 días, hitos de racha, recordatorios (locales en móvil; preferencia guardada en BD)
 - **Perfil:** `POST /user/change-password`, versión de app en móvil
 - **Pendiente fase 3:** IA sobre patrones emocionales, cotizaciones en vivo, portafolio multi-activo

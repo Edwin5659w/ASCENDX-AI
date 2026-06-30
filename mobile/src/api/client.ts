@@ -95,6 +95,24 @@ async function refreshAccessToken(): Promise<string | null> {
   return accessToken;
 }
 
+export class ApiError extends Error {
+  status: number;
+  code?: string;
+  details?: Record<string, unknown>;
+
+  constructor(message: string, status: number, code?: string, details?: Record<string, unknown>) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+    this.details = details;
+  }
+}
+
+export function isAiLimitError(e: unknown): e is ApiError {
+  return e instanceof ApiError && e.code === 'AI_LIMIT_REACHED';
+}
+
 export async function apiRequest<T>(
   path: string,
   options: RequestInit & { public?: boolean } = {},
@@ -132,7 +150,7 @@ export async function apiRequest<T>(
     }
   }
 
-  let json: { data?: T; error?: string; message?: string };
+  let json: { data?: T; error?: string; message?: string; code?: string; details?: Record<string, unknown> };
   try {
     json = await res.json();
   } catch {
@@ -145,7 +163,12 @@ export async function apiRequest<T>(
   }
 
   if (!res.ok) {
-    throw new Error(json.error ?? json.message ?? 'Error en la solicitud');
+    throw new ApiError(
+      json.error ?? json.message ?? 'Error en la solicitud',
+      res.status,
+      json.code,
+      json.details,
+    );
   }
 
   if (json.data !== undefined) {

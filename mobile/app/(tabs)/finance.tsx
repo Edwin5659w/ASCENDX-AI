@@ -19,14 +19,14 @@ import { DonutChart } from '@/src/components/charts/DonutChart';
 import { Card } from '@/src/components/ui/Card';
 import { Button } from '@/src/components/ui/Button';
 import { EmptyState } from '@/src/components/EmptyState';
-import { MethodologyHint } from '@/src/components/MethodologyHint';
 import { TradingJournal } from '@/src/components/TradingJournal';
+import { useAuth } from '@/src/context/AuthContext';
+import { useMoneyFormat } from '@/src/hooks/useMoneyFormat';
 import type { FinanceRecord, FinanceSummary } from '@/src/types/api';
 import { theme } from '@/constants/theme';
 import {
   CATEGORY_CHART_COLORS,
   EXPENSE_CATEGORIES,
-  formatMoney,
   INCOME_CATEGORIES,
   isOnboardingFinanceRecord,
 } from '../../../shared/finance-helpers';
@@ -35,6 +35,9 @@ type FilterType = 'ALL' | 'INCOME' | 'EXPENSE';
 type FinanceTab = 'cashflow' | 'trading';
 
 export default function FinanceScreen() {
+  const { user } = useAuth();
+  const { formatMoney, currency } = useMoneyFormat();
+  const showTrading = user?.plan === 'PRO' && user?.tradingJournalEnabled === true;
   const [financeTab, setFinanceTab] = useState<FinanceTab>('cashflow');
   const [records, setRecords] = useState<FinanceRecord[]>([]);
   const [summary, setSummary] = useState<FinanceSummary | null>(null);
@@ -206,28 +209,29 @@ export default function FinanceScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
         }>
         <Text style={styles.disclaimer}>
-          Control de flujo de caja. No es asesoría financiera ni de inversión.
+          Control de flujo de caja para tu negocio o finanzas personales ({currency}). No es asesoría
+          financiera ni de inversión.
         </Text>
-        <MethodologyHint module="finance" />
+        {showTrading ? (
+          <View style={styles.tabRow}>
+            <Button
+              title="Presupuesto"
+              variant={financeTab === 'cashflow' ? 'primary' : 'secondary'}
+              onPress={() => setFinanceTab('cashflow')}
+              style={styles.tabBtn}
+            />
+            <Button
+              title="Diario trading"
+              variant={financeTab === 'trading' ? 'primary' : 'secondary'}
+              onPress={() => setFinanceTab('trading')}
+              style={styles.tabBtn}
+            />
+          </View>
+        ) : null}
 
-        <View style={styles.tabRow}>
-          <Button
-            title="Presupuesto"
-            variant={financeTab === 'cashflow' ? 'primary' : 'secondary'}
-            onPress={() => setFinanceTab('cashflow')}
-            style={styles.tabBtn}
-          />
-          <Button
-            title="Diario trading"
-            variant={financeTab === 'trading' ? 'primary' : 'secondary'}
-            onPress={() => setFinanceTab('trading')}
-            style={styles.tabBtn}
-          />
-        </View>
+        {showTrading && financeTab === 'trading' ? <TradingJournal /> : null}
 
-        {financeTab === 'trading' ? <TradingJournal /> : null}
-
-        {financeTab === 'cashflow' ? (
+        {(!showTrading || financeTab === 'cashflow') ? (
         <>
         <View style={styles.kpiGrid}>
           <Card style={styles.kpiCard}>

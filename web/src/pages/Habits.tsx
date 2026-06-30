@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Bell, Check, Flame, Pencil, Plus, Trash2, X } from 'lucide-react';
-import { MethodologyHint } from '../components/MethodologyHint';
+import { habitsApi, userApi } from '../api/services';
+import { PlanUsageBar } from '../components/PlanUsageBar';
+import { MethodologyStrip } from '../components/MethodologyStrip';
 import { Card } from '../components/Card';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ListPageSkeleton } from '../components/ui/ListPageSkeleton';
 import { Skeleton } from '../components/ui/Skeleton';
-import { habitsApi } from '../api/services';
 import { useToast } from '../context/ToastContext';
-import type { Habit } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { applyGamificationFeedback } from '../lib/gamification-feedback';
+import type { Habit, PlanUsage } from '../types';
 
 const DAY_LABELS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
@@ -43,7 +46,9 @@ function streakLabel(milestone: number | null | undefined, streak: number) {
 
 export function Habits() {
   const { showToast } = useToast();
+  const { refreshUser } = useAuth();
   const [habits, setHabits] = useState<Habit[]>([]);
+  const [planUsage, setPlanUsage] = useState<PlanUsage | null>(null);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
   const [frequency, setFrequency] = useState<'DAILY' | 'WEEKLY'>('DAILY');
@@ -58,7 +63,9 @@ export function Habits() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setHabits(await habitsApi.list());
+      const [list, usage] = await Promise.all([habitsApi.list(), userApi.plan()]);
+      setHabits(list);
+      setPlanUsage(usage);
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'Error al cargar hábitos', 'error');
     } finally {
@@ -94,8 +101,8 @@ export function Habits() {
       return;
     }
     try {
-      await habitsApi.complete(habit.id);
-      showToast('¡Hábito completado! +15 XP', 'success');
+      const updated = await habitsApi.complete(habit.id);
+      applyGamificationFeedback(updated.gamification, showToast, refreshUser);
       await load();
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'No se pudo completar', 'error');
@@ -167,11 +174,13 @@ export function Habits() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-white mb-2">Hábitos</h1>
-      <MethodologyHint module="habits" />
-      <p className="text-zinc-500 text-sm mb-6">Un completado por día. Mantén tu racha (tracking).</p>
+      <MethodologyStrip module="habits" />
+      <PlanUsageBar usage={planUsage} metric="habits" className="mb-4" />
+      <p className="text-zinc-500 text-sm mb-6">Un completado por día. Mantén tu racha.</p>
 
       <div className="flex flex-col sm:flex-row gap-2 mb-6">
         <input
+          id="habit-name-input"
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && create()}
@@ -256,6 +265,14 @@ export function Habits() {
             icon={Flame}
             title="Sin hábitos aún"
             description="Crea tu primer hábito y completa uno al día para subir tu racha."
+            action={
+              <button
+                type="button"
+                onClick={() => document.getElementById('habit-name-input')?.focus()}
+                className="px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium">
+                Crear mi primer hábito
+              </button>
+            }
           />
         )}
       </div>

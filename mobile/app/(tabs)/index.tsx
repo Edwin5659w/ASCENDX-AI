@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -12,23 +12,36 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useAuth } from '@/src/context/AuthContext';
-import { userApi, aiApi, type AIContextLevel } from '@/src/api/services';
+import { userApi, aiApi, billingApi, type AIContextLevel } from '@/src/api/services';
 import { StatCard } from '@/src/components/StatCard';
 import { FirstStepsCard } from '@/src/components/FirstStepsCard';
 import { GamificationPanel } from '@/src/components/GamificationPanel';
 import { DashboardQuickActions } from '@/src/components/DashboardQuickActions';
+import { DailyFocus } from '@/src/components/dashboard/DailyFocus';
+import { WeeklyRecap } from '@/src/components/dashboard/WeeklyRecap';
+import { UpgradeBanner } from '@/src/components/dashboard/UpgradeBanner';
+import { AIMentorCard } from '@/src/components/dashboard/AIMentorCard';
+import { ProductTour } from '@/src/components/tour/ProductTour';
+import { FirstWinHero } from '@/src/components/dashboard/FirstWinHero';
+import { consumePendingDailyBonus } from '@/src/lib/pending-daily-bonus';
+import { consumePendingProCheckout } from '@/src/lib/pending-pro-checkout';
+import { useToast } from '@/src/context/ToastContext';
 import { BarChartCard } from '@/src/components/charts/BarChartCard';
 import { Card } from '@/src/components/ui/Card';
 import type { UserStats } from '@/src/types/api';
 import { theme } from '@/constants/theme';
 import { computeSetupScore, getTimeGreeting } from '../../../shared/dashboard-helpers';
-import { formatMoney } from '../../../shared/finance-helpers';
+import { RETENTION_MESSAGES } from '../../../shared/retention';
+import { useMoneyFormat } from '@/src/hooks/useMoneyFormat';
 import { CONTEXT_LEVEL_LABELS } from '../../../shared/chat-helpers';
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
+  const { formatMoney } = useMoneyFormat();
+  const { showToast } = useToast();
   const [stats, setStats] = useState<UserStats | null>(null);
+  const [tourOpen, setTourOpen] = useState(false);
   const [dailyPlan, setDailyPlan] = useState('');
   const [warning, setWarning] = useState<string | null>(null);
   const [aiPrompts, setAiPrompts] = useState<string[]>([]);
@@ -36,6 +49,9 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const prevBadgesRef = useRef<Set<string>>(new Set());
+  const dailyBonusShownRef = useRef(false);
+  const proCheckoutRanRef = useRef(false);
 
   const load = useCallback(async () => {
     try {
@@ -46,16 +62,63 @@ export default function DashboardScreen() {
       setAiPrompts(plan.suggestedPrompts ?? []);
       setContextLevel(plan.contextLevel);
       setLoadError(null);
+
+      if (s.firstStepsBonus) {
+        showToast(s.firstStepsBonus.message, 'success');
+      }
+
+      const unlocked = new Set(s.badges.filter((b) => b.unlocked).map((b) => b.slug));
+      for (const slug of unlocked) {
+        if (!prevBadgesRef.current.has(slug)) {
+          const badge = s.badges.find((b) => b.slug === slug);
+          if (badge && prevBadgesRef.current.size > 0) {
+            showToast(`🏆 Logro: ${badge.title}`, 'success');
+          }
+        }
+      }
+      prevBadgesRef.current = unlocked;
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : 'No se pudo cargar el dashboard');
     }
-  }, []);
+  }, [showToast]);
 
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
+      if (user?.onboardingDone && user.productTourDone === false) {
+        setTourOpen(true);
+      }
+      if (!proCheckoutRanRef.current) {
+        proCheckoutRanRef.current = true;
+        void consumePendingProCheckout().then(async (pending) => {
+          if (!pending) return;
+          try {
+            const status = await billingApi.status();
+            if (status.billingConfigured && status.plan !== 'PRO') {
+              const { url } = await billingApi.checkout();
+              const { default: WebBrowser } = await import('expo-web-browser');
+              await WebBrowser.openBrowserAsync(url);
+            }
+          } catch {
+            /* ignore */
+          }
+        });
+      }
+      if (!dailyBonusShownRef.current) {
+        dailyBonusShownRef.current = true;
+        const pending = consumePendingDailyBonus();
+        if (pending?.xpGained) {
+          showToast(pending.message ?? RETENTION_MESSAGES.dailyBonus(pending.xpGained), 'success');
+        } else {
+          void refreshUser().then((bonus) => {
+            if (bonus?.xpGained) {
+              showToast(bonus.message ?? RETENTION_MESSAGES.dailyBonus(bonus.xpGained), 'success');
+            }
+          });
+        }
+      }
       load().finally(() => setLoading(false));
-    }, [load]),
+    }, [load, refreshUser, showToast, user?.onboardingDone, user?.productTourDone]),
   );
 
   const onRefresh = async () => {
@@ -109,6 +172,15 @@ export default function DashboardScreen() {
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
       }>
+      <ProductTour
+        visible={tourOpen}
+        userName={user?.name}
+        onClose={() => {
+          setTourOpen(false);
+          void refreshUser();
+        }}
+      />
+
       <LinearGradient colors={['#1a1033', '#0a0a0f']} style={styles.header}>
         <Text style={styles.greeting}>{getTimeGreeting(user?.name)} 👋</Text>
         <Text style={styles.tagline}>
@@ -142,8 +214,18 @@ export default function DashboardScreen() {
         </Card>
       ) : null}
 
+      <UpgradeBanner planUsage={stats?.planUsage} />
+      <AIMentorCard
+        contextLevel={contextLevel}
+        suggestedPrompts={aiPrompts}
+        aiUsed={stats?.planUsage?.usage.aiChatToday}
+        aiLimit={stats?.planUsage?.limits.aiChatPerDay}
+      />
+      <FirstWinHero stats={stats} />
+      <DailyFocus />
+      {(stats?.completedTasks ?? 0) > 0 || user?.plan === 'PRO' ? <WeeklyRecap /> : null}
       <FirstStepsCard stats={stats} />
-      <GamificationPanel user={user} stats={stats} />
+      <GamificationPanel user={user} stats={stats} compact />
       <DashboardQuickActions />
 
       {warning ? (
@@ -310,4 +392,4 @@ const styles = StyleSheet.create({
   errorText: { color: theme.colors.text, fontSize: 14, marginBottom: 8 },
   retryText: { color: theme.colors.primaryLight, fontWeight: '600', fontSize: 14 },
 });
-
+

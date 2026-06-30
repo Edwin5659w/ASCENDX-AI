@@ -19,7 +19,12 @@
     "./dashboard-helpers": "./dist/dashboard-helpers.js",
     "./onboarding-helpers": "./dist/onboarding-helpers.js",
     "./validators/trade.validator": "./dist/validators/trade.validator.js",
-    "./trading-helpers": "./dist/trading-helpers.js"
+    "./trading-helpers": "./dist/trading-helpers.js",
+    "./plans": "./dist/plans.js",
+    "./weekly-recap": "./dist/weekly-recap.js",
+    "./retention": "./dist/retention.js",
+    "./retention-playbook": "./dist/retention-playbook.js",
+    "./email-content": "./dist/email-content.js"
   },
   "dependencies": {
     "zod": "^3.24.1"

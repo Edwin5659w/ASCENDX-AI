@@ -4,16 +4,18 @@ import { Card } from '../components/Card';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ListPageSkeleton } from '../components/ui/ListPageSkeleton';
-import { MethodologyHint } from '../components/MethodologyHint';
-import { goalsApi } from '../api/services';
+import { goalsApi, userApi } from '../api/services';
+import { PlanUsageBar } from '../components/PlanUsageBar';
+import { MethodologyStrip } from '../components/MethodologyStrip';
 import { useToast } from '../context/ToastContext';
-import type { Goal } from '../types';
+import type { Goal, PlanUsage } from '../types';
 
 const priorityColor = { LOW: 'text-zinc-400', MEDIUM: 'text-cyan-400', HIGH: 'text-red-400' };
 
 export function Goals() {
   const { showToast } = useToast();
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [planUsage, setPlanUsage] = useState<PlanUsage | null>(null);
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('MEDIUM');
   const [loading, setLoading] = useState(true);
@@ -28,7 +30,9 @@ export function Goals() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setGoals(await goalsApi.list());
+      const [list, usage] = await Promise.all([goalsApi.list(), userApi.plan()]);
+      setGoals(list);
+      setPlanUsage(usage);
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'Error al cargar objetivos', 'error');
     } finally {
@@ -101,10 +105,12 @@ export function Goals() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-white mb-2">Objetivos</h1>
-      <MethodologyHint module="goals" />
+      <MethodologyStrip module="goals" />
+      <PlanUsageBar usage={planUsage} metric="goals" className="mb-4" />
 
       <div className="flex flex-col sm:flex-row gap-2 mb-6">
         <input
+          id="goal-title-input"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && create()}
@@ -168,7 +174,15 @@ export function Goals() {
           <EmptyState
             icon={Target}
             title="Sin objetivos"
-            description="Crea tu primera meta SMART y vincula tareas para ver el progreso automático."
+            description="Crea tu primera meta y vincula tareas para ver el progreso automático."
+            action={
+              <button
+                type="button"
+                onClick={() => document.getElementById('goal-title-input')?.focus()}
+                className="px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium">
+                Crear mi primer objetivo
+              </button>
+            }
           />
         )}
       </div>

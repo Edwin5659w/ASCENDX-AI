@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { BrandLogo } from './BrandLogo';
 
-const SPLASH_MS = 2600;
+const SPLASH_MS = 1200;
 const SESSION_KEY = 'ascendx_splash_seen';
 
 interface BrandSplashProps {

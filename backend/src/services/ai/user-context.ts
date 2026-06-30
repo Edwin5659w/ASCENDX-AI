@@ -1,11 +1,13 @@
 import { prisma } from '../../lib/prisma';
 import { toMoneyNumber } from '../../utils/money';
+import { startOfDayUTC } from '../../utils/date';
 import type { AIContextLevel } from '@ascendx/shared/ai-prompts';
 
 export interface UserAIContext {
   userName: string;
   level: number;
   xp: number;
+  dailyFocus: string | null;
   goals: { title: string; progress: number; priority: string }[];
   pendingTasks: string[];
   totalTasks: number;
@@ -19,7 +21,10 @@ export interface UserAIContext {
 
 export async function buildUserAIContext(userId: string): Promise<UserAIContext> {
   const [user, goals, allTasks, pendingTasks, habits, finance] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId }, select: { name: true, level: true, xp: true } }),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, level: true, xp: true, dailyFocus: true, dailyFocusDate: true },
+    }),
     prisma.goal.findMany({ where: { userId }, take: 5, orderBy: { updatedAt: 'desc' } }),
     prisma.task.findMany({ where: { userId }, select: { completed: true } }),
     prisma.task.findMany({
@@ -53,10 +58,19 @@ export async function buildUserAIContext(userId: string): Promise<UserAIContext>
 
   const overdueGoals = goals.filter((g) => g.deadline && g.deadline < new Date()).length;
 
+  const today = startOfDayUTC();
+  const dailyFocus =
+    user?.dailyFocus &&
+    user.dailyFocusDate &&
+    startOfDayUTC(user.dailyFocusDate).getTime() === today.getTime()
+      ? user.dailyFocus
+      : null;
+
   return {
     userName: user?.name?.split(' ')[0] ?? 'viajero',
     level: user?.level ?? 1,
     xp: user?.xp ?? 0,
+    dailyFocus,
     goals: goals.map((g) => ({ title: g.title, progress: g.progress, priority: g.priority })),
     pendingTasks: pendingTasks.map((t) => t.title),
     totalTasks,
@@ -98,6 +112,7 @@ export function formatContextForPrompt(ctx: UserAIContext): string {
   return JSON.stringify(
     {
       perfil: { nombre: ctx.userName, nivel: ctx.level, xp: ctx.xp, nivelContexto: ctx.contextLevel },
+      focoDelDia: ctx.dailyFocus,
       objetivos: ctx.goals,
       tareasPendientes: ctx.pendingTasks,
       resumenTareas: { total: ctx.totalTasks, completadas: ctx.completedTasks },
@@ -120,7 +135,7 @@ export function dailyPlanSystemPrompt(ctx: UserAIContext): string {
   if (ctx.contextLevel === 'partial') {
     return `${base} El perfil está incompleto (faltan objetivos, tareas o hábitos). Usa solo los datos del JSON. Sugiere completar lo que falte y una acción inmediata para hoy.`;
   }
-  return `${base} Usa exclusivamente los datos del JSON. Prioriza tareas pendientes, hábitos con racha y objetivos con mayor progreso pendiente. Puedes citar metodologías cuando ayuden: SMART (objetivos), GTD/Eisenhower (tareas), habit stacking (hábitos), 50/30/20 (finanzas), Pomodoro 25 min (enfoque).`;
+  return `${base} Usa exclusivamente los datos del JSON. Si hay focoDelDia, priorízalo en el plan. Prioriza tareas pendientes, hábitos con racha y objetivos con mayor progreso pendiente. Puedes citar metodologías cuando ayuden: SMART (objetivos), GTD/Eisenhower (tareas), habit stacking (hábitos), 50/30/20 (finanzas), Pomodoro 25 min (enfoque).`;
 }
 
 export function chatSystemPrompt(ctx: UserAIContext): string {
@@ -133,5 +148,5 @@ export function chatSystemPrompt(ctx: UserAIContext): string {
   if (ctx.contextLevel === 'partial') {
     return `${base} Perfil parcial: motiva a completar objetivos, tareas y hábitos en la app antes de planes complejos.`;
   }
-  return `${base} Usa el contexto JSON. Detecta procrastinación si hay muchas tareas pendientes y propón UN primer paso de 15 minutos. Menciona la metodología cuando encaje (SMART, GTD, Pomodoro, rachas de hábitos, 50/30/20). No des asesoría de inversión ni trading bursátil.`;
+  return `${base} Usa el contexto JSON. Detecta procrastinación si hay muchas tareas pendientes y propón UN primer paso de 15 minutos. Menciona la metodología cuando encaje (SMART, GTD, Pomodoro, rachas de hábitos, 50/30/20). Termina con una pregunta concreta o acción única. No des asesoría de inversión ni trading bursátil.`;
 }

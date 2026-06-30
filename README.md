@@ -2,6 +2,8 @@
 
 Plataforma Life OS: objetivos, tareas, hábitos, finanzas y mentor IA personal (web + móvil).
 
+**Comercial:** landing pública, planes Gratis/Pro, referidos (+50 XP), escudos de racha, resumen semanal Pro, 12 logros, foco diario, privacidad/GDPR (eliminar cuenta).
+
 ## Estructura
 
 ```
@@ -42,10 +44,13 @@ npm run dev        # http://localhost:5173
 cd mobile
 cp .env.example .env
 # En Expo Go la IP se detecta desde Metro (no suele hacer falta .env)
+# EXPO_PUBLIC_WEB_URL=https://tu-web.vercel.app  (enlace a precios desde Perfil)
 # Si falla: EXPO_PUBLIC_API_URL=http://TU_IP:4000 y npx expo start -c
 npm install
 npm start
 ```
+
+**Paridad web ↔ móvil (v1.1):** foco diario, resumen semanal Pro, banner upgrade, 12 logros, referidos, escudos de racha, activar Pro, eliminar cuenta, deep link `ascendx://register?ref=CODIGO`.
 
 ## Endpoints principales
 
@@ -53,7 +58,8 @@ npm start
 |------|--------|
 | Sistema | `GET /health` |
 | Auth | `POST /auth/register`, `/login`, `/refresh`, `/logout`, `/forgot-password`, `/reset-password` |
-| Usuario | `GET /user/me`, `/stats`, `PATCH /user/me`, `POST /user/onboarding-setup`, `/onboarding-complete`, `/push/test` |
+| Usuario | `GET /user/me`, `/stats`, `/weekly-recap`, `/referral`, `/plan`, `PATCH /user/me`, `POST /user/daily-focus`, `/upgrade-pro`, `DELETE /user/account`, onboarding, push/test |
+| Público | `GET /public/stats` |
 | Objetivos | `CRUD /goals` |
 | Tareas | `CRUD /tasks` |
 | Hábitos | `CRUD /habits`, `POST /habits/:id/complete` |

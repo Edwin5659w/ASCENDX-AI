@@ -5,8 +5,10 @@ import { startOfDayUTC } from '../../utils/date';
 import {
   EMPTY_DAILY_PLAN,
   getSuggestedPrompts,
+  buildAIUsage,
   type AIContextLevel,
 } from '@ascendx/shared/ai-prompts';
+import { getPlanLimits } from '@ascendx/shared/plans';
 import { encodeChatPair, decodeChatInsightMessage } from '@ascendx/shared/chat-helpers';
 import {
   buildUserAIContext,
@@ -14,6 +16,7 @@ import {
   dailyPlanSystemPrompt,
   formatContextForPrompt,
 } from './user-context';
+import { planService } from '../plan.service';
 
 const FALLBACK_DAILY_PLAN_PARTIAL =
   'Plan del día: 1) Revisa tus objetivos en la app. 2) Elige la tarea más pequeña y complétala. 3) Marca un hábito hoy (+15 XP). 4) Registra un movimiento si aplica. ¡Vamos paso a paso!';
@@ -35,10 +38,21 @@ export class OpenAIService {
 
   async getContextMeta(userId: string) {
     const ctx = await buildUserAIContext(userId);
+    const plan = await planService.getUserPlan(userId);
+    const used = await planService.getAiUsageToday(userId);
+    const limits = getPlanLimits(plan);
     return {
       contextLevel: ctx.contextLevel,
       suggestedPrompts: getSuggestedPrompts(ctx.contextLevel),
+      aiUsage: buildAIUsage(used, limits.aiChatPerDay, plan),
     };
+  }
+
+  async getUsage(userId: string) {
+    const plan = await planService.getUserPlan(userId);
+    const used = await planService.getAiUsageToday(userId);
+    const limits = getPlanLimits(plan);
+    return buildAIUsage(used, limits.aiChatPerDay, plan);
   }
 
   async generateDailyPlan(userId: string): Promise<{
@@ -99,39 +113,63 @@ export class OpenAIService {
   async chat(
     userId: string,
     message: string,
-  ): Promise<{ reply: string; contextLevel: AIContextLevel; suggestedPrompts: string[] }> {
+  ): Promise<{
+    reply: string;
+    contextLevel: AIContextLevel;
+    suggestedPrompts: string[];
+    aiUsage: ReturnType<typeof buildAIUsage>;
+  }> {
+    const usage = await planService.assertCanChat(userId);
     const ctx = await buildUserAIContext(userId);
-    const meta = { contextLevel: ctx.contextLevel, suggestedPrompts: getSuggestedPrompts(ctx.contextLevel) };
-
-    if (!this.client) {
-      return { reply: FALLBACK_CHAT, ...meta };
-    }
+    const baseMeta = {
+      contextLevel: ctx.contextLevel,
+      suggestedPrompts: getSuggestedPrompts(ctx.contextLevel),
+    };
 
     const sanitized = message.trim().slice(0, 2000);
     if (!sanitized) {
-      return { reply: 'Escribe tu pregunta y te ayudo con el siguiente paso concreto.', ...meta };
+      return {
+        reply: 'Escribe tu pregunta y te ayudo con el siguiente paso concreto.',
+        ...baseMeta,
+        aiUsage: buildAIUsage(usage.used, usage.limit, usage.plan),
+      };
+    }
+
+    if (!this.client) {
+      return { reply: FALLBACK_CHAT, ...baseMeta, aiUsage: buildAIUsage(usage.used, usage.limit, usage.plan) };
     }
 
     try {
+      const history = await this.getChatHistory(userId, 12);
+      const recentTurns = history.slice(-8).map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      }));
+
       const completion = await this.client.chat.completions.create({
         model: env.OPENAI_MODEL,
         messages: [
           { role: 'system', content: chatSystemPrompt(ctx) },
+          ...recentTurns,
           {
             role: 'user',
-            content: `Contexto:\n${formatContextForPrompt(ctx)}\n\nMensaje del usuario:\n${sanitized}`,
+            content: `Contexto actualizado:\n${formatContextForPrompt(ctx)}\n\nMensaje del usuario:\n${sanitized}`,
           },
         ],
-        max_tokens: 300,
+        max_tokens: 400,
         temperature: 0.75,
       });
 
       const reply = completion.choices[0]?.message?.content?.trim() || FALLBACK_CHAT;
       await this.saveChatExchange(userId, sanitized, reply);
-      return { reply, ...meta };
+      return {
+        reply,
+        ...baseMeta,
+        aiUsage: buildAIUsage(usage.used + 1, usage.limit, usage.plan),
+      };
     } catch (error) {
       console.error('[OpenAI] chat error:', error);
-      return { reply: FALLBACK_CHAT, ...meta };
+      return { reply: FALLBACK_CHAT, ...baseMeta, aiUsage: buildAIUsage(usage.used, usage.limit, usage.plan) };
     }
   }
 

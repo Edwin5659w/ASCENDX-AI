@@ -36,6 +36,14 @@ export const registerSchema = z.object({
     .max(255, 'Email demasiado largo')
     .toLowerCase(),
   password: passwordSchema,
+  referralCode: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .min(4, 'Código inválido')
+    .max(12, 'Código inválido')
+    .optional()
+    .or(z.literal('')),
 });
 
 export const loginSchema = z.object({

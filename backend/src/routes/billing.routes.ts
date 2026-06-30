@@ -1,0 +1,50 @@
+import { Router } from 'express';
+import { requireAuth } from '../middleware/auth';
+import { sendSuccess } from '../utils/response';
+import { billingService, syncSubscriptionFromSession } from '../services/billing.service';
+import { AppError } from '../middleware/errorHandler';
+
+const router = Router();
+
+router.get('/status', requireAuth, async (req, res, next) => {
+  try {
+    sendSuccess(res, await billingService.getStatus(req.user!.userId));
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.post('/checkout', requireAuth, async (req, res, next) => {
+  try {
+    const session = await billingService.createCheckoutSession(req.user!.userId, req.user!.email);
+    sendSuccess(res, session);
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.post('/portal', requireAuth, async (req, res, next) => {
+  try {
+    const session = await billingService.createPortalSession(req.user!.userId);
+    sendSuccess(res, session);
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.post('/sync-session', requireAuth, async (req, res, next) => {
+  try {
+    const sessionId = typeof req.body?.sessionId === 'string' ? req.body.sessionId : '';
+    if (!sessionId) throw new AppError(400, 'sessionId requerido');
+    const user = await syncSubscriptionFromSession(req.user!.userId, sessionId);
+    sendSuccess(res, { user });
+  } catch (e) {
+    next(e);
+  }
+});
+
+export default router;
+
+export async function handleStripeWebhook(rawBody: Buffer, signature: string | undefined) {
+  return billingService.handleWebhook(rawBody, signature);
+}

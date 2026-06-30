@@ -12,7 +12,7 @@ import Animated, {
 import { BrandLogo } from './BrandLogo';
 import { theme } from '@/constants/theme';
 
-const SPLASH_MS = 2600;
+const SPLASH_MS = 1200;
 
 interface BrandSplashProps {
   onFinish: () => void;
