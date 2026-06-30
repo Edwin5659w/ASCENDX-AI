@@ -17,6 +17,7 @@ export interface User {
   pushToken?: string | null;
   preferredCurrency?: string;
   tradingJournalEnabled?: boolean;
+  proTrialEndsAt?: string | null;
   createdAt: string;
   updatedAt?: string;
 }
@@ -60,6 +61,10 @@ export interface UserStats {
   badges: UserBadgeDto[];
   planUsage?: PlanUsage;
   firstStepsBonus?: { xpGained: number; message: string } | null;
+  ascendScore?: number;
+  ascendLabel?: string;
+  ascendTips?: string[];
+  morningRitualDone?: boolean;
 }
 
 export interface BillingStatus {

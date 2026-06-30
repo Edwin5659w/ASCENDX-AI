@@ -67,6 +67,8 @@ const FOCUS_FA_ICONS: Record<
   FINANZAS: 'money',
   TRABAJO: 'briefcase',
   PERSONAL: 'sun-o',
+  EMPRENDEDOR: 'rocket',
+  FITNESS: 'heartbeat',
 };
 
 

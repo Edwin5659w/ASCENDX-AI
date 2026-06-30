@@ -25,6 +25,7 @@ import { API_URL, checkApiHealth, formatApiError } from '@/src/api/client';
 import { userApi, billingApi } from '@/src/api/services';
 import { DEFAULT_CURRENCY, SUPPORTED_CURRENCIES } from '../../../shared/currencies';
 import type { ReferralInfo } from '@/src/types/api';
+import { AccountabilityPanel } from '@/src/components/AccountabilityPanel';
 import { useToast } from '@/src/context/ToastContext';
 
 Notifications.setNotificationHandler({
@@ -387,6 +388,8 @@ export default function ProfileScreen() {
           </Pressable>
         </Card>
       )}
+
+      <AccountabilityPanel />
 
       {referral && (
         <Card style={styles.referralCard}>

@@ -23,6 +23,8 @@ import { UpgradeBanner } from '@/src/components/dashboard/UpgradeBanner';
 import { AIMentorCard } from '@/src/components/dashboard/AIMentorCard';
 import { ProductTour } from '@/src/components/tour/ProductTour';
 import { FirstWinHero } from '@/src/components/dashboard/FirstWinHero';
+import { AscensoScoreCard } from '@/src/components/dashboard/AscensoScoreCard';
+import { MorningRitualModal } from '@/src/components/dashboard/MorningRitualModal';
 import { consumePendingDailyBonus } from '@/src/lib/pending-daily-bonus';
 import { consumePendingProCheckout } from '@/src/lib/pending-pro-checkout';
 import { useToast } from '@/src/context/ToastContext';
@@ -49,6 +51,7 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [ritualOpen, setRitualOpen] = useState(false);
   const prevBadgesRef = useRef<Set<string>>(new Set());
   const dailyBonusShownRef = useRef(false);
   const proCheckoutRanRef = useRef(false);
@@ -215,6 +218,30 @@ export default function DashboardScreen() {
       ) : null}
 
       <UpgradeBanner planUsage={stats?.planUsage} />
+      {user?.proTrialEndsAt && new Date(user.proTrialEndsAt) > new Date() ? (
+        <Card style={styles.trialBanner}>
+          <Text style={styles.trialText}>
+            Pro de prueba activo hasta{' '}
+            {new Date(user.proTrialEndsAt).toLocaleDateString('es', { day: 'numeric', month: 'long' })}
+          </Text>
+        </Card>
+      ) : null}
+      {stats?.ascendScore != null ? (
+        <AscensoScoreCard score={stats.ascendScore} label={stats.ascendLabel ?? ''} tips={stats.ascendTips} />
+      ) : null}
+      {!stats?.morningRitualDone ? (
+        <Pressable style={styles.ritualBtn} onPress={() => setRitualOpen(true)}>
+          <FontAwesome name="sun-o" size={16} color="#fcd34d" />
+          <Text style={styles.ritualBtnText}>Empezar ritual matutino (2 min)</Text>
+        </Pressable>
+      ) : null}
+      <MorningRitualModal
+        visible={ritualOpen}
+        onClose={() => {
+          setRitualOpen(false);
+          void load();
+        }}
+      />
       <AIMentorCard
         contextLevel={contextLevel}
         suggestedPrompts={aiPrompts}
@@ -338,6 +365,28 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   setupFill: { height: '100%', backgroundColor: theme.colors.primary, borderRadius: 3 },
+  trialBanner: {
+    marginHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    borderColor: theme.colors.primary + '55',
+    borderWidth: 1,
+    backgroundColor: theme.colors.primary + '15',
+  },
+  trialText: { color: theme.colors.primaryLight, fontSize: 13 },
+  ritualBtn: {
+    marginHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(251,191,36,0.35)',
+    backgroundColor: 'rgba(251,191,36,0.1)',
+  },
+  ritualBtnText: { color: '#fcd34d', fontWeight: '600', fontSize: 14 },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

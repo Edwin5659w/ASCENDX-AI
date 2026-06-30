@@ -80,6 +80,17 @@ export const userApi = {
     apiRequest<User>('/user/me', { method: 'PATCH', body: JSON.stringify(data) }),
   completeOnboarding: () => apiRequest<User>('/user/onboarding-complete', { method: 'POST' }),
   completeProductTour: () => apiRequest<User>('/user/product-tour-complete', { method: 'POST' }),
+  completeMorningRitual: () => apiRequest<{ ok: boolean }>('/user/morning-ritual-complete', { method: 'POST' }),
+  accountabilityCode: () => apiRequest<{ code: string }>('/user/accountability/code'),
+  accountabilityPartners: () =>
+    apiRequest<{ id: string; name: string; ascendScore: number; ascendLabel: string }[]>(
+      '/user/accountability/partners',
+    ),
+  linkAccountability: (code: string) =>
+    apiRequest<{ partnerName: string; partnerId: string }>('/user/accountability/link', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    }),
   setupOnboarding: (data: {
     focus: string;
     goalTitle: string;
@@ -116,7 +127,11 @@ export const userApi = {
 
 export const billingApi = {
   status: () => apiRequest<BillingStatus>('/billing/status'),
-  checkout: () => apiRequest<{ url: string }>('/billing/checkout', { method: 'POST' }),
+  checkout: (interval: 'month' | 'year' = 'month') =>
+    apiRequest<{ url: string }>('/billing/checkout', {
+      method: 'POST',
+      body: JSON.stringify({ interval }),
+    }),
   portal: () => apiRequest<{ url: string }>('/billing/portal', { method: 'POST' }),
 };
 
