@@ -18,6 +18,7 @@ export interface User {
   preferredCurrency?: string;
   tradingJournalEnabled?: boolean;
   proTrialEndsAt?: string | null;
+  themePreference?: 'dark' | 'light';
   createdAt: string;
   updatedAt?: string;
 }
@@ -73,6 +74,8 @@ export interface BillingStatus {
   subscriptionPeriodEnd: string | null;
   billingConfigured: boolean;
   hasStripeCustomer: boolean;
+  iapConfigured?: boolean;
+  subscriptionProvider?: string | null;
 }
 
 export interface PlanUsage {

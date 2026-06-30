@@ -1,4 +1,6 @@
 import { apiRequest, saveTokens, clearTokens, getRefreshToken } from './client';
+import { listQueryString } from '../../../shared/list-helpers';
+import type { PaginatedResult } from '../../../shared/pagination';
 import type {
   AuthResponse,
   User,
@@ -98,6 +100,7 @@ export const userApi = {
     preferredCurrency?: string;
     tradingJournalEnabled?: boolean;
     emailOptIn?: boolean;
+    themePreference?: 'dark' | 'light';
   }) =>
     apiRequest<User>('/user/me', { method: 'PATCH', body: JSON.stringify(data) }),
   completeOnboarding: () => apiRequest<User>('/user/onboarding-complete', { method: 'POST' }),
@@ -161,6 +164,7 @@ export const billingApi = {
       body: JSON.stringify({ interval }),
     }),
   portal: () => apiRequest<{ url: string }>('/billing/portal', { method: 'POST' }),
+  revenueCatSync: () => apiRequest<{ user: User }>('/billing/revenuecat/sync', { method: 'POST' }),
 };
 
 export const tradesApi = {
@@ -179,7 +183,10 @@ export const tradesApi = {
 };
 
 export const goalsApi = {
-  list: () => apiRequest<Goal[]>('/goals'),
+  list: (page?: number, limit = 50) =>
+    apiRequest<Goal[] | PaginatedResult<Goal>>(
+      page != null ? `/goals${listQueryString(page, limit)}` : '/goals',
+    ),
   create: (data: Partial<Goal>) =>
     apiRequest<Goal>('/goals', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: Partial<Goal>) =>
@@ -188,7 +195,10 @@ export const goalsApi = {
 };
 
 export const tasksApi = {
-  list: () => apiRequest<Task[]>('/tasks'),
+  list: (page?: number, limit = 50) =>
+    apiRequest<Task[] | PaginatedResult<Task>>(
+      page != null ? `/tasks${listQueryString(page, limit)}` : '/tasks',
+    ),
   create: (data: { title: string; goalId?: string | null; dueDate?: string }) =>
     apiRequest<Task>('/tasks', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: Partial<Task>) =>
@@ -197,7 +207,10 @@ export const tasksApi = {
 };
 
 export const habitsApi = {
-  list: () => apiRequest<Habit[]>('/habits'),
+  list: (page?: number, limit = 50) =>
+    apiRequest<Habit[] | PaginatedResult<Habit>>(
+      page != null ? `/habits${listQueryString(page, limit)}` : '/habits',
+    ),
   create: (data: { name: string; frequency?: 'DAILY' | 'WEEKLY' }) =>
     apiRequest<Habit>('/habits', { method: 'POST', body: JSON.stringify(data) }),
   update: (
@@ -215,7 +228,10 @@ export const habitsApi = {
 };
 
 export const financeApi = {
-  list: () => apiRequest<FinanceRecord[]>('/finance'),
+  list: (page?: number, limit = 50) =>
+    apiRequest<FinanceRecord[] | PaginatedResult<FinanceRecord>>(
+      page != null ? `/finance${listQueryString(page, limit)}` : '/finance',
+    ),
   summary: () => apiRequest<FinanceSummary>('/finance/summary'),
   create: (data: { type: 'INCOME' | 'EXPENSE'; amount: number; category: string; note?: string }) =>
     apiRequest<FinanceRecord>('/finance', { method: 'POST', body: JSON.stringify(data) }),

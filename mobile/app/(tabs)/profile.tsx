@@ -27,6 +27,9 @@ import { DEFAULT_CURRENCY, SUPPORTED_CURRENCIES } from '../../../shared/currenci
 import type { ReferralInfo } from '@/src/types/api';
 import { AccountabilityPanel } from '@/src/components/AccountabilityPanel';
 import { useToast } from '@/src/context/ToastContext';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useLocale } from '@/src/context/LocaleContext';
+import { isRevenueCatConfigured, purchasePro, restorePurchases, configureRevenueCat } from '@/src/lib/revenuecat';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -49,6 +52,8 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout, refreshUser } = useAuth();
   const { showToast } = useToast();
+  const { mode, setMode } = useAppTheme();
+  const { locale, setLocale, t } = useLocale();
   const [pushBusy, setPushBusy] = useState(false);
   const [testPushBusy, setTestPushBusy] = useState(false);
   const [name, setName] = useState(user?.name ?? '');
@@ -72,6 +77,12 @@ export default function ProfileScreen() {
   useEffect(() => {
     userApi.referral().then(setReferral).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (user?.id && isRevenueCatConfigured()) {
+      void configureRevenueCat(user.id);
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     setName(user?.name ?? '');
@@ -251,6 +262,14 @@ export default function ProfileScreen() {
         showToast('Ya tienes Pro activo', 'info');
         return;
       }
+      if (isRevenueCatConfigured() && user?.id) {
+        const ok = await purchasePro(user.id);
+        if (ok) {
+          await refreshUser();
+          showToast('¡Pro activado con App Store / Play Store!', 'success');
+          return;
+        }
+      }
       if (!status.billingConfigured) {
         Alert.alert('Pagos', 'Los pagos aún no están disponibles. Visita la web para más info.');
         await WebBrowser.openBrowserAsync(PRICING_URL);
@@ -260,6 +279,20 @@ export default function ProfileScreen() {
       await WebBrowser.openBrowserAsync(url);
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo activar Pro');
+    } finally {
+      setUpgrading(false);
+    }
+  };
+
+  const restoreIap = async () => {
+    if (!user?.id || !isRevenueCatConfigured()) return;
+    setUpgrading(true);
+    try {
+      await restorePurchases(user.id);
+      await refreshUser();
+      showToast('Compras restauradas', 'success');
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo restaurar');
     } finally {
       setUpgrading(false);
     }
@@ -383,6 +416,9 @@ export default function ProfileScreen() {
             100 mensajes IA/día, resumen semanal, diario de trading y más objetivos.
           </Text>
           <Button title="Suscribirme a Pro" onPress={upgradePro} loading={upgrading} />
+          {isRevenueCatConfigured() ? (
+            <Button title="Restaurar compras" variant="secondary" onPress={restoreIap} loading={upgrading} />
+          ) : null}
           <Pressable style={styles.pricingLink} onPress={() => void WebBrowser.openBrowserAsync(PRICING_URL)}>
             <Text style={styles.pricingLinkText}>Ver planes en web →</Text>
           </Pressable>
@@ -431,6 +467,36 @@ export default function ProfileScreen() {
       <Card style={styles.nameCard}>
         <Input label="Nombre completo" value={name} onChangeText={setName} autoCapitalize="words" />
         <Button title="Guardar nombre" onPress={saveName} loading={savingName} />
+      </Card>
+
+      <Card style={styles.prefsCard}>
+        <Text style={styles.sectionTitle}>Apariencia e idioma</Text>
+        <View style={styles.currencyGrid}>
+          <Pressable
+            style={[styles.currencyChip, mode === 'dark' && styles.currencyChipActive]}
+            onPress={() => setMode('dark')}>
+            <Text style={[styles.currencyChipText, mode === 'dark' && styles.currencyChipTextActive]}>
+              {t('theme', 'dark')}
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.currencyChip, mode === 'light' && styles.currencyChipActive]}
+            onPress={() => setMode('light')}>
+            <Text style={[styles.currencyChipText, mode === 'light' && styles.currencyChipTextActive]}>
+              {t('theme', 'light')}
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.currencyChip, locale === 'es' && styles.currencyChipActive]}
+            onPress={() => setLocale('es')}>
+            <Text style={[styles.currencyChipText, locale === 'es' && styles.currencyChipTextActive]}>ES</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.currencyChip, locale === 'en' && styles.currencyChipActive]}
+            onPress={() => setLocale('en')}>
+            <Text style={[styles.currencyChipText, locale === 'en' && styles.currencyChipTextActive]}>EN</Text>
+          </Pressable>
+        </View>
       </Card>
 
       <Card style={styles.prefsCard}>

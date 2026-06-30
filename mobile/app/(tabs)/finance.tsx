@@ -22,6 +22,7 @@ import { EmptyState } from '@/src/components/EmptyState';
 import { TradingJournal } from '@/src/components/TradingJournal';
 import { useAuth } from '@/src/context/AuthContext';
 import { useMoneyFormat } from '@/src/hooks/useMoneyFormat';
+import { usePaginatedList } from '@/src/hooks/usePaginatedList';
 import type { FinanceRecord, FinanceSummary } from '@/src/types/api';
 import { theme } from '@/constants/theme';
 import {
@@ -39,13 +40,21 @@ export default function FinanceScreen() {
   const { formatMoney, currency } = useMoneyFormat();
   const showTrading = user?.plan === 'PRO' && user?.tradingJournalEnabled === true;
   const [financeTab, setFinanceTab] = useState<FinanceTab>('cashflow');
-  const [records, setRecords] = useState<FinanceRecord[]>([]);
+  const fetchRecords = useCallback((page: number, limit: number) => financeApi.list(page, limit), []);
+  const {
+    items: records,
+    loading: recordsLoading,
+    loadingMore,
+    hasMore,
+    refresh,
+    loadMore,
+  } = usePaginatedList<FinanceRecord>(fetchRecords);
   const [summary, setSummary] = useState<FinanceSummary | null>(null);
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [note, setNote] = useState('');
   const [type, setType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE');
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [editing, setEditing] = useState<FinanceRecord | null>(null);
@@ -59,26 +68,24 @@ export default function FinanceScreen() {
   const categoryPresets = type === 'INCOME' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
   const editPresets = editType === 'INCOME' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
 
-  const load = useCallback(async () => {
-    try {
-      const [list, sum] = await Promise.all([financeApi.list(), financeApi.summary()]);
-      setRecords(list);
-      setSummary(sum);
-    } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudieron cargar los datos');
-    }
+  const loadSummary = useCallback(async () => {
+    setSummary(await financeApi.summary());
   }, []);
+
+  const reload = useCallback(async () => {
+    await Promise.all([refresh(), loadSummary()]);
+  }, [refresh, loadSummary]);
 
   useFocusEffect(
     useCallback(() => {
-      setLoading(true);
-      load().finally(() => setLoading(false));
-    }, [load]),
+      setInitialLoading(true);
+      reload().finally(() => setInitialLoading(false));
+    }, [reload]),
   );
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await load();
+    await reload();
     setRefreshing(false);
   };
 
@@ -99,7 +106,7 @@ export default function FinanceScreen() {
       setAmount('');
       setCategory('');
       setNote('');
-      await load();
+      await reload();
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo guardar');
     } finally {
@@ -130,7 +137,7 @@ export default function FinanceScreen() {
         note: editNote.trim() || undefined,
       });
       setEditing(null);
-      await load();
+      await reload();
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo actualizar');
     }
@@ -145,7 +152,7 @@ export default function FinanceScreen() {
         onPress: async () => {
           try {
             await financeApi.remove(r.id);
-            await load();
+            await reload();
           } catch (e) {
             Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo eliminar');
           }
@@ -192,7 +199,7 @@ export default function FinanceScreen() {
 
   const balancePositive = (summary?.balance ?? 0) >= 0;
 
-  if (loading && !summary) {
+  if (initialLoading && !summary) {
     return (
       <View style={styles.boot}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -424,6 +431,11 @@ export default function FinanceScreen() {
             );
           })
         )}
+        {hasMore ? (
+          <Pressable style={styles.loadMoreBtn} onPress={() => loadMore()} disabled={loadingMore}>
+            <Text style={styles.loadMoreText}>{loadingMore ? 'Cargando...' : 'Cargar más'}</Text>
+          </Pressable>
+        ) : null}
         </>
         ) : null}
       </ScrollView>
@@ -639,6 +651,17 @@ const styles = StyleSheet.create({
   recordNote: { color: theme.colors.textMuted, fontSize: 12, marginTop: 2 },
   recordDate: { color: theme.colors.textMuted, fontSize: 11, marginTop: 4 },
   recordAmount: { fontSize: 15, fontWeight: '700' },
+  loadMoreBtn: {
+    marginHorizontal: theme.spacing.md,
+    marginTop: 12,
+    marginBottom: 8,
+    paddingVertical: 12,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: 'center',
+  },
+  loadMoreText: { color: theme.colors.textMuted, fontSize: 14 },
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.65)',

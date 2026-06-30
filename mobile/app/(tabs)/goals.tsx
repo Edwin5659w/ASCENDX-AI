@@ -15,8 +15,10 @@ import { goalsApi, userApi } from '@/src/api/services';
 import { Card } from '@/src/components/ui/Card';
 import { Button } from '@/src/components/ui/Button';
 import { EmptyState } from '@/src/components/EmptyState';
+import { LoadMoreFooter } from '@/src/components/LoadMoreFooter';
 import { PlanUsageBar } from '@/src/components/PlanUsageBar';
 import { MethodologyStrip } from '@/src/components/MethodologyStrip';
+import { usePaginatedList } from '@/src/hooks/usePaginatedList';
 import type { Goal, PlanUsage } from '@/src/types/api';
 import { theme } from '@/constants/theme';
 
@@ -27,7 +29,8 @@ const priorityColors = {
 };
 
 export default function GoalsScreen() {
-  const [goals, setGoals] = useState<Goal[]>([]);
+  const fetchGoals = useCallback((page: number, limit: number) => goalsApi.list(page, limit), []);
+  const { items: goals, loadingMore, hasMore, refresh, loadMore } = usePaginatedList<Goal>(fetchGoals);
   const [planUsage, setPlanUsage] = useState<PlanUsage | null>(null);
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('MEDIUM');
@@ -37,17 +40,16 @@ export default function GoalsScreen() {
   const [editPriority, setEditPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('MEDIUM');
   const [editDeadline, setEditDeadline] = useState('');
 
-  const load = useCallback(async () => {
+  const reload = useCallback(async () => {
+    await refresh();
     try {
-      const [list, usage] = await Promise.all([goalsApi.list(), userApi.plan()]);
-      setGoals(list);
-      setPlanUsage(usage);
-    } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudieron cargar los objetivos');
+      setPlanUsage(await userApi.plan());
+    } catch {
+      /* ignore */
     }
-  }, []);
+  }, [refresh]);
 
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  useFocusEffect(useCallback(() => { void reload(); }, [reload]));
 
   const handleCreate = async () => {
     if (title.trim().length < 3) {
@@ -58,7 +60,7 @@ export default function GoalsScreen() {
     try {
       await goalsApi.create({ title: title.trim(), priority });
       setTitle('');
-      await load();
+      await reload();
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo crear');
     } finally {
@@ -82,7 +84,7 @@ export default function GoalsScreen() {
         deadline: editDeadline || undefined,
       });
       setEditGoal(null);
-      await load();
+      await reload();
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo guardar');
     }
@@ -97,7 +99,7 @@ export default function GoalsScreen() {
         onPress: async () => {
           try {
             await goalsApi.remove(id);
-            await load();
+            await reload();
           } catch (e) {
             Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo eliminar');
           }
@@ -132,6 +134,9 @@ export default function GoalsScreen() {
             description="Crea tu primera meta SMART y vincula tareas."
           />
         }
+        onEndReached={() => loadMore()}
+        onEndReachedThreshold={0.3}
+        ListFooterComponent={<LoadMoreFooter loading={loadingMore} />}
         renderItem={({ item }) => (
           <Card style={styles.card}>
             <View style={styles.cardHeader}>

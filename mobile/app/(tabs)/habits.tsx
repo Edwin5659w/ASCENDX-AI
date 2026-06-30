@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -16,11 +16,13 @@ import { habitsApi, userApi } from '@/src/api/services';
 import { Button } from '@/src/components/ui/Button';
 import { EmptyState } from '@/src/components/EmptyState';
 import { HabitWeekStrip } from '@/src/components/HabitWeekStrip';
+import { LoadMoreFooter } from '@/src/components/LoadMoreFooter';
 import { PlanUsageBar } from '@/src/components/PlanUsageBar';
 import { MethodologyStrip } from '@/src/components/MethodologyStrip';
 import { syncHabitReminders } from '@/src/lib/habit-reminders';
 import { useAuth } from '@/src/context/AuthContext';
 import { useToast } from '@/src/context/ToastContext';
+import { usePaginatedList } from '@/src/hooks/usePaginatedList';
 import { applyGamificationFeedback } from '@/src/lib/gamification-feedback';
 import type { Habit, PlanUsage } from '@/src/types/api';
 import { theme } from '@/constants/theme';
@@ -36,7 +38,8 @@ function streakBadge(milestone: number | null | undefined, streak: number) {
 export default function HabitsScreen() {
   const { refreshUser } = useAuth();
   const { showToast } = useToast();
-  const [habits, setHabits] = useState<Habit[]>([]);
+  const fetchHabits = useCallback((page: number, limit: number) => habitsApi.list(page, limit), []);
+  const { items: habits, loadingMore, hasMore, refresh, loadMore } = usePaginatedList<Habit>(fetchHabits);
   const [planUsage, setPlanUsage] = useState<PlanUsage | null>(null);
   const [name, setName] = useState('');
   const [frequency, setFrequency] = useState<'DAILY' | 'WEEKLY'>('DAILY');
@@ -48,22 +51,24 @@ export default function HabitsScreen() {
   const [reminderHour, setReminderHour] = useState('8');
   const [reminderMinute, setReminderMinute] = useState('0');
 
-  const load = useCallback(async () => {
+  const reload = useCallback(async () => {
+    await refresh();
     try {
-      const [list, usage] = await Promise.all([habitsApi.list(), userApi.plan()]);
-      setHabits(list);
-      setPlanUsage(usage);
-      await syncHabitReminders(list);
-    } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudieron cargar hábitos');
+      setPlanUsage(await userApi.plan());
+    } catch {
+      /* ignore */
     }
-  }, []);
+  }, [refresh]);
 
   useFocusEffect(
     useCallback(() => {
-      void load();
-    }, [load]),
+      void reload();
+    }, [reload]),
   );
+
+  useEffect(() => {
+    void syncHabitReminders(habits);
+  }, [habits]);
 
   const stats = useMemo(() => {
     const doneToday = habits.filter((h) => h.completedToday).length;
@@ -79,7 +84,7 @@ export default function HabitsScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await load();
+    await reload();
     setRefreshing(false);
   };
 
@@ -92,7 +97,7 @@ export default function HabitsScreen() {
     try {
       await habitsApi.create({ name: name.trim(), frequency });
       setName('');
-      await load();
+      await reload();
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo crear');
     } finally {
@@ -108,7 +113,7 @@ export default function HabitsScreen() {
     try {
       const updated = await habitsApi.complete(habit.id);
       applyGamificationFeedback(updated.gamification, showToast, refreshUser);
-      await load();
+      await reload();
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo completar');
     }
@@ -124,7 +129,7 @@ export default function HabitsScreen() {
     try {
       await habitsApi.update(renameFor.id, { name: renameText.trim() });
       setRenameFor(null);
-      await load();
+      await reload();
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo renombrar');
     }
@@ -151,7 +156,7 @@ export default function HabitsScreen() {
         reminderMinute: enabled ? m : null,
       });
       setReminderFor(null);
-      await load();
+      await reload();
       if (enabled) {
         Alert.alert('Recordatorio', 'Se programó una notificación local diaria (requiere permisos).');
       }
@@ -169,7 +174,7 @@ export default function HabitsScreen() {
         onPress: async () => {
           try {
             await habitsApi.remove(habit.id);
-            await load();
+            await reload();
           } catch (e) {
             Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo eliminar');
           }
@@ -238,6 +243,9 @@ export default function HabitsScreen() {
             description="Crea un hábito diario, marca la semana en el heatmap y activa recordatorios."
           />
         }
+        onEndReached={() => loadMore()}
+        onEndReachedThreshold={0.3}
+        ListFooterComponent={<LoadMoreFooter loading={loadingMore} />}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View style={styles.row}>

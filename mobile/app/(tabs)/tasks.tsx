@@ -16,8 +16,10 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { goalsApi, tasksApi } from '@/src/api/services';
 import { Button } from '@/src/components/ui/Button';
 import { EmptyState } from '@/src/components/EmptyState';
+import { LoadMoreFooter } from '@/src/components/LoadMoreFooter';
 import { useAuth } from '@/src/context/AuthContext';
 import { useToast } from '@/src/context/ToastContext';
+import { usePaginatedList } from '@/src/hooks/usePaginatedList';
 import { applyGamificationFeedback } from '@/src/lib/gamification-feedback';
 import type { Goal, Task } from '@/src/types/api';
 import { theme } from '@/constants/theme';
@@ -25,7 +27,8 @@ import { theme } from '@/constants/theme';
 export default function TasksScreen() {
   const { refreshUser } = useAuth();
   const { showToast } = useToast();
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const fetchTasks = useCallback((page: number, limit: number) => tasksApi.list(page, limit), []);
+  const { items: tasks, loadingMore, hasMore, refresh, loadMore } = usePaginatedList<Task>(fetchTasks);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [title, setTitle] = useState('');
   const [goalId, setGoalId] = useState('');
@@ -37,21 +40,20 @@ export default function TasksScreen() {
   const [editGoalId, setEditGoalId] = useState('');
   const [editDueDate, setEditDueDate] = useState('');
 
-  const load = useCallback(async () => {
-    try {
-      const [taskList, goalList] = await Promise.all([tasksApi.list(), goalsApi.list()]);
-      setTasks(taskList);
-      setGoals(goalList);
-    } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudieron cargar las tareas');
-    }
+  const loadGoals = useCallback(async () => {
+    const goalList = await goalsApi.list();
+    setGoals(Array.isArray(goalList) ? goalList : goalList.items);
   }, []);
 
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  const reload = useCallback(async () => {
+    await Promise.all([refresh(), loadGoals()]);
+  }, [refresh, loadGoals]);
+
+  useFocusEffect(useCallback(() => { void reload(); }, [reload]));
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await load();
+    await reload();
     setRefreshing(false);
   };
 
@@ -67,7 +69,7 @@ export default function TasksScreen() {
       setTitle('');
       setGoalId('');
       setDueDate('');
-      await load();
+      await reload();
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo crear');
     } finally {
@@ -79,7 +81,7 @@ export default function TasksScreen() {
     try {
       const updated = await tasksApi.update(task.id, { completed: !task.completed });
       applyGamificationFeedback(updated.gamification, showToast, refreshUser);
-      await load();
+      await reload();
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo actualizar la tarea');
     }
@@ -101,7 +103,7 @@ export default function TasksScreen() {
         dueDate: editDueDate || undefined,
       });
       setEditTask(null);
-      await load();
+      await reload();
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo guardar');
     }
@@ -116,7 +118,7 @@ export default function TasksScreen() {
         onPress: async () => {
           try {
             await tasksApi.remove(task.id);
-            await load();
+            await reload();
           } catch (e) {
             Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo eliminar');
           }
@@ -170,6 +172,9 @@ export default function TasksScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
+        onEndReached={() => loadMore()}
+        onEndReachedThreshold={0.3}
+        ListFooterComponent={<LoadMoreFooter loading={loadingMore} />}
         ListEmptyComponent={
           <EmptyState
             icon="check-square-o"

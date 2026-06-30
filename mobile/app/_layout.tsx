@@ -3,30 +3,58 @@ import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/src/context/AuthContext';
 import { ToastProvider } from '@/src/context/ToastContext';
+import { AppThemeProvider, useAppTheme } from '@/src/context/AppThemeContext';
+import { LocaleProvider } from '@/src/context/LocaleContext';
 import { BrandSplash } from '@/src/components/brand/BrandSplash';
-import { theme } from '@/constants/theme';
 
 export { ErrorBoundary } from 'expo-router';
 
 SplashScreen.preventAutoHideAsync();
 
-const ascendxDark = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    background: theme.colors.background,
-    card: theme.colors.surface,
-    text: theme.colors.text,
-    border: theme.colors.border,
-    primary: theme.colors.primary,
-  },
-};
+function ThemedRoot({
+  splashDone,
+  onSplashFinish,
+  loaded,
+}: {
+  splashDone: boolean;
+  onSplashFinish: () => void;
+  loaded: boolean;
+}) {
+  const { theme, mode } = useAppTheme();
+  const navTheme = useMemo(
+    () => ({
+      ...DarkTheme,
+      dark: mode === 'dark',
+      colors: {
+        ...DarkTheme.colors,
+        background: theme.colors.background,
+        card: theme.colors.surface,
+        text: theme.colors.text,
+        border: theme.colors.border,
+        primary: theme.colors.primary,
+      },
+    }),
+    [theme, mode],
+  );
+
+  if (!loaded) return null;
+
+  return (
+    <>
+      {!splashDone ? <BrandSplash onFinish={onSplashFinish} /> : null}
+      <ThemeProvider value={navTheme}>
+        <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
+        <RootNavigator />
+      </ThemeProvider>
+    </>
+  );
+}
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -47,25 +75,22 @@ export default function RootLayout() {
 
   const onSplashFinish = useCallback(() => setSplashDone(true), []);
 
-  if (!loaded) return null;
-
   return (
-    <>
-      {!splashDone ? <BrandSplash onFinish={onSplashFinish} /> : null}
-      <AuthProvider>
-        <ToastProvider>
-          <ThemeProvider value={ascendxDark}>
-            <StatusBar style="light" />
-            <RootNavigator />
-          </ThemeProvider>
-        </ToastProvider>
-      </AuthProvider>
-    </>
+    <AuthProvider>
+      <LocaleProvider>
+        <AppThemeProvider>
+          <ToastProvider>
+            <ThemedRoot splashDone={splashDone} onSplashFinish={onSplashFinish} loaded={loaded} />
+          </ToastProvider>
+        </AppThemeProvider>
+      </LocaleProvider>
+    </AuthProvider>
   );
 }
 
 function RootNavigator() {
   const { isAuthenticated, isLoading, user } = useAuth();
+  const { theme } = useAppTheme();
   const segments = useSegments();
   const router = useRouter();
 
@@ -96,7 +121,11 @@ function RootNavigator() {
   }, [isAuthenticated, isLoading, segments, router, user?.onboardingDone]);
 
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.background } }}>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: theme.colors.background },
+      }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(onboarding)" />
