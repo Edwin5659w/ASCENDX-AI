@@ -21,6 +21,7 @@ export const updateProfileSchema = z.object({
   tradingJournalEnabled: z.boolean().optional(),
   dailyFocus: z.string().trim().max(120, 'Máximo 120 caracteres').optional(),
   emailOptIn: z.boolean().optional(),
+  themePreference: z.enum(['dark', 'light']).optional(),
 });
 
 export const dailyFocusSchema = z.object({

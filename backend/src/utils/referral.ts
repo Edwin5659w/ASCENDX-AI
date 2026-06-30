@@ -10,3 +10,7 @@ export function generateReferralCode(name: string): string {
   const suffix = crypto.randomBytes(2).toString('hex').toUpperCase();
   return `${prefix}${suffix}`;
 }
+
+export function generateAccountabilityCode(): string {
+  return crypto.randomBytes(3).toString('hex').toUpperCase();
+}

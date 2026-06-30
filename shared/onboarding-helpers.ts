@@ -56,6 +56,24 @@ export const ONBOARDING_FOCUS_META: Record<OnboardingFocus, OnboardingFocusMeta>
     goalHint: 'Pequeño pero diario',
     habitHint: 'Empieza con 5–10 minutos',
   },
+  EMPRENDEDOR: {
+    label: 'Emprendedor',
+    description: 'Lanza y haz crecer tu proyecto o negocio.',
+    icon: 'rocket',
+    color: '#a78bfa',
+    methodology: 'OKR + deep work',
+    goalHint: 'Resultado medible este trimestre',
+    habitHint: 'Bloque de trabajo profundo diario',
+  },
+  FITNESS: {
+    label: 'Fitness',
+    description: 'Energía física y constancia en el movimiento.',
+    icon: 'heartbeat',
+    color: '#fb923c',
+    methodology: 'Habit stacking + tracking',
+    goalHint: 'Meta de 90 días alcanzable',
+    habitHint: '30 min de movimiento al día',
+  },
 };
 
 export const ONBOARDING_STEPS = ['welcome', 'focus', 'setup'] as const;

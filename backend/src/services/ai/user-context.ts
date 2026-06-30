@@ -14,13 +14,14 @@ export interface UserAIContext {
   completedTasks: number;
   habits: { name: string; streak: number }[];
   recentFinance: { type: string; amount: number; category: string }[];
+  recentTrades: { symbol: string; side: string; pnl: number | null; emotionTag: string | null }[];
   pendingTasksCount: number;
   overdueGoals: number;
   contextLevel: AIContextLevel;
 }
 
 export async function buildUserAIContext(userId: string): Promise<UserAIContext> {
-  const [user, goals, allTasks, pendingTasks, habits, finance] = await Promise.all([
+  const [user, goals, allTasks, pendingTasks, habits, finance, trades] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { name: true, level: true, xp: true, dailyFocus: true, dailyFocusDate: true },
@@ -39,6 +40,12 @@ export async function buildUserAIContext(userId: string): Promise<UserAIContext>
       take: 5,
       orderBy: { createdAt: 'desc' },
       select: { type: true, amount: true, category: true },
+    }),
+    prisma.trade.findMany({
+      where: { userId },
+      take: 5,
+      orderBy: { tradedAt: 'desc' },
+      select: { symbol: true, side: true, pnl: true, emotionTag: true },
     }),
   ]);
 
@@ -81,6 +88,12 @@ export async function buildUserAIContext(userId: string): Promise<UserAIContext>
       amount: toMoneyNumber(f.amount),
       category: f.category,
     })),
+    recentTrades: trades.map((t) => ({
+      symbol: t.symbol,
+      side: t.side,
+      pnl: t.pnl != null ? toMoneyNumber(t.pnl) : null,
+      emotionTag: t.emotionTag,
+    })),
     pendingTasksCount: pendingTasks.length,
     overdueGoals,
     contextLevel,
@@ -118,6 +131,7 @@ export function formatContextForPrompt(ctx: UserAIContext): string {
       resumenTareas: { total: ctx.totalTasks, completadas: ctx.completedTasks },
       habitos: ctx.habits,
       finanzasRecientes: ctx.recentFinance,
+      tradingReciente: ctx.recentTrades,
       metricas: { tareasPendientes: ctx.pendingTasksCount, objetivosVencidos: ctx.overdueGoals },
     },
     null,

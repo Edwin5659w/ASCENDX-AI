@@ -12,6 +12,8 @@ import { getPlanLimits } from '@ascendx/shared/plans';
 import { XP, RETENTION_MESSAGES } from '@ascendx/shared/retention';
 import { buildFirstSteps, isFirstStepsComplete } from '@ascendx/shared/first-steps';
 import { planService } from './plan.service';
+import { computeAscensoScore } from '@ascendx/shared/ascenso-score';
+import { computeSetupScore } from '@ascendx/shared/dashboard-helpers';
 
 export const userService = {
   async getMe(userId: string) {
@@ -29,14 +31,26 @@ export const userService = {
 
   async getStats(userId: string) {
     const today = startOfDayUTC();
-    const [user, goals, tasks, habits, finance, habitsCompletedToday, referralCount] = await Promise.all([
+    const weekStart = daysAgoUTC(7);
+    const tomorrow = new Date(today);
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+
+    const [user, goals, tasks, habits, finance, habitsCompletedToday, referralCount, userMeta] =
+      await Promise.all([
       prisma.user.findUnique({ where: { id: userId }, select: { xp: true, level: true } }),
       prisma.goal.count({ where: { userId } }),
-      prisma.task.findMany({ where: { userId }, select: { completed: true, streakCount: true } }),
+      prisma.task.findMany({
+        where: { userId },
+        select: { completed: true, streakCount: true, dueDate: true, updatedAt: true },
+      }),
       prisma.habit.findMany({ where: { userId }, select: { streak: true } }),
-      prisma.financeRecord.findMany({ where: { userId }, select: { type: true, amount: true } }),
+      prisma.financeRecord.findMany({ where: { userId }, select: { type: true, amount: true, createdAt: true } }),
       prisma.habitCompletion.count({ where: { userId, completedDate: today } }),
       prisma.user.count({ where: { referredById: userId } }),
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { dailyFocus: true, dailyFocusDate: true, morningRitualDoneDate: true },
+      }),
     ]);
 
     if (!user) throw new AppError(404, 'Usuario no encontrado');
@@ -49,6 +63,41 @@ export const userService = {
       return r.type === 'INCOME' ? acc + amt : acc - amt;
     }, 0);
 
+    const financeRecordsThisWeek = finance.filter((r) => r.createdAt >= weekStart).length;
+    const tasksCompletedToday = tasks.filter(
+      (t) => t.completed && t.updatedAt >= today,
+    ).length;
+    const tasksDueToday = tasks.filter(
+      (t) =>
+        !t.completed &&
+        t.dueDate &&
+        t.dueDate >= today &&
+        t.dueDate < tomorrow,
+    ).length;
+    const hasDailyFocus = Boolean(
+      userMeta?.dailyFocus &&
+        userMeta.dailyFocusDate &&
+        startOfDayUTC(userMeta.dailyFocusDate).getTime() === today.getTime(),
+    );
+    const setupScore = computeSetupScore({
+      totalGoals: goals,
+      totalTasks: tasks.length,
+      completedTasks,
+      activeHabits: habits.length,
+      habitsCompletedToday,
+      financeRecordsCount: finance.length,
+    });
+    const ascendScore = computeAscensoScore({
+      tasksCompletedToday,
+      tasksDueToday: Math.max(tasksDueToday, tasksCompletedToday > 0 ? 1 : 0),
+      habitsTotal: habits.length,
+      habitsCompletedToday,
+      longestStreak,
+      financeRecordsThisWeek,
+      hasDailyFocus,
+      setupScore,
+    });
+
     const statsCore = {
       totalGoals: goals,
       completedTasks,
@@ -60,6 +109,13 @@ export const userService = {
       level: user.level,
       longestStreak,
       financeBalance: roundMoney(financeBalance),
+      ascendScore: ascendScore.score,
+      ascendLabel: ascendScore.label,
+      ascendTips: ascendScore.tips,
+      morningRitualDone: Boolean(
+        userMeta?.morningRitualDoneDate &&
+          startOfDayUTC(userMeta.morningRitualDoneDate).getTime() === today.getTime(),
+      ),
     };
 
     const badges = await badgeService.syncAndList(userId, {
@@ -272,6 +328,7 @@ export const userService = {
       tradingJournalEnabled?: boolean;
       dailyFocus?: string;
       emailOptIn?: boolean;
+      themePreference?: string;
     },
   ) {
     const payload: {
@@ -284,6 +341,7 @@ export const userService = {
       dailyFocus?: string;
       dailyFocusDate?: Date;
       emailOptIn?: boolean;
+      themePreference?: string;
     } = { ...data };
     if (payload.pushToken !== undefined) {
       payload.pushToken = payload.pushToken && payload.pushToken.length > 0 ? payload.pushToken : null;
@@ -431,12 +489,6 @@ export const userService = {
   },
 
   async exportUserData(userId: string) {
-    const plan = await planService.getUserPlan(userId);
-    const limits = getPlanLimits(plan);
-    if (!limits.exportData) {
-      throw new AppError(403, 'La exportación de datos es exclusiva de Pro.');
-    }
-
     const [profile, goals, tasks, habits, finance, trades, insights] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
@@ -475,5 +527,37 @@ export const userService = {
       trades,
       aiInsights: insights,
     };
+  },
+
+  async completeMorningRitual(userId: string) {
+    const today = startOfDayUTC();
+    await prisma.user.update({
+      where: { id: userId },
+      data: { morningRitualDoneDate: today },
+    });
+    return { ok: true };
+  },
+
+  async search(userId: string, q: string) {
+    const query = q.trim();
+    if (query.length < 2) return { goals: [], tasks: [], habits: [] };
+    const [goals, tasks, habits] = await Promise.all([
+      prisma.goal.findMany({
+        where: { userId, title: { contains: query, mode: 'insensitive' } },
+        take: 8,
+        select: { id: true, title: true },
+      }),
+      prisma.task.findMany({
+        where: { userId, title: { contains: query, mode: 'insensitive' } },
+        take: 8,
+        select: { id: true, title: true, completed: true },
+      }),
+      prisma.habit.findMany({
+        where: { userId, name: { contains: query, mode: 'insensitive' } },
+        take: 8,
+        select: { id: true, name: true },
+      }),
+    ]);
+    return { goals, tasks, habits };
   },
 };

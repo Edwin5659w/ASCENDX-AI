@@ -16,7 +16,8 @@ router.get('/status', requireAuth, async (req, res, next) => {
 
 router.post('/checkout', requireAuth, async (req, res, next) => {
   try {
-    const session = await billingService.createCheckoutSession(req.user!.userId, req.user!.email);
+    const interval = req.body?.interval === 'year' ? 'year' : 'month';
+    const session = await billingService.createCheckoutSession(req.user!.userId, req.user!.email, interval);
     sendSuccess(res, session);
   } catch (e) {
     next(e);

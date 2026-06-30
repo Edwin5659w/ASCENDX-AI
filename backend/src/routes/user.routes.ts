@@ -6,6 +6,7 @@ import { AppError } from '../middleware/errorHandler';
 import { sendSuccess } from '../utils/response';
 import { userService } from '../services/user.service';
 import { planService } from '../services/plan.service';
+import { accountabilityService } from '../services/accountability.service';
 import { env } from '../config/env';
 import { updateProfileSchema, changePasswordSchema, dailyFocusSchema, deleteAccountSchema } from '@ascendx/shared/validators/user.validator';
 import { onboardingSetupSchema } from '@ascendx/shared/validators/onboarding.validator';
@@ -133,6 +134,58 @@ router.post('/product-tour-complete', async (req, res, next) => {
   try {
     const user = await userService.updateProfile(req.user!.userId, { productTourDone: true });
     sendSuccess(res, user);
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.post('/morning-ritual-complete', async (req, res, next) => {
+  try {
+    sendSuccess(res, await userService.completeMorningRitual(req.user!.userId));
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.get('/search', async (req, res, next) => {
+  try {
+    const q = typeof req.query.q === 'string' ? req.query.q : '';
+    sendSuccess(res, await userService.search(req.user!.userId, q));
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.get('/accountability/code', async (req, res, next) => {
+  try {
+    const code = await accountabilityService.ensureCode(req.user!.userId);
+    sendSuccess(res, { code });
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.get('/accountability/partners', async (req, res, next) => {
+  try {
+    sendSuccess(res, await accountabilityService.listPartners(req.user!.userId));
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.post('/accountability/link', async (req, res, next) => {
+  try {
+    const code = typeof req.body?.code === 'string' ? req.body.code : '';
+    if (!code) throw new AppError(400, 'Código requerido');
+    sendSuccess(res, await accountabilityService.linkPartner(req.user!.userId, code));
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.delete('/accountability/partners/:partnerId', async (req, res, next) => {
+  try {
+    sendSuccess(res, await accountabilityService.unlinkPartner(req.user!.userId, req.params.partnerId));
   } catch (e) {
     next(e);
   }

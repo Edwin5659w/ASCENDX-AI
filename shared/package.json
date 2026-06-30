@@ -24,7 +24,15 @@
     "./weekly-recap": "./dist/weekly-recap.js",
     "./retention": "./dist/retention.js",
     "./retention-playbook": "./dist/retention-playbook.js",
-    "./email-content": "./dist/email-content.js"
+    "./email-content": "./dist/email-content.js",
+    "./ascenso-score": "./dist/ascenso-score.js",
+    "./morning-ritual": "./dist/morning-ritual.js",
+    "./profile-templates": "./dist/profile-templates.js",
+    "./product-tour": "./dist/product-tour.js",
+    "./checkout-intent": "./dist/checkout-intent.js",
+    "./plan-marketing": "./dist/plan-marketing.js",
+    "./currencies": "./dist/currencies.js",
+    "./i18n": "./dist/i18n/index.js"
   },
   "dependencies": {
     "zod": "^3.24.1"

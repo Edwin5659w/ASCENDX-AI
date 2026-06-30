@@ -74,6 +74,12 @@ model User {
   subscriptionStatus    SubscriptionStatus @default(NONE)
   subscriptionPeriodEnd DateTime?
   emailOptIn            Boolean   @default(true)
+  googleId              String?   @unique
+  termsAcceptedAt       DateTime?
+  themePreference       String    @default("dark")
+  accountabilityCode    String?   @unique
+  morningRitualDoneDate DateTime? @db.Date
+  proTrialEndsAt        DateTime?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
@@ -91,6 +97,21 @@ model User {
   userBadges       UserBadge[]
   tasks            Task[]
   trades           Trade[]
+  accountabilityLinks AccountabilityLink[] @relation("UserAccountability")
+  partnerLinks     AccountabilityLink[] @relation("PartnerAccountability")
+}
+
+model AccountabilityLink {
+  id        String   @id @default(uuid())
+  userId    String
+  partnerId String
+  createdAt DateTime @default(now())
+  user      User     @relation("UserAccountability", fields: [userId], references: [id], onDelete: Cascade)
+  partner   User     @relation("PartnerAccountability", fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, partnerId])
+  @@index([userId])
+  @@index([partnerId])
 }
 
 model EmailLog {
@@ -170,8 +191,10 @@ model Task {
   completed   Boolean   @default(false)
   goalId      String?
   userId      String
-  dueDate     DateTime?
-  streakCount Int       @default(0)
+  dueDate         DateTime?
+  isRecurring     Boolean   @default(false)
+  recurrenceDays  String?
+  streakCount     Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)

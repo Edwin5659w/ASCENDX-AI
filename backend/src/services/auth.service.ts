@@ -10,8 +10,8 @@ import { emailService } from './email.service';
 import { retentionService } from './retention.service';
 import { USER_PROFILE_SELECT } from '../constants/user-select';
 import { expiresAtFromJwt } from '../utils/jwt';
-import { generateReferralCode } from '../utils/referral';
-import { REFERRAL_BONUS_XP } from '@ascendx/shared/plans';
+import { generateReferralCode, generateAccountabilityCode } from '../utils/referral';
+import { REFERRAL_BONUS_XP, REFERRAL_PRO_TRIAL_DAYS } from '@ascendx/shared/plans';
 
 const SALT_ROUNDS = 12;
 
@@ -60,6 +60,17 @@ export const authService = {
       referralCode = generateReferralCode(input.name);
     }
 
+    const proTrialEndsAt = referredById
+      ? new Date(Date.now() + REFERRAL_PRO_TRIAL_DAYS * 24 * 60 * 60 * 1000)
+      : undefined;
+
+    let accountabilityCode = generateAccountabilityCode();
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const taken = await prisma.user.findUnique({ where: { accountabilityCode } });
+      if (!taken) break;
+      accountabilityCode = generateAccountabilityCode();
+    }
+
     const user = await prisma.user.create({
       data: {
         name: input.name,
@@ -67,6 +78,9 @@ export const authService = {
         password: hashed,
         referralCode,
         referredById,
+        proTrialEndsAt,
+        accountabilityCode,
+        termsAcceptedAt: new Date(),
       },
       select: USER_PROFILE_SELECT,
     });
@@ -207,5 +221,106 @@ export const authService = {
     });
 
     return { ok: true as const };
+  },
+
+  async loginWithGoogle(idToken: string, referralCode?: string) {
+    if (!env.GOOGLE_CLIENT_ID) {
+      throw new AppError(503, 'Google Sign-In no configurado en el servidor');
+    }
+
+    const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
+    if (!res.ok) throw new AppError(401, 'Token de Google inválido');
+    const payload = (await res.json()) as {
+      aud?: string;
+      email?: string;
+      email_verified?: string;
+      name?: string;
+      sub?: string;
+    };
+
+    if (payload.aud !== env.GOOGLE_CLIENT_ID) throw new AppError(401, 'Token de Google no válido para esta app');
+    if (!payload.email || payload.email_verified === 'false') {
+      throw new AppError(401, 'Email de Google no verificado');
+    }
+    if (!payload.sub) throw new AppError(401, 'Token de Google incompleto');
+
+    const email = payload.email.toLowerCase();
+    let user = await prisma.user.findFirst({
+      where: { OR: [{ googleId: payload.sub }, { email }] },
+      select: USER_PROFILE_SELECT,
+    });
+
+    if (user && !user.email) throw new AppError(500, 'Cuenta inconsistente');
+
+    if (!user) {
+      const displayName =
+        payload.name?.trim() && payload.name.split(/\s+/).length >= 2
+          ? payload.name.trim()
+          : `${payload.name ?? 'Usuario'} Google`;
+
+      let referredById: string | undefined;
+      const refCode = referralCode?.trim().toUpperCase();
+      if (refCode) {
+        const referrer = await prisma.user.findUnique({ where: { referralCode: refCode } });
+        if (referrer) referredById = referrer.id;
+      }
+
+      const hashed = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), SALT_ROUNDS);
+      let code = generateReferralCode(displayName);
+      for (let i = 0; i < 5; i++) {
+        if (!(await prisma.user.findUnique({ where: { referralCode: code } }))) break;
+        code = generateReferralCode(displayName);
+      }
+      let accCode = generateAccountabilityCode();
+      for (let i = 0; i < 5; i++) {
+        if (!(await prisma.user.findUnique({ where: { accountabilityCode: accCode } }))) break;
+        accCode = generateAccountabilityCode();
+      }
+
+      const proTrialEndsAt = referredById
+        ? new Date(Date.now() + REFERRAL_PRO_TRIAL_DAYS * 24 * 60 * 60 * 1000)
+        : undefined;
+
+      user = await prisma.user.create({
+        data: {
+          name: displayName,
+          email,
+          password: hashed,
+          googleId: payload.sub,
+          referralCode: code,
+          referredById,
+          accountabilityCode: accCode,
+          proTrialEndsAt,
+          termsAcceptedAt: new Date(),
+        },
+        select: USER_PROFILE_SELECT,
+      });
+
+      if (referredById) {
+        await prisma.user.update({
+          where: { id: referredById },
+          data: { xp: { increment: REFERRAL_BONUS_XP } },
+        });
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { xp: { increment: REFERRAL_BONUS_XP } },
+        });
+      }
+      void retentionService.sendWelcome(user.id, user.email, user.name);
+    } else if (!user.googleId) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { googleId: payload.sub },
+      });
+    }
+
+    const payloadJwt: AuthPayload = { userId: user.id, email: user.email };
+    const accessToken = signAccessToken(payloadJwt);
+    const refreshToken = signRefreshToken(payloadJwt);
+    await cleanupExpiredRefreshTokens();
+    await revokeUserRefreshTokens(user.id);
+    await storeRefreshToken(user.id, refreshToken);
+
+    return { user, accessToken, refreshToken, referralBonus: 0 };
   },
 };

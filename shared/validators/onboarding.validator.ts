@@ -1,6 +1,14 @@
 import { z } from 'zod';
 
-export const onboardingFocusEnum = z.enum(['ESTUDIO', 'SALUD', 'FINANZAS', 'TRABAJO', 'PERSONAL']);
+export const onboardingFocusEnum = z.enum([
+  'ESTUDIO',
+  'SALUD',
+  'FINANZAS',
+  'TRABAJO',
+  'PERSONAL',
+  'EMPRENDEDOR',
+  'FITNESS',
+]);
 
 export type OnboardingFocus = z.infer<typeof onboardingFocusEnum>;
 
@@ -37,6 +45,18 @@ export const ONBOARDING_TEMPLATES: Record<
     goalTitle: 'Construir mejores hábitos diarios',
     taskTitles: ['Leer 10 páginas', 'Reflexionar 5 minutos al final del día'],
     habitName: 'Meditar 10 minutos',
+  },
+  EMPRENDEDOR: {
+    label: 'Emprendedor',
+    goalTitle: 'Hacer crecer mi negocio este trimestre',
+    taskTitles: ['Contactar 3 clientes potenciales', 'Revisar métricas de la semana'],
+    habitName: 'Bloque de trabajo profundo 45 min',
+  },
+  FITNESS: {
+    label: 'Fitness',
+    goalTitle: 'Mejorar mi condición física en 90 días',
+    taskTitles: ['Preparar ropa de entreno', 'Planificar comidas de la semana'],
+    habitName: 'Entrenar o moverme 30 min',
   },
 };
 

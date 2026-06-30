@@ -62,6 +62,14 @@ export const taskService = {
           xp: xpResult.xp,
           message: RETENTION_MESSAGES.taskComplete(XP.TASK_COMPLETE),
         };
+        if (existing.isRecurring) {
+          const nextDue = new Date();
+          nextDue.setUTCDate(nextDue.getUTCDate() + 1);
+          await prisma.task.update({
+            where: { id },
+            data: { completed: false, dueDate: nextDue, streakCount: { increment: 1 } },
+          });
+        }
       }
       if (existing.goalId) {
         const goalTasks = await prisma.task.findMany({ where: { goalId: existing.goalId } });

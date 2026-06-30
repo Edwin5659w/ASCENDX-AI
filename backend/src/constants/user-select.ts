@@ -18,6 +18,11 @@ export const USER_PROFILE_SELECT = {
   subscriptionStatus: true,
   subscriptionPeriodEnd: true,
   emailOptIn: true,
+  themePreference: true,
+  accountabilityCode: true,
+  morningRitualDoneDate: true,
+  proTrialEndsAt: true,
+  termsAcceptedAt: true,
   createdAt: true,
   updatedAt: true,
 } as const;

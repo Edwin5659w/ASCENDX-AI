@@ -24,6 +24,9 @@ const envSchema = z.object({
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   STRIPE_PRO_PRICE_ID: z.string().optional(),
+  STRIPE_PRO_ANNUAL_PRICE_ID: z.string().optional(),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  SENTRY_DSN: z.string().optional(),
   /** Cron de emails de retención (09:00 UTC) */
   RETENTION_CRON_ENABLED: z
     .string()

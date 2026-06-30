@@ -1,16 +1,28 @@
 import { prisma } from '../lib/prisma';
-import { startOfDayUTC } from '../utils/date';
-import { getPlanLimits, type PlanTier } from '@ascendx/shared/plans';
 import { AppError } from '../middleware/errorHandler';
+import { getPlanLimits, type PlanTier } from '@ascendx/shared/plans';
+import { startOfDayUTC } from '../utils/date';
 
 export const planService = {
-  async assertTradingAccess(userId: string): Promise<void> {
+  async getEffectivePlan(userId: string): Promise<PlanTier> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { plan: true, tradingJournalEnabled: true },
+      select: { plan: true, proTrialEndsAt: true },
+    });
+    if (!user) return 'FREE';
+    if (user.plan === 'PRO') return 'PRO';
+    if (user.proTrialEndsAt && user.proTrialEndsAt > new Date()) return 'PRO';
+    return 'FREE';
+  },
+
+  async assertTradingAccess(userId: string): Promise<void> {
+    const plan = await this.getEffectivePlan(userId);
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { tradingJournalEnabled: true },
     });
     if (!user) throw new AppError(404, 'Usuario no encontrado');
-    const limits = getPlanLimits(user.plan as PlanTier);
+    const limits = getPlanLimits(plan);
     if (!limits.tradingJournal) {
       throw new AppError(403, 'El diario de trading requiere plan Pro.');
     }
@@ -20,7 +32,7 @@ export const planService = {
   },
 
   async assertCanEnableTrading(userId: string): Promise<void> {
-    const plan = await this.getUserPlan(userId);
+    const plan = await this.getEffectivePlan(userId);
     const limits = getPlanLimits(plan);
     if (!limits.tradingJournal) {
       throw new AppError(402, 'El diario de trading es exclusivo de Pro. Mejora tu plan en Perfil.');
@@ -33,7 +45,7 @@ export const planService = {
 
     const monthKey = `shield_refill_${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
     const users = await prisma.user.findMany({
-      select: { id: true, plan: true, streakShields: true },
+      select: { id: true, plan: true, streakShields: true, proTrialEndsAt: true },
     });
 
     let refilled = 0;
@@ -43,7 +55,9 @@ export const planService = {
       });
       if (already) continue;
 
-      const allowance = getPlanLimits(u.plan as PlanTier).streakShieldsPerMonth;
+      const effectivePlan =
+        u.plan === 'PRO' || (u.proTrialEndsAt && u.proTrialEndsAt > new Date()) ? 'PRO' : 'FREE';
+      const allowance = getPlanLimits(effectivePlan as PlanTier).streakShieldsPerMonth;
       const next = Math.max(u.streakShields, allowance);
       if (next !== u.streakShields) {
         await prisma.user.update({
@@ -56,12 +70,9 @@ export const planService = {
     }
     return refilled;
   },
+
   async getUserPlan(userId: string): Promise<PlanTier> {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { plan: true },
-    });
-    return (user?.plan as PlanTier) ?? 'FREE';
+    return this.getEffectivePlan(userId);
   },
 
   async getAiUsageToday(userId: string): Promise<number> {
@@ -76,7 +87,7 @@ export const planService = {
   },
 
   async assertCanChat(userId: string): Promise<{ plan: PlanTier; used: number; limit: number }> {
-    const plan = await this.getUserPlan(userId);
+    const plan = await this.getEffectivePlan(userId);
     const limits = getPlanLimits(plan);
     const used = await this.getAiUsageToday(userId);
 
@@ -95,7 +106,7 @@ export const planService = {
   },
 
   async getUsageSummary(userId: string) {
-    const plan = await this.getUserPlan(userId);
+    const plan = await this.getEffectivePlan(userId);
     const limits = getPlanLimits(plan);
     const aiChatUsed = await this.getAiUsageToday(userId);
     const [goals, habits, referrals] = await Promise.all([

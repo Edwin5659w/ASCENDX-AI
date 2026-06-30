@@ -55,10 +55,15 @@ export const billingService = {
     };
   },
 
-  async createCheckoutSession(userId: string, email: string) {
+  async createCheckoutSession(userId: string, email: string, interval: 'month' | 'year' = 'month') {
     if (!this.isConfigured()) {
       throw new AppError(503, 'Stripe no está configurado en el servidor');
     }
+    const priceId =
+      interval === 'year' && env.STRIPE_PRO_ANNUAL_PRICE_ID
+        ? env.STRIPE_PRO_ANNUAL_PRICE_ID
+        : env.STRIPE_PRO_PRICE_ID;
+    if (!priceId) throw new AppError(503, 'Precio de Stripe no configurado');
     const client = getStripe();
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -85,7 +90,7 @@ export const billingService = {
     const session = await client.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
-      line_items: [{ price: env.STRIPE_PRO_PRICE_ID!, quantity: 1 }],
+      line_items: [{ price: priceId!, quantity: 1 }],
       success_url: `${appOrigin()}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appOrigin()}/pricing?canceled=1`,
       metadata: { userId },

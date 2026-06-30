@@ -26,7 +26,15 @@
     "weekly-recap.ts",
     "retention.ts",
     "retention-playbook.ts",
-    "email-content.ts"
+    "email-content.ts",
+    "ascenso-score.ts",
+    "morning-ritual.ts",
+    "profile-templates.ts",
+    "product-tour.ts",
+    "checkout-intent.ts",
+    "plan-marketing.ts",
+    "currencies.ts",
+    "i18n/**/*"
   ],
   "exclude": ["node_modules", "dist"]
 }

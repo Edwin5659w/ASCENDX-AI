@@ -8,6 +8,7 @@ import {
   refreshSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  googleAuthSchema,
 } from '@ascendx/shared/validators/auth.validator';
 
 const router = Router();
@@ -61,6 +62,15 @@ router.post('/reset-password', validate(resetPasswordSchema), async (req, res, n
   try {
     const result = await authService.resetPassword(req.body.token, req.body.password);
     sendSuccess(res, result);
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.post('/google', validate(googleAuthSchema), async (req, res, next) => {
+  try {
+    const result = await authService.loginWithGoogle(req.body.idToken, req.body.referralCode);
+    sendSuccess(res, result, 201);
   } catch (e) {
     next(e);
   }

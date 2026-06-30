@@ -5,6 +5,8 @@ export const createTaskSchema = z.object({
   completed: z.boolean().default(false),
   goalId: z.string().uuid().optional().nullable(),
   dueDate: z.coerce.date().optional(),
+  isRecurring: z.boolean().optional(),
+  recurrenceDays: z.string().max(50).optional().nullable(),
 });
 
 export const updateTaskSchema = createTaskSchema.partial();

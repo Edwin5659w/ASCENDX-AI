@@ -67,5 +67,10 @@ export const resetPasswordSchema = z.object({
   password: passwordSchema,
 });
 
+export const googleAuthSchema = z.object({
+  idToken: z.string().min(10, 'Token de Google inválido'),
+  referralCode: z.string().trim().toUpperCase().max(12).optional(),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;

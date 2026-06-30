@@ -37,9 +37,14 @@ export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
 export const PLAN_PRICING = {
   FREE: { price: 0, currency: 'USD', label: 'Gratis' },
   PRO: { price: 4.99, currency: 'USD', label: 'Pro', period: 'mes' },
+  PRO_ANNUAL: { price: 39.99, currency: 'USD', label: 'Pro Anual', period: 'año', savings: '2 meses gratis' },
 } as const;
 
 export const REFERRAL_BONUS_XP = 50;
+/** Días de Pro gratis al registrarse con código de referido */
+export const REFERRAL_PRO_TRIAL_DAYS = 7;
+/** Trial Pro sin tarjeta para nuevos usuarios (opcional backend) */
+export const NEW_USER_PRO_TRIAL_DAYS = 0;
 
 export function getPlanLimits(plan: PlanTier): PlanLimits {
   return PLAN_LIMITS[plan] ?? PLAN_LIMITS.FREE;
