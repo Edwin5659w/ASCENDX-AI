@@ -35,7 +35,8 @@
     "plan-marketing.ts",
     "currencies.ts",
     "i18n/**/*",
-    "pagination.ts"
+    "pagination.ts",
+    "list-helpers.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }

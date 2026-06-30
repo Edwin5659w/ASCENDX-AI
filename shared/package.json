@@ -33,7 +33,8 @@
     "./plan-marketing": "./dist/plan-marketing.js",
     "./currencies": "./dist/currencies.js",
     "./i18n": "./dist/i18n/index.js",
-    "./pagination": "./dist/pagination.js"
+    "./pagination": "./dist/pagination.js",
+    "./list-helpers": "./dist/list-helpers.js"
   },
   "dependencies": {
     "zod": "^3.24.1"
