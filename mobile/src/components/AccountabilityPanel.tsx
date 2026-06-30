@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Card } from '../ui/Card';
+import { Card } from '@/src/components/ui/Card';
 import { userApi } from '@/src/api/services';
 import { theme } from '@/constants/theme';
 import { useToast } from '@/src/context/ToastContext';

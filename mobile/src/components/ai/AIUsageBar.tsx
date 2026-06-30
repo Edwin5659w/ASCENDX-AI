@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View, Pressable } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import type { AIUsage } from '../../../shared/ai-prompts';
+import type { AIUsage } from '../../../../shared/ai-prompts';
 import { theme } from '@/constants/theme';
 
 interface AIUsageBarProps {

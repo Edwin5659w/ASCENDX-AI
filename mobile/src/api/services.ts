@@ -64,6 +64,28 @@ export const authApi = {
       body: JSON.stringify({ token, password }),
       public: true,
     }),
+  loginWithGoogle: async (idToken: string, referralCode?: string) => {
+    const data = await apiRequest<AuthResponse>('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ idToken, referralCode: referralCode || undefined }),
+      public: true,
+    });
+    await saveTokens(data.accessToken, data.refreshToken);
+    return data;
+  },
+  loginWithApple: async (identityToken: string, fullName?: string, referralCode?: string) => {
+    const data = await apiRequest<AuthResponse>('/auth/apple', {
+      method: 'POST',
+      body: JSON.stringify({
+        identityToken,
+        fullName,
+        referralCode: referralCode || undefined,
+      }),
+      public: true,
+    });
+    await saveTokens(data.accessToken, data.refreshToken);
+    return data;
+  },
 };
 
 export const userApi = {
@@ -81,6 +103,12 @@ export const userApi = {
   completeOnboarding: () => apiRequest<User>('/user/onboarding-complete', { method: 'POST' }),
   completeProductTour: () => apiRequest<User>('/user/product-tour-complete', { method: 'POST' }),
   completeMorningRitual: () => apiRequest<{ ok: boolean }>('/user/morning-ritual-complete', { method: 'POST' }),
+  search: (q: string) =>
+    apiRequest<{
+      goals: { id: string; title: string }[];
+      tasks: { id: string; title: string; completed: boolean }[];
+      habits: { id: string; name: string }[];
+    }>(`/user/search?q=${encodeURIComponent(q)}`),
   accountabilityCode: () => apiRequest<{ code: string }>('/user/accountability/code'),
   accountabilityPartners: () =>
     apiRequest<{ id: string; name: string; ascendScore: number; ascendLabel: string }[]>(

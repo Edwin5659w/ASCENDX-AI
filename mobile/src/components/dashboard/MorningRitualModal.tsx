@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { MORNING_RITUAL_STEPS } from '../../../shared/morning-ritual';
+import { MORNING_RITUAL_STEPS } from '../../../../shared/morning-ritual';
 import { userApi } from '@/src/api/services';
 import { theme } from '@/constants/theme';
 

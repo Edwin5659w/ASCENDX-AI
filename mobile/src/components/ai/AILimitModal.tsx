@@ -1,7 +1,7 @@
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { PRO_VALUE_PROPS } from '../../../shared/retention-playbook';
-import { PLAN_LIMITS, PLAN_PRICING } from '../../../shared/plans';
+import { PRO_VALUE_PROPS } from '../../../../shared/retention-playbook';
+import { PLAN_LIMITS, PLAN_PRICING } from '../../../../shared/plans';
 import { theme } from '@/constants/theme';
 
 interface AILimitModalProps {

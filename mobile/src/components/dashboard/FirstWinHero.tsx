@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { XP } from '../../../shared/retention';
+import { XP } from '../../../../shared/retention';
 import { Card } from '@/src/components/ui/Card';
 import type { UserStats } from '@/src/types/api';
 import { theme } from '@/constants/theme';

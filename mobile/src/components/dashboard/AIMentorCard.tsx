@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Card } from '@/src/components/ui/Card';
-import type { AIContextLevel } from '../../../shared/ai-prompts';
+import type { AIContextLevel } from '../../../../shared/ai-prompts';
 import { theme } from '@/constants/theme';
 
 interface AIMentorCardProps {

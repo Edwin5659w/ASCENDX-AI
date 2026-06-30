@@ -12,12 +12,12 @@ import {
 import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { LinearGradient } from 'expo-linear-gradient';
-import { PRODUCT_TOUR_STEPS, type ProductTourIcon } from '../../../shared/product-tour';
+import { PRODUCT_TOUR_STEPS, type ProductTourIcon } from '../../../../shared/product-tour';
 import { BrandLogo } from '@/src/components/brand/BrandLogo';
 import { theme } from '@/constants/theme';
 import { userApi } from '@/src/api/services';
-import { XP } from '../../../shared/retention';
-import { PLAN_LIMITS, PLAN_PRICING } from '../../../shared/plans';
+import { XP } from '../../../../shared/retention';
+import { PLAN_LIMITS, PLAN_PRICING } from '../../../../shared/plans';
 
 const ICON_MAP: Record<ProductTourIcon, React.ComponentProps<typeof FontAwesome>['name']> = {
   wave: 'hand-paper-o',

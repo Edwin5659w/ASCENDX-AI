@@ -1,5 +1,5 @@
-import type { GamificationPayload } from '@shared/retention';
-import { RETENTION_MESSAGES } from '@shared/retention';
+import type { GamificationPayload } from '../../../shared/retention';
+import { RETENTION_MESSAGES } from '../../../shared/retention';
 
 export function applyGamificationFeedback(
   g: GamificationPayload | undefined | null,

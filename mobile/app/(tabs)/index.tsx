@@ -25,6 +25,8 @@ import { ProductTour } from '@/src/components/tour/ProductTour';
 import { FirstWinHero } from '@/src/components/dashboard/FirstWinHero';
 import { AscensoScoreCard } from '@/src/components/dashboard/AscensoScoreCard';
 import { MorningRitualModal } from '@/src/components/dashboard/MorningRitualModal';
+import { PomodoroTimer } from '@/src/components/dashboard/PomodoroTimer';
+import { QuickSearchModal } from '@/src/components/QuickSearchModal';
 import { consumePendingDailyBonus } from '@/src/lib/pending-daily-bonus';
 import { consumePendingProCheckout } from '@/src/lib/pending-pro-checkout';
 import { useToast } from '@/src/context/ToastContext';
@@ -52,6 +54,7 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [ritualOpen, setRitualOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const prevBadgesRef = useRef<Set<string>>(new Set());
   const dailyBonusShownRef = useRef(false);
   const proCheckoutRanRef = useRef(false);
@@ -185,10 +188,17 @@ export default function DashboardScreen() {
       />
 
       <LinearGradient colors={['#1a1033', '#0a0a0f']} style={styles.header}>
-        <Text style={styles.greeting}>{getTimeGreeting(user?.name)} 👋</Text>
-        <Text style={styles.tagline}>
-          Nivel {user?.level ?? 1} · {user?.xp ?? 0} XP
-        </Text>
+        <View style={styles.headerTop}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.greeting}>{getTimeGreeting(user?.name)} 👋</Text>
+            <Text style={styles.tagline}>
+              Nivel {user?.level ?? 1} · {user?.xp ?? 0} XP
+            </Text>
+          </View>
+          <Pressable style={styles.searchBtn} onPress={() => setSearchOpen(true)} accessibilityLabel="Buscar">
+            <FontAwesome name="search" size={18} color={theme.colors.accent} />
+          </Pressable>
+        </View>
         <View style={styles.badgeRow}>
           <View style={styles.iaBadge}>
             <Text style={styles.iaBadgeText}>IA: {ctxLabel}</Text>
@@ -242,6 +252,8 @@ export default function DashboardScreen() {
           void load();
         }}
       />
+      <QuickSearchModal visible={searchOpen} onClose={() => setSearchOpen(false)} />
+      <PomodoroTimer />
       <AIMentorCard
         contextLevel={contextLevel}
         suggestedPrompts={aiPrompts}
@@ -341,6 +353,17 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
     paddingTop: 8,
     marginBottom: theme.spacing.sm,
+  },
+  headerTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  searchBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.surface + '99',
   },
   greeting: { fontSize: 24, fontWeight: '700', color: theme.colors.text },
   tagline: { color: theme.colors.textMuted, fontSize: 14, marginTop: 6 },

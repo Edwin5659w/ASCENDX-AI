@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { onboardingStepIndex, type OnboardingStepId } from '../../../shared/onboarding-helpers';
+import { onboardingStepIndex, type OnboardingStepId } from '../../../../shared/onboarding-helpers';
 import { theme } from '@/constants/theme';
 
 interface OnboardingProgressProps {

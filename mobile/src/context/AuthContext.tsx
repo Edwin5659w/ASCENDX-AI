@@ -11,6 +11,8 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (idToken: string, referralCode?: string) => Promise<User>;
+  loginWithApple: (identityToken: string, fullName?: string, referralCode?: string) => Promise<User>;
   register: (name: string, email: string, password: string, referralCode?: string) => Promise<number>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<DailyBonus>;
@@ -56,6 +58,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data.user);
   };
 
+  const loginWithGoogle = async (idToken: string, referralCode?: string) => {
+    const data = await authApi.loginWithGoogle(idToken, referralCode);
+    setUser(data.user);
+    return data.user;
+  };
+
+  const loginWithApple = async (identityToken: string, fullName?: string, referralCode?: string) => {
+    const data = await authApi.loginWithApple(identityToken, fullName, referralCode);
+    setUser(data.user);
+    return data.user;
+  };
+
   const register = async (name: string, email: string, password: string, referralCode?: string) => {
     const data = await authApi.register(name, email, password, referralCode);
     setUser(data.user);
@@ -76,6 +90,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         isAuthenticated: !!user,
         login,
+        loginWithGoogle,
+        loginWithApple,
         register,
         logout,
         refreshUser,

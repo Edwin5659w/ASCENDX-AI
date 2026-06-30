@@ -7,10 +7,11 @@ import { Button } from '@/src/components/ui/Button';
 import { ValidatedInput } from '@/src/components/auth/ValidatedInput';
 import { AuthScreenShell } from '@/src/components/brand/AuthScreenShell';
 import { validateLoginEmail, validateLoginPassword } from '@/src/lib/auth.rules';
+import { OAuthButtons } from '@/src/components/auth/OAuthButtons';
 import { theme } from '@/constants/theme';
 
 export default function LoginScreen() {
-  const { login } = useAuth();
+  const { login, loginWithGoogle, loginWithApple } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -70,6 +71,15 @@ export default function LoginScreen() {
         </Pressable>
         {submitError ? <Text style={styles.error}>{submitError}</Text> : null}
         <Button title="Iniciar sesión" onPress={handleLogin} loading={loading} disabled={!isFormValid} />
+        <OAuthButtons
+          onGoogleSuccess={async (token) => {
+            await loginWithGoogle(token);
+          }}
+          onAppleSuccess={async (token, name) => {
+            await loginWithApple(token, name);
+          }}
+          onError={setSubmitError}
+        />
       </View>
 
       <Link href={'/(auth)/forgot-password' as any} asChild>
