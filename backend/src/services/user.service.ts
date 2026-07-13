@@ -19,6 +19,7 @@ import { buildFirstSteps, isFirstStepsComplete } from '@ascendx/shared/first-ste
 import { planService } from './plan.service';
 import { computeAscensoScore } from '@ascendx/shared/ascenso-score';
 import { computeSetupScore } from '@ascendx/shared/dashboard-helpers';
+import { openaiService } from './ai/openai.service';
 
 export const userService = {
   async getMe(userId: string) {
@@ -442,16 +443,19 @@ export const userService = {
       return r.type === 'INCOME' ? acc + amt : acc - amt;
     }, 0);
 
-    return buildWeeklyRecap({
-      tasksCompleted,
-      tasksCreated,
-      habitsCompleted,
-      activeHabits,
-      xpGained: Math.min(user?.xp ?? 0, 200),
-      longestStreak,
-      goalsProgress,
-      financeBalance: roundMoney(financeBalance),
-    });
+    return openaiService.enrichWeeklyRecap(
+      userId,
+      buildWeeklyRecap({
+        tasksCompleted,
+        tasksCreated,
+        habitsCompleted,
+        activeHabits,
+        xpGained: Math.min(user?.xp ?? 0, 200),
+        longestStreak,
+        goalsProgress,
+        financeBalance: roundMoney(financeBalance),
+      }),
+    );
   },
 
   async getReferralInfo(userId: string) {

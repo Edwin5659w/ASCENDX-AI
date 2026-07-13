@@ -152,15 +152,19 @@ export function dailyPlanSystemPrompt(ctx: UserAIContext): string {
   return `${base} Usa exclusivamente los datos del JSON. Si hay focoDelDia, priorízalo en el plan. Prioriza tareas pendientes, hábitos con racha y objetivos con mayor progreso pendiente. Puedes citar metodologías cuando ayuden: SMART (objetivos), GTD/Eisenhower (tareas), habit stacking (hábitos), 50/30/20 (finanzas), Pomodoro 25 min (enfoque).`;
 }
 
-export function chatSystemPrompt(ctx: UserAIContext): string {
+export function chatSystemPrompt(ctx: UserAIContext, opts?: { canAct?: boolean }): string {
   const base =
     'Eres ASCENDX AI, mentor empático y directo. Español, máximo 150 palabras. Acciones concretas, sin rodeos. No des consejos médicos, legales ni financieros profesionales.';
 
+  const actHint = opts?.canAct
+    ? ' Si el usuario pide crear una tarea o hábito, confirma en lenguaje natural y añade al FINAL una sola línea exacta: ASCENDX_ACTION:CREATE_TASK:título aquí  o  ASCENDX_ACTION:CREATE_HABIT:nombre aquí (sin markdown).'
+    : '';
+
   if (ctx.contextLevel === 'empty') {
-    return `${base} El usuario aún no configuró la app. Ayúdale a dar los primeros pasos (objetivo, tareas, hábito). No inventes metas que no aparecen en el contexto.`;
+    return `${base} El usuario aún no configuró la app. Ayúdale a dar los primeros pasos (objetivo, tareas, hábito). No inventes metas que no aparecen en el contexto.${actHint}`;
   }
   if (ctx.contextLevel === 'partial') {
-    return `${base} Perfil parcial: motiva a completar objetivos, tareas y hábitos en la app antes de planes complejos.`;
+    return `${base} Perfil parcial: motiva a completar objetivos, tareas y hábitos en la app antes de planes complejos.${actHint}`;
   }
-  return `${base} Usa el contexto JSON. Detecta procrastinación si hay muchas tareas pendientes y propón UN primer paso de 15 minutos. Menciona la metodología cuando encaje (SMART, GTD, Pomodoro, rachas de hábitos, 50/30/20). Termina con una pregunta concreta o acción única. No des asesoría de inversión ni trading bursátil.`;
+  return `${base} Usa el contexto JSON. Detecta procrastinación si hay muchas tareas pendientes y propón UN primer paso de 15 minutos. Menciona la metodología cuando encaje (SMART, GTD, Pomodoro, rachas de hábitos, 50/30/20). Termina con una pregunta concreta o acción única. No des asesoría de inversión ni trading bursátil.${actHint}`;
 }

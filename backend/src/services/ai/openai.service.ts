@@ -118,9 +118,12 @@ export class OpenAIService {
     contextLevel: AIContextLevel;
     suggestedPrompts: string[];
     aiUsage: ReturnType<typeof buildAIUsage>;
+    action?: { type: 'CREATE_TASK' | 'CREATE_HABIT'; title: string };
   }> {
     const usage = await planService.assertCanChat(userId);
     const ctx = await buildUserAIContext(userId);
+    const effectivePlan = await planService.getUserPlan(userId);
+    const canAct = effectivePlan === 'PRO';
     const baseMeta = {
       contextLevel: ctx.contextLevel,
       suggestedPrompts: getSuggestedPrompts(ctx.contextLevel),
@@ -149,7 +152,7 @@ export class OpenAIService {
       const completion = await this.client.chat.completions.create({
         model: env.OPENAI_MODEL,
         messages: [
-          { role: 'system', content: chatSystemPrompt(ctx) },
+          { role: 'system', content: chatSystemPrompt(ctx, { canAct }) },
           ...recentTurns,
           {
             role: 'user',
@@ -160,17 +163,87 @@ export class OpenAIService {
         temperature: 0.75,
       });
 
-      const reply = completion.choices[0]?.message?.content?.trim() || FALLBACK_CHAT;
+      let reply = completion.choices[0]?.message?.content?.trim() || FALLBACK_CHAT;
+      let action: { type: 'CREATE_TASK' | 'CREATE_HABIT'; title: string } | undefined;
+
+      if (canAct) {
+        const parsed = parseAscendxAction(reply);
+        if (parsed) {
+          action = parsed.action;
+          reply = parsed.cleanReply;
+          try {
+            if (action.type === 'CREATE_TASK') {
+              await prisma.task.create({
+                data: { title: action.title.slice(0, 120), userId },
+              });
+              reply = `${reply}\n\n✓ Tarea creada: «${action.title}»`;
+            } else {
+              const habitCount = await prisma.habit.count({ where: { userId } });
+              const limits = getPlanLimits(effectivePlan);
+              if (habitCount < limits.maxHabits) {
+                await prisma.habit.create({
+                  data: { name: action.title.slice(0, 80), frequency: 'DAILY', userId },
+                });
+                reply = `${reply}\n\n✓ Hábito creado: «${action.title}»`;
+              }
+            }
+          } catch (err) {
+            console.warn('[OpenAI] action create failed:', err);
+          }
+        }
+      } else {
+        reply = reply.replace(/ASCENDX_ACTION:[^\n]+/g, '').trim();
+      }
+
       await this.saveChatExchange(userId, sanitized, reply);
       return {
         reply,
         ...baseMeta,
         aiUsage: buildAIUsage(usage.used + 1, usage.limit, usage.plan),
+        action,
       };
     } catch (error) {
       console.error('[OpenAI] chat error:', error);
       return { reply: FALLBACK_CHAT, ...baseMeta, aiUsage: buildAIUsage(usage.used, usage.limit, usage.plan) };
     }
+  }
+
+  /** Enriquece el resumen semanal Pro con un párrafo corto de IA (fallback = heurística). */
+  async enrichWeeklyRecap(
+    userId: string,
+    base: { headline: string; highlights: string[]; score: number; encouragement: string },
+  ) {
+    if (!this.client) return base;
+    try {
+      const completion = await this.client.chat.completions.create({
+        model: env.OPENAI_MODEL,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'Eres el mentor ASCENDX. En español, reescribe SOLO el encouragement (1-2 frases motivadoras y concretas) a partir del resumen. No inventes métricas. Responde solo el texto del encouragement, sin comillas.',
+          },
+          {
+            role: 'user',
+            content: JSON.stringify({
+              headline: base.headline,
+              score: base.score,
+              highlights: base.highlights,
+              encouragement: base.encouragement,
+            }),
+          },
+        ],
+        max_tokens: 120,
+        temperature: 0.7,
+      });
+      const encouragement = completion.choices[0]?.message?.content?.trim();
+      if (encouragement && encouragement.length > 10) {
+        return { ...base, encouragement };
+      }
+    } catch (err) {
+      console.warn('[OpenAI] weekly recap enrich failed:', err);
+    }
+    return base;
   }
 
   async detectProcrastination(userId: string): Promise<string | null> {
@@ -241,3 +314,16 @@ export class OpenAIService {
 }
 
 export const openaiService = new OpenAIService();
+
+function parseAscendxAction(reply: string): {
+  cleanReply: string;
+  action: { type: 'CREATE_TASK' | 'CREATE_HABIT'; title: string };
+} | null {
+  const match = reply.match(/ASCENDX_ACTION:(CREATE_TASK|CREATE_HABIT):(.+)/i);
+  if (!match) return null;
+  const type = match[1].toUpperCase() as 'CREATE_TASK' | 'CREATE_HABIT';
+  const title = match[2].trim().replace(/^["«]|["»]$/g, '');
+  if (!title || title.length < 2) return null;
+  const cleanReply = reply.replace(/ASCENDX_ACTION:[^\n]+/gi, '').trim();
+  return { cleanReply, action: { type, title } };
+}
