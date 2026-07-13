@@ -353,7 +353,9 @@ export function Profile() {
           <Download size={16} />
           {exporting ? 'Exportando...' : 'Exportar mis datos (JSON)'}
         </button>
-        <p className="text-zinc-600 text-xs text-center mt-2">Disponible para todos los usuarios (GDPR)</p>
+        <p className="text-zinc-600 text-xs text-center mt-2">
+          Exportación JSON — exclusiva Pro (cumple tu derecho de portabilidad)
+        </p>
       </Card>
 
       {referral && (

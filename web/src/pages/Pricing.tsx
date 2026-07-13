@@ -119,7 +119,8 @@ export function Pricing() {
         <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-6 text-center">
           <p className="text-cyan-200 text-sm font-medium mb-1">¿Aún no estás seguro?</p>
           <p className="text-zinc-400 text-sm mb-4">
-            Empieza Gratis, usa la app una semana y decide. Pro estará ahí cuando sientas el valor.
+            Empieza Gratis con <strong className="text-zinc-300 font-medium">7 días de Pro</strong>{' '}
+            al registrarte. Usa la app y decide. Cancela cuando quieras.
           </p>
           <Link to="/register" className="text-violet-400 font-medium hover:underline">
             Crear cuenta gratis →

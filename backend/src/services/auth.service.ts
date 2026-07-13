@@ -12,7 +12,7 @@ import { USER_PROFILE_SELECT } from '../constants/user-select';
 import { expiresAtFromJwt } from '../utils/jwt';
 import { generateReferralCode, generateAccountabilityCode } from '../utils/referral';
 import { verifyAppleIdentityToken } from '../utils/apple-auth';
-import { REFERRAL_BONUS_XP, REFERRAL_PRO_TRIAL_DAYS } from '@ascendx/shared/plans';
+import { REFERRAL_BONUS_XP, REFERRAL_PRO_TRIAL_DAYS, NEW_USER_PRO_TRIAL_DAYS } from '@ascendx/shared/plans';
 
 const SALT_ROUNDS = 12;
 
@@ -61,9 +61,11 @@ export const authService = {
       referralCode = generateReferralCode(input.name);
     }
 
-    const proTrialEndsAt = referredById
-      ? new Date(Date.now() + REFERRAL_PRO_TRIAL_DAYS * 24 * 60 * 60 * 1000)
-      : undefined;
+    const trialDays = referredById
+      ? Math.max(REFERRAL_PRO_TRIAL_DAYS, NEW_USER_PRO_TRIAL_DAYS)
+      : NEW_USER_PRO_TRIAL_DAYS;
+    const proTrialEndsAt =
+      trialDays > 0 ? new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000) : undefined;
 
     let accountabilityCode = generateAccountabilityCode();
     for (let attempt = 0; attempt < 5; attempt++) {
@@ -278,9 +280,11 @@ export const authService = {
         accCode = generateAccountabilityCode();
       }
 
-      const proTrialEndsAt = referredById
-        ? new Date(Date.now() + REFERRAL_PRO_TRIAL_DAYS * 24 * 60 * 60 * 1000)
-        : undefined;
+      const trialDays = referredById
+        ? Math.max(REFERRAL_PRO_TRIAL_DAYS, NEW_USER_PRO_TRIAL_DAYS)
+        : NEW_USER_PRO_TRIAL_DAYS;
+      const proTrialEndsAt =
+        trialDays > 0 ? new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000) : undefined;
 
       user = await prisma.user.create({
         data: {
@@ -371,9 +375,11 @@ export const authService = {
         accCode = generateAccountabilityCode();
       }
 
-      const proTrialEndsAt = referredById
-        ? new Date(Date.now() + REFERRAL_PRO_TRIAL_DAYS * 24 * 60 * 60 * 1000)
-        : undefined;
+      const trialDays = referredById
+        ? Math.max(REFERRAL_PRO_TRIAL_DAYS, NEW_USER_PRO_TRIAL_DAYS)
+        : NEW_USER_PRO_TRIAL_DAYS;
+      const proTrialEndsAt =
+        trialDays > 0 ? new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000) : undefined;
 
       user = await prisma.user.create({
         data: {

@@ -438,7 +438,7 @@ export default function ProfileScreen() {
       <Button title="Ver tour del producto de nuevo" variant="secondary" onPress={replayTour} />
 
       {user?.plan === 'PRO' ? (
-        <Button title="Exportar mis datos (JSON)" variant="secondary" onPress={exportData} loading={exporting} />
+        <Button title="Exportar mis datos (JSON · Pro)" variant="secondary" onPress={exportData} loading={exporting} />
       ) : null}
 
       <Card style={styles.nameCard}>

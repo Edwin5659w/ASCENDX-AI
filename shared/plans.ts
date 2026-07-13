@@ -43,8 +43,8 @@ export const PLAN_PRICING = {
 export const REFERRAL_BONUS_XP = 50;
 /** Días de Pro gratis al registrarse con código de referido */
 export const REFERRAL_PRO_TRIAL_DAYS = 7;
-/** Trial Pro sin tarjeta para nuevos usuarios (opcional backend) */
-export const NEW_USER_PRO_TRIAL_DAYS = 0;
+/** Trial Pro sin tarjeta para nuevos usuarios orgánicos */
+export const NEW_USER_PRO_TRIAL_DAYS = 7;
 
 /** Copy comercial del programa de referidos (invitador). */
 export function referralInviterPitch(
