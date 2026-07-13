@@ -431,7 +431,11 @@ export default function ProfileScreen() {
         <Card style={styles.referralCard}>
           <Text style={styles.sectionTitle}>Invita amigos</Text>
           <Text style={styles.prefsHint}>
-            Comparte tu código. Ambos ganan +{referral.bonusXp} XP.
+            Tú ganas +{referral.bonusXp} XP. Tu amigo gana +{referral.bonusXp} XP y{' '}
+            {referral.trialDays ?? 7} días de Pro gratis.
+          </Text>
+          <Text style={[styles.prefsHint, { color: theme.colors.accent, marginTop: 4 }]}>
+            Más amigos = más XP. Ellos prueban Pro sin tarjeta.
           </Text>
           <Text style={styles.refCode}>{referral.referralCode}</Text>
           <Text style={styles.refCount}>{referral.referralCount} invitado(s)</Text>

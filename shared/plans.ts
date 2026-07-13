@@ -46,6 +46,30 @@ export const REFERRAL_PRO_TRIAL_DAYS = 7;
 /** Trial Pro sin tarjeta para nuevos usuarios (opcional backend) */
 export const NEW_USER_PRO_TRIAL_DAYS = 0;
 
+/** Copy comercial del programa de referidos (invitador). */
+export function referralInviterPitch(
+  bonusXp: number = REFERRAL_BONUS_XP,
+  trialDays: number = REFERRAL_PRO_TRIAL_DAYS,
+): string {
+  return `Tú ganas +${bonusXp} XP. Tu amigo gana +${bonusXp} XP y ${trialDays} días de Pro gratis.`;
+}
+
+/** Hint en registro para quien llega con código. */
+export function referralRegisterHint(
+  bonusXp: number = REFERRAL_BONUS_XP,
+  trialDays: number = REFERRAL_PRO_TRIAL_DAYS,
+): string {
+  return `Con código: +${bonusXp} XP y ${trialDays} días de Pro gratis para ti (+${bonusXp} XP a quien te invitó).`;
+}
+
+export function referralShareMessage(
+  code: string,
+  bonusXp: number = REFERRAL_BONUS_XP,
+  trialDays: number = REFERRAL_PRO_TRIAL_DAYS,
+): string {
+  return `Únete a ASCENDX AI con mi código ${code}: +${bonusXp} XP para ambos y ${trialDays} días de Pro gratis para ti. Tu Life OS con mentor IA.`;
+}
+
 export function getPlanLimits(plan: PlanTier): PlanLimits {
   return PLAN_LIMITS[plan] ?? PLAN_LIMITS.FREE;
 }

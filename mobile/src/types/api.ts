@@ -107,6 +107,7 @@ export interface ReferralInfo {
   referralCode: string;
   referralCount: number;
   bonusXp: number;
+  trialDays: number;
   shareMessage: string;
 }
 

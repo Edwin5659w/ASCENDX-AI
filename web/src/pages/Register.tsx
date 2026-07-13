@@ -8,6 +8,7 @@ import { AuthLayout } from '../components/brand/AuthLayout';
 import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
 import { PasswordStrength } from '../components/auth/PasswordStrength';
 import { RETENTION_MESSAGES } from '@shared/retention';
+import { referralRegisterHint, REFERRAL_PRO_TRIAL_DAYS } from '@shared/plans';
 import { setPendingProCheckout } from '../lib/pending-pro-checkout';
 import { track, AnalyticsEvents } from '../lib/analytics';
 import {
@@ -58,7 +59,7 @@ export function Register() {
     try {
       const referralBonus = await register(name.trim().replace(/\s+/g, ' '), email.trim().toLowerCase(), password, referralCode || undefined);
       if (referralBonus > 0) {
-        showToast(RETENTION_MESSAGES.referralBonus(referralBonus), 'success');
+        showToast(RETENTION_MESSAGES.referralBonus(referralBonus, REFERRAL_PRO_TRIAL_DAYS), 'success');
       }
       if (wantsPro) setPendingProCheckout();
       track(AnalyticsEvents.REGISTER, { plan: wantsPro ? 'pro' : 'free' });
@@ -140,7 +141,7 @@ export function Register() {
               maxLength={12}
               className="w-full bg-[#0a0a0f] border border-white/10 rounded-lg px-4 py-2.5 text-white uppercase tracking-wider focus:outline-none focus:border-violet-500"
             />
-            <p className="text-zinc-600 text-xs mt-1">+50 XP para ti y quien te invitó</p>
+            <p className="text-zinc-600 text-xs mt-1">{referralRegisterHint()}</p>
           </div>
 
           {submitError ? (

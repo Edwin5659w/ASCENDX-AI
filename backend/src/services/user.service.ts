@@ -8,7 +8,12 @@ import { startOfDayUTC, daysAgoUTC } from '../utils/date';
 import { USER_PROFILE_SELECT } from '../constants/user-select';
 import { roundMoney, toMoneyNumber } from '../utils/money';
 import { buildWeeklyRecap } from '@ascendx/shared/weekly-recap';
-import { getPlanLimits } from '@ascendx/shared/plans';
+import {
+  getPlanLimits,
+  REFERRAL_BONUS_XP,
+  REFERRAL_PRO_TRIAL_DAYS,
+  referralShareMessage,
+} from '@ascendx/shared/plans';
 import { XP, RETENTION_MESSAGES } from '@ascendx/shared/retention';
 import { buildFirstSteps, isFirstStepsComplete } from '@ascendx/shared/first-steps';
 import { planService } from './plan.service';
@@ -460,8 +465,9 @@ export const userService = {
     return {
       referralCode: user.referralCode,
       referralCount,
-      bonusXp: 50,
-      shareMessage: `Únete a ASCENDX AI con mi código ${user.referralCode} y ambos ganamos +50 XP. Tu Life OS con mentor IA.`,
+      bonusXp: REFERRAL_BONUS_XP,
+      trialDays: REFERRAL_PRO_TRIAL_DAYS,
+      shareMessage: referralShareMessage(user.referralCode),
     };
   },
 

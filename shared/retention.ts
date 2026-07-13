@@ -12,7 +12,8 @@ export const XP = {
 export const RETENTION_MESSAGES = {
   onboardingDone: (xp: number) =>
     `¡Tu espacio está listo! +${xp} XP de bienvenida. Completa tu primera tarea (+${XP.TASK_COMPLETE} XP) ahora.`,
-  referralBonus: (xp: number) => `¡Código de referido aplicado! +${xp} XP para ti y tu invitador.`,
+  referralBonus: (xp: number, trialDays = 7) =>
+    `¡Código de referido aplicado! +${xp} XP y ${trialDays} días de Pro. Tu invitador también gana XP.`,
   dailyBonus: (xp: number) => `Bonus diario: +${xp} XP. ¡Bienvenido de vuelta!`,
   taskComplete: (xp: number) => `+${xp} XP · Tarea completada`,
   habitComplete: (xp: number, streak: number) => `+${xp} XP · Racha ${streak} días 🔥`,

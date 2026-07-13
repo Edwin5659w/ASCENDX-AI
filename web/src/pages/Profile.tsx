@@ -363,7 +363,11 @@ export function Profile() {
             <h3 className="text-white font-semibold">Invita amigos</h3>
           </div>
           <p className="text-zinc-500 text-sm">
-            Comparte tu código. Ambos ganan +{referral.bonusXp} XP al registrarse.
+            Tú ganas +{referral.bonusXp} XP. Tu amigo gana +{referral.bonusXp} XP y{' '}
+            {referral.trialDays ?? 7} días de Pro gratis.
+          </p>
+          <p className="text-cyan-400/80 text-xs font-medium">
+            Más amigos = más XP. Ellos prueban Pro sin tarjeta.
           </p>
           <div className="flex items-center gap-2">
             <code className="flex-1 bg-[#0a0a0f] border border-white/10 rounded-lg px-4 py-2.5 text-cyan-300 font-mono text-lg tracking-wider">

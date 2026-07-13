@@ -9,6 +9,7 @@ import { Button } from '@/src/components/ui/Button';
 import { ValidatedInput } from '@/src/components/auth/ValidatedInput';
 import { PasswordStrength } from '@/src/components/auth/PasswordStrength';
 import { RETENTION_MESSAGES } from '../../../shared/retention';
+import { referralRegisterHint, REFERRAL_PRO_TRIAL_DAYS } from '../../../shared/plans';
 import {
   validateEmail,
   validateFullName,
@@ -65,7 +66,7 @@ export default function RegisterScreen() {
         referralCode.trim() || undefined,
       );
       if (referralBonus > 0) {
-        showToast(RETENTION_MESSAGES.referralBonus(referralBonus), 'success');
+        showToast(RETENTION_MESSAGES.referralBonus(referralBonus, REFERRAL_PRO_TRIAL_DAYS), 'success');
       }
       if (wantsPro) await setPendingProCheckout();
       router.replace('/(onboarding)');
@@ -130,7 +131,7 @@ export default function RegisterScreen() {
               autoCapitalize="characters"
               style={styles.refInput}
             />
-            <Text style={styles.refHint}>+50 XP para ti y quien te invitó</Text>
+            <Text style={styles.refHint}>{referralRegisterHint()}</Text>
             <Pressable onPress={() => setAcceptedTerms(!acceptedTerms)} style={styles.termsRow}>
               <View style={[styles.checkbox, acceptedTerms && styles.checkboxOn]} />
               <Text style={styles.termsText}>

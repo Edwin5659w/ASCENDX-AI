@@ -103,7 +103,11 @@ export const PRODUCT_TOUR_STEPS: ProductTourStep[] = [
     icon: 'rocket',
     title: '¡Listo para ascender!',
     body: 'Ya tienes objetivo, tareas y hábito del onboarding. Completa tu primera tarea ahora y siente el primer +10 XP.',
-    bullets: ['Tu mentor IA ya puede planificar tu día', 'Vuelve mañana por el bonus diario', 'Invita amigos con tu código en Perfil'],
+    bullets: [
+      'Tu mentor IA ya puede planificar tu día',
+      'Vuelve mañana por el bonus diario',
+      'Invita amigos: ellos prueban Pro 7 días y tú ganas XP',
+    ],
     cta: 'Completar mi primera tarea',
     accent: 'violet',
   },
