@@ -2,10 +2,12 @@ import { prisma } from '../lib/prisma';
 import { env } from '../config/env';
 import { emailService } from './email.service';
 import { planService } from './plan.service';
+import { pushService } from './push.service';
+import { startOfDayUTC } from '../utils/date';
 import type { EmailTemplate } from '@ascendx/shared/retention-playbook';
 
 const COOLDOWN_DAYS: Partial<Record<EmailTemplate, number>> = {
-  streak_at_risk: 6,
+  streak_at_risk: 1,
   dormant_7d: 14,
   day3_upgrade: 999,
   day1_nudge: 999,
@@ -90,26 +92,49 @@ export const retentionService = {
   },
 
   async sendStreakAtRiskEmails() {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    yesterday.setHours(0, 0, 0, 0);
+    const today = startOfDayUTC();
 
     const habits = await prisma.habit.findMany({
-      where: { streak: { gte: 3 }, frequency: 'DAILY' },
+      where: { streak: { gte: 2 }, frequency: 'DAILY' },
       include: {
-        user: { select: { id: true, name: true, email: true, emailOptIn: true } },
+        user: {
+          select: { id: true, name: true, email: true, emailOptIn: true, pushToken: true },
+        },
         completions: {
-          where: { completedDate: yesterday },
+          where: { completedDate: today },
           take: 1,
         },
       },
     });
 
+    const notifiedUsers = new Set<string>();
+
     for (const h of habits) {
-      if (!h.user.emailOptIn || h.completions.length > 0) continue;
-      if (await wasSentRecently(h.user.id, 'streak_at_risk', COOLDOWN_DAYS.streak_at_risk ?? 6)) continue;
-      const ok = await emailService.sendStreakAtRisk(h.user.email, h.user.name, h.name, h.streak);
-      if (ok) await logSent(h.user.id, 'streak_at_risk');
+      if (h.completions.length > 0) continue;
+      if (notifiedUsers.has(h.user.id)) continue;
+      if (await wasSentRecently(h.user.id, 'streak_at_risk', COOLDOWN_DAYS.streak_at_risk ?? 1)) {
+        continue;
+      }
+
+      let sent = false;
+      if (h.user.emailOptIn) {
+        const ok = await emailService.sendStreakAtRisk(h.user.email, h.user.name, h.name, h.streak);
+        if (ok) sent = true;
+      }
+
+      if (h.user.pushToken) {
+        const push = await pushService.sendToUser(h.user.id, {
+          title: 'Tu racha está en peligro 🔥',
+          body: `"${h.name}" · ${h.streak} días. Márcalo hoy para no perderla.`,
+          data: { type: 'streak_at_risk', habitId: h.id },
+        });
+        if (push.sent) sent = true;
+      }
+
+      if (sent) {
+        await logSent(h.user.id, 'streak_at_risk');
+        notifiedUsers.add(h.user.id);
+      }
     }
   },
 
@@ -172,5 +197,12 @@ export function startRetentionScheduler() {
       console.error('[retention] Error en cron:', err);
     });
   });
-  console.log('[retention] Cron diario activo (09:00 UTC)');
+
+  // Empuje vespertino: rachas en peligro (20:00 UTC)
+  cron.schedule('0 20 * * *', () => {
+    void retentionService.sendStreakAtRiskEmails().catch((err) => {
+      console.error('[retention] Error streak-at-risk:', err);
+    });
+  });
+  console.log('[retention] Cron diario activo (09:00 UTC) + rachas 20:00 UTC');
 }
