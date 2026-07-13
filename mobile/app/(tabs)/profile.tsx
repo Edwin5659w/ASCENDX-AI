@@ -13,7 +13,6 @@ import {
 import * as WebBrowser from 'expo-web-browser';
 import { useRouter } from 'expo-router';
 import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useAuth } from '@/src/context/AuthContext';
@@ -30,16 +29,7 @@ import { useToast } from '@/src/context/ToastContext';
 import { useAppTheme } from '@/src/context/AppThemeContext';
 import { useLocale } from '@/src/context/LocaleContext';
 import { isRevenueCatConfigured, purchasePro, restorePurchases, configureRevenueCat } from '@/src/lib/revenuecat';
-
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+import { registerExpoPushToken } from '@/src/lib/notifications';
 
 const APP_VERSION =
   Constants.expoConfig?.version ?? Constants.manifest2?.extra?.expoClient?.version ?? '1.1.0';
@@ -193,30 +183,13 @@ export default function ProfileScreen() {
       Alert.alert('Avisos', 'Las notificaciones push funcionan en un dispositivo físico.');
       return;
     }
-    if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('default', {
-        name: 'default',
-        importance: Notifications.AndroidImportance.DEFAULT,
-      });
-    }
     setPushBusy(true);
     try {
-      const { status: existing } = await Notifications.getPermissionsAsync();
-      let final = existing;
-      if (existing !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        final = status;
-      }
-      if (final !== 'granted') {
+      const token = await registerExpoPushToken();
+      if (!token) {
         Alert.alert('Permisos', 'Activa las notificaciones para ASCENDX en los ajustes del sistema.');
         return;
       }
-      const projectId =
-        Constants.expoConfig?.extra?.eas?.projectId ??
-        (Constants as { easConfig?: { projectId?: string } }).easConfig?.projectId;
-      const opts = projectId ? { projectId } : undefined;
-      const { data } = await Notifications.getExpoPushTokenAsync(opts);
-      await userApi.updateProfile({ pushToken: data });
       await refreshUser();
       Alert.alert('Listo', 'Notificaciones registradas en tu cuenta.');
     } catch (e) {

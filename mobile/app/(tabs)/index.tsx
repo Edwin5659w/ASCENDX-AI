@@ -24,6 +24,10 @@ import { AIMentorCard } from '@/src/components/dashboard/AIMentorCard';
 import { ProductTour } from '@/src/components/tour/ProductTour';
 import { FirstWinHero } from '@/src/components/dashboard/FirstWinHero';
 import { WelcomeModal } from '@/src/components/dashboard/WelcomeModal';
+import {
+  NotificationOptInModal,
+  shouldAskNotificationOptIn,
+} from '@/src/components/dashboard/NotificationOptInModal';
 import { AscensoScoreCard } from '@/src/components/dashboard/AscensoScoreCard';
 import { MorningRitualModal } from '@/src/components/dashboard/MorningRitualModal';
 import { PomodoroTimer } from '@/src/components/dashboard/PomodoroTimer';
@@ -58,6 +62,7 @@ export default function DashboardScreen() {
   const [ritualOpen, setRitualOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
+  const [notifOptInOpen, setNotifOptInOpen] = useState(false);
   const prevBadgesRef = useRef<Set<string>>(new Set());
   const dailyBonusShownRef = useRef(false);
   const proCheckoutRanRef = useRef(false);
@@ -194,14 +199,28 @@ export default function DashboardScreen() {
         onClose={() => {
           setTourOpen(false);
           void refreshUser();
+          void shouldAskNotificationOptIn().then((ask) => {
+            if (ask) setNotifOptInOpen(true);
+          });
         }}
       />
       <WelcomeModal
-        visible={welcomeOpen && !tourOpen}
+        visible={welcomeOpen && !tourOpen && !notifOptInOpen}
         userName={user?.name}
         onDismiss={() => {
           setWelcomeOpen(false);
           void clearWelcomePending();
+        }}
+      />
+      <NotificationOptInModal
+        visible={notifOptInOpen && !tourOpen}
+        onDismiss={() => setNotifOptInOpen(false)}
+        onDone={(result) => {
+          if (result === 'enabled') {
+            showToast('Recordatorios de hábitos activados (8:00)', 'success');
+          } else if (result === 'denied') {
+            showToast('Sin permiso de notificaciones — actívalo luego en Perfil', 'info');
+          }
         }}
       />
 

@@ -12,6 +12,7 @@ import { ToastProvider } from '@/src/context/ToastContext';
 import { AppThemeProvider, useAppTheme } from '@/src/context/AppThemeContext';
 import { LocaleProvider } from '@/src/context/LocaleContext';
 import { BrandSplash } from '@/src/components/brand/BrandSplash';
+import '@/src/lib/notifications';
 
 export { ErrorBoundary } from 'expo-router';
 

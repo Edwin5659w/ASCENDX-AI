@@ -20,6 +20,7 @@ import { LoadMoreFooter } from '@/src/components/LoadMoreFooter';
 import { PlanUsageBar } from '@/src/components/PlanUsageBar';
 import { MethodologyStrip } from '@/src/components/MethodologyStrip';
 import { syncHabitReminders } from '@/src/lib/habit-reminders';
+import { ensureNotificationPermission } from '@/src/lib/notifications';
 import { useAuth } from '@/src/context/AuthContext';
 import { useToast } from '@/src/context/ToastContext';
 import { usePaginatedList } from '@/src/hooks/usePaginatedList';
@@ -150,15 +151,33 @@ export default function HabitsScreen() {
       return;
     }
     try {
-      await habitsApi.update(reminderFor.id, {
+      if (enabled) {
+        const granted = await ensureNotificationPermission();
+        if (!granted) {
+          Alert.alert(
+            'Permisos necesarios',
+            'Activa las notificaciones para ASCENDX en Ajustes del teléfono para recibir recordatorios.',
+          );
+          return;
+        }
+      }
+      const updated = await habitsApi.update(reminderFor.id, {
         reminderEnabled: enabled,
         reminderHour: enabled ? h : null,
         reminderMinute: enabled ? m : null,
       });
       setReminderFor(null);
       await reload();
+      const nextHabits = habits.map((h) => (h.id === updated.id ? updated : h));
+      const sync = await syncHabitReminders(nextHabits, { requestPermission: enabled });
       if (enabled) {
-        Alert.alert('Recordatorio', 'Se programó una notificación local diaria (requiere permisos).');
+        if (sync.granted && sync.scheduled > 0) {
+          Alert.alert('Recordatorio activo', `Te avisaremos a las ${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} cada día.`);
+        } else if (!sync.granted) {
+          Alert.alert('Sin permiso', 'Se guardó la preferencia, pero no hay permiso de notificaciones.');
+        } else {
+          Alert.alert('Guardado', 'Preferencia guardada.');
+        }
       }
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo guardar');
@@ -304,7 +323,9 @@ export default function HabitsScreen() {
         <Pressable style={styles.modalBackdrop} onPress={() => setReminderFor(null)}>
           <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.modalTitle}>Recordatorio diario</Text>
-            <Text style={styles.modalHint}>Notificación local a la hora indicada (UTC del dispositivo).</Text>
+            <Text style={styles.modalHint}>
+              Notificación local diaria a la hora de tu dispositivo. Pediremos permiso al activar.
+            </Text>
             <View style={styles.timeRow}>
               <TextInput
                 style={[styles.input, styles.timeInput]}
