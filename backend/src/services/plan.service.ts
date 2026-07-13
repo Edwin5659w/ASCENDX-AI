@@ -7,12 +7,36 @@ export const planService = {
   async getEffectivePlan(userId: string): Promise<PlanTier> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { plan: true, proTrialEndsAt: true },
+      select: {
+        plan: true,
+        proTrialEndsAt: true,
+        subscriptionStatus: true,
+        subscriptionPeriodEnd: true,
+      },
     });
     if (!user) return 'FREE';
-    if (user.plan === 'PRO') return 'PRO';
+
     if (user.proTrialEndsAt && user.proTrialEndsAt > new Date()) return 'PRO';
-    return 'FREE';
+
+    if (user.plan !== 'PRO') return 'FREE';
+
+    // PAST_DUE: sin acceso Pro hasta que el pago se recupere
+    if (user.subscriptionStatus === 'PAST_DUE') return 'FREE';
+
+    // Cancelado pero aún dentro del periodo pagado
+    if (user.subscriptionStatus === 'CANCELED') {
+      if (user.subscriptionPeriodEnd && user.subscriptionPeriodEnd > new Date()) return 'PRO';
+      return 'FREE';
+    }
+
+    return 'PRO';
+  },
+
+  async assertCanExport(userId: string): Promise<void> {
+    const plan = await this.getEffectivePlan(userId);
+    if (!getPlanLimits(plan).exportData) {
+      throw new AppError(402, 'La exportación de datos requiere plan Pro.');
+    }
   },
 
   async assertTradingAccess(userId: string): Promise<void> {

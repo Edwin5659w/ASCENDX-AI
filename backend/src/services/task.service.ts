@@ -63,14 +63,30 @@ export const taskService = {
 
     if (data.completed !== undefined && data.completed !== existing.completed) {
       if (data.completed) {
-        const xpResult = await userService.addXp(userId, XP.TASK_COMPLETE);
-        gamification = {
-          xpGained: XP.TASK_COMPLETE,
-          leveledUp: xpResult.leveledUp,
-          level: xpResult.level,
-          xp: xpResult.xp,
-          message: RETENTION_MESSAGES.taskComplete(XP.TASK_COMPLETE),
-        };
+        let shouldAwardXp = true;
+        if (!existing.isRecurring) {
+          const xpKey = `xp_task_${id}`;
+          const already = await prisma.emailLog.findFirst({
+            where: { userId, template: xpKey },
+          });
+          if (already) {
+            shouldAwardXp = false;
+          } else {
+            await prisma.emailLog.create({ data: { userId, template: xpKey } });
+          }
+        }
+
+        if (shouldAwardXp) {
+          const xpResult = await userService.addXp(userId, XP.TASK_COMPLETE);
+          gamification = {
+            xpGained: XP.TASK_COMPLETE,
+            leveledUp: xpResult.leveledUp,
+            level: xpResult.level,
+            xp: xpResult.xp,
+            message: RETENTION_MESSAGES.taskComplete(XP.TASK_COMPLETE),
+          };
+        }
+
         if (existing.isRecurring) {
           const nextDue = new Date();
           nextDue.setUTCDate(nextDue.getUTCDate() + 1);

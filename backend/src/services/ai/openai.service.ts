@@ -212,10 +212,13 @@ export class OpenAIService {
   async getChatHistory(userId: string, limit = 40) {
     const rows = await prisma.aIInsight.findMany({
       where: { userId, type: 'CHAT' },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: 'desc' },
       take: limit,
     });
-    return rows.flatMap((row) => decodeChatInsightMessage(row.id, row.message, row.createdAt));
+    // Invertir para mostrar cronológicamente (más antiguo → más reciente)
+    return [...rows]
+      .reverse()
+      .flatMap((row) => decodeChatInsightMessage(row.id, row.message, row.createdAt));
   }
 
   async clearChatHistory(userId: string) {

@@ -193,6 +193,7 @@ router.delete('/accountability/partners/:partnerId', async (req, res, next) => {
 
 router.get('/export', async (req, res, next) => {
   try {
+    await planService.assertCanExport(req.user!.userId);
     const data = await userService.exportUserData(req.user!.userId);
     res.setHeader('Content-Type', 'application/json');
     res.setHeader(
