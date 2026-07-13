@@ -294,4 +294,6 @@ export const publicApi = {
       '/public/stats',
       { public: true },
     ),
+  billing: () =>
+    apiRequest<{ billingConfigured: boolean }>('/public/billing', { public: true }),
 };

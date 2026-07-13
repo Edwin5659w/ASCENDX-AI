@@ -6,19 +6,36 @@ import { PlanComparison } from '../components/marketing/PlanComparison';
 import { FREE_VALUE_PITCH, PRO_VALUE_PITCH } from '@shared/plan-marketing';
 import { PLAN_PRICING } from '@shared/plans';
 import { useProCheckout } from '../hooks/useProCheckout';
-import { billingApi } from '../api/services';
+import { publicApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
+
+type BillingHint = 'loading' | 'ready' | 'unavailable';
 
 export function Pricing() {
   const { isAuthenticated } = useAuth();
   const { startCheckout, loading } = useProCheckout();
-  const [stripeReady, setStripeReady] = useState(false);
+  const [billingHint, setBillingHint] = useState<BillingHint>('loading');
 
   useEffect(() => {
-    if (isAuthenticated) {
-      billingApi.status().then((s) => setStripeReady(s.billingConfigured)).catch(() => {});
-    }
-  }, [isAuthenticated]);
+    let cancelled = false;
+    publicApi
+      .billing()
+      .then((s) => {
+        if (!cancelled) setBillingHint(s.billingConfigured ? 'ready' : 'unavailable');
+      })
+      .catch(() => {
+        // Si falla la API, no asustar al visitante con copy de desarrollador.
+        if (!cancelled) setBillingHint('ready');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const paymentFooter =
+    billingHint === 'unavailable'
+      ? 'Pro se activa con pago seguro. Mientras tanto puedes empezar Gratis sin tarjeta.'
+      : 'Pago seguro con Stripe. Cancela cuando quieras desde Perfil.';
 
   return (
     <MarketingLayout>
@@ -89,11 +106,7 @@ export function Pricing() {
               className="block w-full text-center mt-3 py-3 rounded-xl border border-violet-500/40 text-violet-300 font-semibold hover:bg-violet-500/10 disabled:opacity-50">
               Pro anual — ${PLAN_PRICING.PRO_ANNUAL.price}/año ({PLAN_PRICING.PRO_ANNUAL.savings})
             </button>
-            <p className="text-zinc-600 text-xs text-center mt-3">
-              {stripeReady
-                ? 'Pago seguro con Stripe. Cancela cuando quieras desde Perfil.'
-                : 'Configura Stripe en el servidor para activar pagos.'}
-            </p>
+            <p className="text-zinc-600 text-xs text-center mt-3">{paymentFooter}</p>
           </div>
         </div>
 
