@@ -181,7 +181,7 @@ export const userService = {
         title: 'ASCENDX',
         body: 'Notificación de prueba correcta ✓',
         sound: 'default',
-        data: { type: 'test' },
+        data: { type: 'test', screen: 'profile' },
       },
     ]);
     if (!ok) {

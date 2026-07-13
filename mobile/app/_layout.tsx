@@ -12,6 +12,7 @@ import { ToastProvider } from '@/src/context/ToastContext';
 import { AppThemeProvider, useAppTheme } from '@/src/context/AppThemeContext';
 import { LocaleProvider } from '@/src/context/LocaleContext';
 import { BrandSplash } from '@/src/components/brand/BrandSplash';
+import { useNotificationNavigation } from '@/src/hooks/useNotificationNavigation';
 import '@/src/lib/notifications';
 
 export { ErrorBoundary } from 'expo-router';
@@ -94,6 +95,11 @@ function RootNavigator() {
   const { theme } = useAppTheme();
   const segments = useSegments();
   const router = useRouter();
+
+  const canNavigateFromPush =
+    !isLoading && isAuthenticated && user?.onboardingDone !== false;
+
+  useNotificationNavigation(canNavigateFromPush);
 
   useEffect(() => {
     if (isLoading) return;
