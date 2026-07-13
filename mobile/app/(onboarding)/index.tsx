@@ -48,6 +48,7 @@ import { userApi } from '@/src/api/services';
 import { useAuth } from '@/src/context/AuthContext';
 import { BrandLogo } from '@/src/components/brand/BrandLogo';
 import { OnboardingProgress } from '@/src/components/onboarding/OnboardingProgress';
+import { markWelcomePending } from '@/src/lib/welcome-pending';
 import { theme } from '@/constants/theme';
 
 
@@ -138,6 +139,7 @@ export default function OnboardingScreen() {
         habitName: t.habitName,
       });
       await refreshUser();
+      await markWelcomePending();
       router.replace('/(tabs)');
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo continuar');
@@ -205,6 +207,8 @@ export default function OnboardingScreen() {
       });
 
       await refreshUser();
+
+      await markWelcomePending();
 
       router.replace('/(tabs)');
 

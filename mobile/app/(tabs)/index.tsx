@@ -23,12 +23,14 @@ import { UpgradeBanner } from '@/src/components/dashboard/UpgradeBanner';
 import { AIMentorCard } from '@/src/components/dashboard/AIMentorCard';
 import { ProductTour } from '@/src/components/tour/ProductTour';
 import { FirstWinHero } from '@/src/components/dashboard/FirstWinHero';
+import { WelcomeModal } from '@/src/components/dashboard/WelcomeModal';
 import { AscensoScoreCard } from '@/src/components/dashboard/AscensoScoreCard';
 import { MorningRitualModal } from '@/src/components/dashboard/MorningRitualModal';
 import { PomodoroTimer } from '@/src/components/dashboard/PomodoroTimer';
 import { QuickSearchModal } from '@/src/components/QuickSearchModal';
 import { consumePendingDailyBonus } from '@/src/lib/pending-daily-bonus';
 import { consumePendingProCheckout } from '@/src/lib/pending-pro-checkout';
+import { clearWelcomePending, peekWelcomePending } from '@/src/lib/welcome-pending';
 import { useToast } from '@/src/context/ToastContext';
 import { BarChartCard } from '@/src/components/charts/BarChartCard';
 import { Card } from '@/src/components/ui/Card';
@@ -55,9 +57,11 @@ export default function DashboardScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [ritualOpen, setRitualOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
   const prevBadgesRef = useRef<Set<string>>(new Set());
   const dailyBonusShownRef = useRef(false);
   const proCheckoutRanRef = useRef(false);
+  const welcomeCheckedRef = useRef(false);
 
   const load = useCallback(async () => {
     try {
@@ -108,6 +112,12 @@ export default function DashboardScreen() {
           } catch {
             /* ignore */
           }
+        });
+      }
+      if (!welcomeCheckedRef.current) {
+        welcomeCheckedRef.current = true;
+        void peekWelcomePending().then((pending) => {
+          if (pending) setWelcomeOpen(true);
         });
       }
       if (!dailyBonusShownRef.current) {
@@ -186,6 +196,14 @@ export default function DashboardScreen() {
           void refreshUser();
         }}
       />
+      <WelcomeModal
+        visible={welcomeOpen && !tourOpen}
+        userName={user?.name}
+        onDismiss={() => {
+          setWelcomeOpen(false);
+          void clearWelcomePending();
+        }}
+      />
 
       <LinearGradient colors={['#1a1033', '#0a0a0f']} style={styles.header}>
         <View style={styles.headerTop}>
@@ -228,6 +246,7 @@ export default function DashboardScreen() {
       ) : null}
 
       <UpgradeBanner planUsage={stats?.planUsage} />
+      <FirstWinHero stats={stats} />
       {user?.proTrialEndsAt && new Date(user.proTrialEndsAt) > new Date() ? (
         <Card style={styles.trialBanner}>
           <Text style={styles.trialText}>
@@ -260,7 +279,6 @@ export default function DashboardScreen() {
         aiUsed={stats?.planUsage?.usage.aiChatToday}
         aiLimit={stats?.planUsage?.limits.aiChatPerDay}
       />
-      <FirstWinHero stats={stats} />
       <DailyFocus />
       {(stats?.completedTasks ?? 0) > 0 || user?.plan === 'PRO' ? <WeeklyRecap /> : null}
       <FirstStepsCard stats={stats} />

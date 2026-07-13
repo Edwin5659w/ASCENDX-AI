@@ -23,6 +23,7 @@ import { AscensoScoreCard } from '../components/dashboard/AscensoScoreCard';
 import { MorningRitualModal } from '../components/dashboard/MorningRitualModal';
 import { PomodoroTimer } from '../components/dashboard/PomodoroTimer';
 import { WelcomeModal, useWelcomeModal } from '../components/dashboard/WelcomeModal';
+import { FirstWinHero } from '../components/dashboard/FirstWinHero';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { usePendingProCheckout } from '../hooks/usePendingProCheckout';
@@ -169,7 +170,9 @@ export function Dashboard() {
           void refreshUser();
         }}
       />
-      {welcomeOpen ? <WelcomeModal userName={user?.name} onDismiss={closeWelcome} /> : null}
+      {welcomeOpen && !tourOpen ? (
+        <WelcomeModal userName={user?.name} onDismiss={closeWelcome} />
+      ) : null}
       <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white mb-1">{greeting} 👋</h1>
@@ -192,6 +195,8 @@ export function Dashboard() {
           </button>
         </div>
       </div>
+
+      <FirstWinHero stats={stats} />
 
       <UpgradeBanner planUsage={stats?.planUsage} />
       {user?.proTrialEndsAt && new Date(user.proTrialEndsAt) > new Date() ? (
