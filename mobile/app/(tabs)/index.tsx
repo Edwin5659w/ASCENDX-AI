@@ -41,6 +41,7 @@ import { Card } from '@/src/components/ui/Card';
 import type { UserStats } from '@/src/types/api';
 import { theme } from '@/constants/theme';
 import { computeSetupScore, getTimeGreeting } from '../../../shared/dashboard-helpers';
+import { isEarlyDashboard } from '../../../shared/dashboard-progressive';
 import { RETENTION_MESSAGES } from '../../../shared/retention';
 import { useMoneyFormat } from '@/src/hooks/useMoneyFormat';
 import { CONTEXT_LEVEL_LABELS } from '../../../shared/chat-helpers';
@@ -176,6 +177,7 @@ export default function DashboardScreen() {
   const pendingTasks = (stats?.totalTasks ?? 0) - (stats?.completedTasks ?? 0);
   const balancePositive = (stats?.financeBalance ?? 0) >= 0;
   const ctxLabel = CONTEXT_LEVEL_LABELS[contextLevel]?.label ?? contextLevel;
+  const early = isEarlyDashboard(stats);
 
   if (loading && !stats) {
     return (
@@ -229,7 +231,9 @@ export default function DashboardScreen() {
           <View style={{ flex: 1 }}>
             <Text style={styles.greeting}>{getTimeGreeting(user?.name)} 👋</Text>
             <Text style={styles.tagline}>
-              Nivel {user?.level ?? 1} · {user?.xp ?? 0} XP
+              {early
+                ? 'Paso 1: completa una tarea y gana XP'
+                : `Nivel ${user?.level ?? 1} · ${user?.xp ?? 0} XP`}
             </Text>
           </View>
           <Pressable style={styles.searchBtn} onPress={() => setSearchOpen(true)} accessibilityLabel="Buscar">
@@ -264,8 +268,10 @@ export default function DashboardScreen() {
         </Card>
       ) : null}
 
-      <UpgradeBanner planUsage={stats?.planUsage} />
+      {!early ? <UpgradeBanner planUsage={stats?.planUsage} /> : null}
       <FirstWinHero stats={stats} />
+      <FirstStepsCard stats={stats} />
+      <DailyFocus />
       {user?.proTrialEndsAt && new Date(user.proTrialEndsAt) > new Date() ? (
         <Card style={styles.trialBanner}>
           <Text style={styles.trialText}>
@@ -274,10 +280,10 @@ export default function DashboardScreen() {
           </Text>
         </Card>
       ) : null}
-      {stats?.ascendScore != null ? (
+      {!early && stats?.ascendScore != null ? (
         <AscensoScoreCard score={stats.ascendScore} label={stats.ascendLabel ?? ''} tips={stats.ascendTips} />
       ) : null}
-      {!stats?.morningRitualDone ? (
+      {!early && !stats?.morningRitualDone ? (
         <Pressable style={styles.ritualBtn} onPress={() => setRitualOpen(true)}>
           <FontAwesome name="sun-o" size={16} color="#fcd34d" />
           <Text style={styles.ritualBtnText}>Empezar ritual matutino (2 min)</Text>
@@ -291,17 +297,15 @@ export default function DashboardScreen() {
         }}
       />
       <QuickSearchModal visible={searchOpen} onClose={() => setSearchOpen(false)} />
-      <PomodoroTimer />
+      {!early ? <PomodoroTimer /> : null}
       <AIMentorCard
         contextLevel={contextLevel}
-        suggestedPrompts={aiPrompts}
+        suggestedPrompts={early ? aiPrompts.slice(0, 1) : aiPrompts}
         aiUsed={stats?.planUsage?.usage.aiChatToday}
         aiLimit={stats?.planUsage?.limits.aiChatPerDay}
       />
-      <DailyFocus />
-      {(stats?.completedTasks ?? 0) > 0 || user?.plan === 'PRO' ? <WeeklyRecap /> : null}
-      <FirstStepsCard stats={stats} />
-      <GamificationPanel user={user} stats={stats} compact />
+      {!early && ((stats?.completedTasks ?? 0) > 0 || user?.plan === 'PRO') ? <WeeklyRecap /> : null}
+      {!early ? <GamificationPanel user={user} stats={stats} compact /> : null}
       <DashboardQuickActions />
 
       {warning ? (

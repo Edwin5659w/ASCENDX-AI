@@ -32,6 +32,7 @@ import { ProTeaserStrip } from '../components/dashboard/ProTeaserStrip';
 import { userApi, aiApi, type AIContextLevel } from '../api/services';
 import type { UserStats } from '../types';
 import { getTimeGreeting } from '@shared/dashboard-helpers';
+import { isEarlyDashboard } from '@shared/dashboard-progressive';
 import { RETENTION_MESSAGES } from '@shared/retention';
 import { consumePendingDailyBonus } from '../lib/pending-daily-bonus';
 import { useMoneyFormat } from '../hooks/useMoneyFormat';
@@ -159,6 +160,7 @@ export function Dashboard() {
 
   const ctxMeta = CONTEXT_LEVEL_LABELS[contextLevel];
   const greeting = getTimeGreeting(user?.name);
+  const early = isEarlyDashboard(stats);
 
   return (
     <div>
@@ -177,7 +179,9 @@ export function Dashboard() {
         <div>
           <h1 className="text-2xl font-bold text-white mb-1">{greeting} 👋</h1>
           <p className="text-zinc-500 text-sm">
-            Tu Life OS — nivel {user?.level ?? 1} · {user?.xp ?? 0} XP
+            {early
+              ? 'Paso 1: completa una tarea y gana XP'
+              : `Tu Life OS — nivel ${user?.level ?? 1} · ${user?.xp ?? 0} XP`}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -197,20 +201,22 @@ export function Dashboard() {
       </div>
 
       <FirstWinHero stats={stats} />
+      <FirstStepsPanel stats={stats} />
+      <DailyFocus />
 
-      <UpgradeBanner planUsage={stats?.planUsage} />
+      {!early ? <UpgradeBanner planUsage={stats?.planUsage} /> : null}
       {user?.proTrialEndsAt && new Date(user.proTrialEndsAt) > new Date() ? (
         <div className="mb-4 rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-3 text-sm text-violet-200">
           Pro de prueba activo hasta{' '}
           {new Date(user.proTrialEndsAt).toLocaleDateString('es', { day: 'numeric', month: 'long' })}
         </div>
       ) : null}
-      {stats?.ascendScore != null ? (
+      {!early && stats?.ascendScore != null ? (
         <div className="mb-4">
           <AscensoScoreCard score={stats.ascendScore} label={stats.ascendLabel ?? ''} tips={stats.ascendTips} />
         </div>
       ) : null}
-      {!stats?.morningRitualDone ? (
+      {!early && !stats?.morningRitualDone ? (
         <button
           type="button"
           onClick={() => setRitualOpen(true)}
@@ -220,18 +226,16 @@ export function Dashboard() {
         </button>
       ) : null}
       <MorningRitualModal open={ritualOpen} onClose={() => setRitualOpen(false)} />
-      <PomodoroTimer />
-      {user?.plan !== 'PRO' ? <ProTeaserStrip /> : null}
+      {!early ? <PomodoroTimer /> : null}
+      {!early && user?.plan !== 'PRO' ? <ProTeaserStrip /> : null}
       <AIMentorCard
         contextLevel={contextLevel}
         suggestedPrompts={aiPrompts}
         aiUsed={stats?.planUsage?.usage.aiChatToday}
         aiLimit={stats?.planUsage?.limits.aiChatPerDay}
       />
-      <DailyFocus />
-      <FirstStepsPanel stats={stats} />
-      {(stats?.completedTasks ?? 0) > 0 || user?.plan === 'PRO' ? <WeeklyRecap /> : null}
-      <GamificationPanel user={user ?? null} stats={stats} compact />
+      {!early && ((stats?.completedTasks ?? 0) > 0 || user?.plan === 'PRO') ? <WeeklyRecap /> : null}
+      {!early ? <GamificationPanel user={user ?? null} stats={stats} compact /> : null}
       <DashboardQuickActions />
 
       {warning && (
@@ -272,7 +276,7 @@ export function Dashboard() {
           <div className="mt-4 pt-4 border-t border-white/10">
             <p className="text-zinc-500 text-xs mb-2">Pregúntale al mentor:</p>
             <div className="flex flex-col gap-2">
-              {aiPrompts.slice(0, 3).map((p) => (
+              {aiPrompts.slice(0, early ? 1 : 3).map((p) => (
                 <Link
                   key={p}
                   to="/chat"
