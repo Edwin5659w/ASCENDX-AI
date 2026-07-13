@@ -1,9 +1,10 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import type { ComponentProps } from 'react';
 import { Tabs } from 'expo-router';
 import { theme } from '@/constants/theme';
 import { BrandLogo } from '@/src/components/brand/BrandLogo';
 
-function TabIcon({ name, color }: { name: React.ComponentProps<typeof FontAwesome>['name']; color: string }) {
+function TabIcon({ name, color }: { name: ComponentProps<typeof FontAwesome>['name']; color: string }) {
   return <FontAwesome size={22} name={name} color={color} style={{ marginBottom: -2 }} />;
 }
 
@@ -33,13 +34,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="goals"
-        options={{
-          href: null,
-          title: 'Objetivos',
-        }}
-      />
-      <Tabs.Screen
         name="tasks"
         options={{
           title: 'Tareas',
@@ -61,6 +55,27 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="more"
+        options={{
+          title: 'Más',
+          tabBarIcon: ({ color }) => <TabIcon name="th-large" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          href: null,
+          title: 'Perfil',
+        }}
+      />
+      <Tabs.Screen
+        name="goals"
+        options={{
+          href: null,
+          title: 'Objetivos',
+        }}
+      />
+      <Tabs.Screen
         name="finance"
         options={{
           href: null,
@@ -72,13 +87,6 @@ export default function TabLayout() {
         options={{
           href: null,
           title: 'Logros',
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Perfil',
-          tabBarIcon: ({ color }) => <TabIcon name="user" color={color} />,
         }}
       />
     </Tabs>

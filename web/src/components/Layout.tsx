@@ -8,6 +8,8 @@ import {
   LogOut,
   Flame,
   Search,
+  Target,
+  Wallet,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { BrandLogo } from './brand/BrandLogo';
@@ -16,8 +18,10 @@ import { SkipLink } from './SkipLink';
 
 const nav = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Inicio' },
+  { to: '/goals', icon: Target, label: 'Objetivos' },
   { to: '/tasks', icon: CheckSquare, label: 'Tareas' },
   { to: '/habits', icon: Flame, label: 'Hábitos' },
+  { to: '/finance', icon: Wallet, label: 'Finanzas' },
   { to: '/chat', icon: MessageCircle, label: 'Mentor' },
   { to: '/profile', icon: User, label: 'Perfil' },
 ];
