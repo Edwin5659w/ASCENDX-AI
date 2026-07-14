@@ -25,11 +25,14 @@ import { userApi, billingApi } from '@/src/api/services';
 import { DEFAULT_CURRENCY, SUPPORTED_CURRENCIES } from '../../../shared/currencies';
 import type { ReferralInfo } from '@/src/types/api';
 import { AccountabilityPanel } from '@/src/components/AccountabilityPanel';
+import { ProfileAvatar } from '@/src/components/profile/ProfileAvatar';
+import { ProfileSection } from '@/src/components/profile/ProfileSection';
 import { useToast } from '@/src/context/ToastContext';
 import { useAppTheme } from '@/src/context/AppThemeContext';
 import { useLocale } from '@/src/context/LocaleContext';
 import { isRevenueCatConfigured, purchasePro, restorePurchases, configureRevenueCat } from '@/src/lib/revenuecat';
 import { registerExpoPushToken } from '@/src/lib/notifications';
+import { lightTapHaptic } from '@/src/lib/haptics';
 
 const APP_VERSION =
   Constants.expoConfig?.version ?? Constants.manifest2?.extra?.expoClient?.version ?? '1.1.0';
@@ -118,7 +121,8 @@ export default function ProfileScreen() {
     try {
       await userApi.updateProfile({ name: trimmed });
       await refreshUser();
-      Alert.alert('Listo', 'Nombre actualizado');
+      lightTapHaptic();
+      showToast('Nombre actualizado', 'success');
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo guardar');
     } finally {
@@ -365,8 +369,8 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
-      <View style={styles.avatar}>
-        <FontAwesome name="user" size={40} color={theme.colors.primaryLight} />
+      <View style={{ marginTop: 16 }}>
+        <ProfileAvatar name={user?.name ?? name} size={96} />
       </View>
       <Text style={styles.name}>{user?.name}</Text>
       <Text style={styles.email}>{user?.email}</Text>
@@ -380,6 +384,36 @@ export default function ProfileScreen() {
         <Text style={styles.freeBadge}>Plan Gratis</Text>
       )}
 
+      <Card style={styles.statsCard}>
+        <View style={styles.statRow}>
+          <Text style={styles.statLabel}>Nivel</Text>
+          <Text style={styles.statValue}>{user?.level ?? 1}</Text>
+        </View>
+        <View style={styles.statRow}>
+          <Text style={styles.statLabel}>XP total</Text>
+          <Text style={styles.statValue}>{user?.xp ?? 0}</Text>
+        </View>
+        <View style={styles.statRow}>
+          <Text style={styles.statLabel}>Miembro desde</Text>
+          <Text style={styles.statValue}>
+            {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('es') : '—'}
+          </Text>
+        </View>
+        {user?.pushToken ? (
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Push</Text>
+            <Text style={styles.statValueSmall}>Activo</Text>
+          </View>
+        ) : null}
+      </Card>
+
+      <ProfileSection title="Identidad" hint="Cómo te ve ASCENDX en la app" />
+      <Card style={styles.nameCard}>
+        <Input label="Nombre completo" value={name} onChangeText={setName} autoCapitalize="words" />
+        <Button title="Guardar nombre" onPress={saveName} loading={savingName} />
+      </Card>
+
+      <ProfileSection title="Plan y progreso" />
       {user?.subscriptionStatus === 'PAST_DUE' ? (
         <Card style={styles.pastDueCard}>
           <Text style={styles.pastDueTitle}>Pago pendiente</Text>
@@ -453,17 +487,13 @@ export default function ProfileScreen() {
         <Text style={styles.achievementsLinkText}>Ver mis logros</Text>
       </Pressable>
 
-      <Button title="Ver tour del producto de nuevo" variant="secondary" onPress={replayTour} />
+      <Button title="Ver cómo funciona ASCENDX" variant="secondary" onPress={replayTour} />
 
       {user?.plan === 'PRO' ? (
         <Button title="Exportar mis datos (JSON · Pro)" variant="secondary" onPress={exportData} loading={exporting} />
       ) : null}
 
-      <Card style={styles.nameCard}>
-        <Input label="Nombre completo" value={name} onChangeText={setName} autoCapitalize="words" />
-        <Button title="Guardar nombre" onPress={saveName} loading={savingName} />
-      </Card>
-
+      <ProfileSection title="Preferencias" hint="Apariencia, idioma y moneda" />
       <Card style={styles.prefsCard}>
         <Text style={styles.sectionTitle}>Apariencia e idioma</Text>
         <View style={styles.currencyGrid}>
@@ -559,8 +589,28 @@ export default function ProfileScreen() {
         </View>
       </Card>
 
+      <ProfileSection title="Notificaciones" />
+      <Card style={styles.pushCard}>
+        <Text style={styles.pushTitle}>Avisos en el teléfono</Text>
+        <Text style={styles.pushHint}>
+          Registra el token para avisos de hábitos y metas. Los recordatorios de hábitos usan
+          notificaciones locales al configurar la campana en cada hábito.
+        </Text>
+        <Button title="Activar notificaciones push" onPress={registerPush} loading={pushBusy} />
+        {user?.pushToken ? (
+          <Button
+            title="Probar notificación"
+            variant="secondary"
+            onPress={sendTestPush}
+            loading={testPushBusy}
+            style={styles.testPushButton}
+          />
+        ) : null}
+      </Card>
+
+      <ProfileSection title="Cuenta y seguridad" />
       <Card style={styles.passwordCard}>
-        <Text style={styles.sectionTitle}>Seguridad</Text>
+        <Text style={styles.sectionTitle}>Cambiar contraseña</Text>
         <Input
           label="Contraseña actual"
           value={currentPassword}
@@ -575,47 +625,6 @@ export default function ProfileScreen() {
           secureTextEntry
         />
         <Button title="Cambiar contraseña" onPress={changePassword} loading={changingPassword} />
-      </Card>
-
-      <Card style={styles.statsCard}>
-        <View style={styles.statRow}>
-          <Text style={styles.statLabel}>Nivel</Text>
-          <Text style={styles.statValue}>{user?.level ?? 1}</Text>
-        </View>
-        <View style={styles.statRow}>
-          <Text style={styles.statLabel}>XP total</Text>
-          <Text style={styles.statValue}>{user?.xp ?? 0}</Text>
-        </View>
-        <View style={styles.statRow}>
-          <Text style={styles.statLabel}>Miembro desde</Text>
-          <Text style={styles.statValue}>
-            {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('es') : '—'}
-          </Text>
-        </View>
-        {user?.pushToken ? (
-          <View style={styles.statRow}>
-            <Text style={styles.statLabel}>Push</Text>
-            <Text style={styles.statValueSmall}>Activo</Text>
-          </View>
-        ) : null}
-      </Card>
-
-      <Card style={styles.pushCard}>
-        <Text style={styles.pushTitle}>Notificaciones</Text>
-        <Text style={styles.pushHint}>
-          Registra el token en el servidor para avisos de hábitos y metas. Los recordatorios de hábitos usan
-          notificaciones locales al configurar la campana en cada hábito.
-        </Text>
-        <Button title="Activar notificaciones push" onPress={registerPush} loading={pushBusy} />
-        {user?.pushToken ? (
-          <Button
-            title="Probar notificación"
-            variant="secondary"
-            onPress={sendTestPush}
-            loading={testPushBusy}
-            style={styles.testPushButton}
-          />
-        ) : null}
       </Card>
 
       {__DEV__ ? (
@@ -671,17 +680,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: 40,
   },
-  avatar: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: theme.colors.surfaceLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 16,
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
-  },
   name: { color: theme.colors.text, fontSize: 24, fontWeight: '700', marginTop: 16 },
   email: { color: theme.colors.textMuted, fontSize: 15, marginTop: 4 },
   version: { color: theme.colors.textMuted, fontSize: 12, marginTop: 8 },
@@ -696,10 +694,12 @@ const styles = StyleSheet.create({
   },
   proBadgeText: { color: theme.colors.primaryLight, fontSize: 12, fontWeight: '600' },
   freeBadge: { color: theme.colors.textMuted, fontSize: 12, marginTop: 8 },
-  proCard: { width: '100%', marginTop: 16, borderColor: 'rgba(139, 92, 246, 0.35)', borderWidth: 1 },
+  nameCard: { width: '100%', marginTop: 8 },
+  statsCard: { width: '100%', marginTop: 16 },
+  proCard: { width: '100%', marginTop: 8, borderColor: 'rgba(139, 92, 246, 0.35)', borderWidth: 1 },
   pastDueCard: {
     width: '100%',
-    marginTop: 16,
+    marginTop: 8,
     borderColor: 'rgba(245, 158, 11, 0.4)',
     borderWidth: 1,
     backgroundColor: 'rgba(245, 158, 11, 0.08)',
@@ -707,7 +707,7 @@ const styles = StyleSheet.create({
   pastDueTitle: { color: theme.colors.warning, fontWeight: '700', fontSize: 15, marginBottom: 6 },
   pricingLink: { marginTop: 12, alignItems: 'center' },
   pricingLinkText: { color: theme.colors.primaryLight, fontSize: 13 },
-  referralCard: { width: '100%', marginTop: 16 },
+  referralCard: { width: '100%', marginTop: 8 },
   refCode: {
     color: theme.colors.accent,
     fontSize: 22,
@@ -718,7 +718,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   refCount: { color: theme.colors.textMuted, fontSize: 12, marginBottom: 12, textAlign: 'center' },
-  shieldsCard: { width: '100%', marginTop: 16 },
+  shieldsCard: { width: '100%', marginTop: 8 },
   shieldsRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   shieldsTitle: { color: theme.colors.text, fontWeight: '600', fontSize: 14 },
   achievementsLink: {
@@ -732,13 +732,12 @@ const styles = StyleSheet.create({
   achievementsLinkText: { color: theme.colors.primaryLight, fontWeight: '600', fontSize: 14 },
   dangerCard: {
     width: '100%',
-    marginTop: 16,
+    marginTop: 8,
     borderColor: 'rgba(248, 113, 113, 0.35)',
     borderWidth: 1,
   },
   dangerTitle: { color: theme.colors.danger, fontWeight: '600', marginBottom: 8 },
-  nameCard: { width: '100%', marginTop: 20 },
-  prefsCard: { width: '100%', marginTop: 16 },
+  prefsCard: { width: '100%', marginTop: 8 },
   prefsHint: { color: theme.colors.textMuted, fontSize: 13, lineHeight: 18, marginBottom: 12 },
   currencyGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   currencyChip: {
@@ -757,10 +756,9 @@ const styles = StyleSheet.create({
   currencyChipTextActive: { color: theme.colors.primaryLight },
   switchRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   switchCopy: { flex: 1 },
-  passwordCard: { width: '100%', marginTop: 16, gap: 4 },
+  passwordCard: { width: '100%', marginTop: 8, gap: 4 },
   sectionTitle: { color: theme.colors.text, fontWeight: '600', marginBottom: 8 },
-  statsCard: { width: '100%', marginTop: 16 },
-  pushCard: { width: '100%', marginTop: 16 },
+  pushCard: { width: '100%', marginTop: 8 },
   pushTitle: { color: theme.colors.text, fontWeight: '600', marginBottom: 8 },
   pushHint: { color: theme.colors.textMuted, fontSize: 13, lineHeight: 18, marginBottom: 12 },
   testPushButton: { marginTop: 12 },
