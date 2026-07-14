@@ -17,6 +17,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.ascendx.ai",
       "infoPlist": {
+        "NSUserNotificationsUsageDescription": "ASCENDX te avisa de hábitos y rachas para que no pierdas tu progreso.",
         "NSAppTransportSecurity": {
           "NSAllowsLocalNetworking": true
         }
@@ -29,12 +30,17 @@
       },
       "package": "com.ascendx.ai",
       "edgeToEdgeEnabled": true,
-      "usesCleartextTraffic": true
+      "usesCleartextTraffic": false
     },
     "web": {
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
+      }
     },
     "plugins": [
       "expo-router",
