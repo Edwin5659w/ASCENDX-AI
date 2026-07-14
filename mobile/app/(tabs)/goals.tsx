@@ -9,7 +9,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { goalsApi, userApi } from '@/src/api/services';
 import { Card } from '@/src/components/ui/Card';
@@ -19,6 +18,7 @@ import { LoadMoreFooter } from '@/src/components/LoadMoreFooter';
 import { PlanUsageBar } from '@/src/components/PlanUsageBar';
 import { MethodologyStrip } from '@/src/components/MethodologyStrip';
 import { usePaginatedList } from '@/src/hooks/usePaginatedList';
+import { useThrottledFocusEffect } from '@/src/hooks/useThrottledFocusEffect';
 import type { Goal, PlanUsage } from '@/src/types/api';
 import { theme } from '@/constants/theme';
 
@@ -49,8 +49,11 @@ export default function GoalsScreen() {
     }
   }, [refresh]);
 
-  useFocusEffect(useCallback(() => { void reload(); }, [reload]));
-
+  useThrottledFocusEffect(
+    useCallback(() => {
+      void reload();
+    }, [reload]),
+  );
   const handleCreate = async () => {
     if (title.trim().length < 3) {
       Alert.alert('Error', 'El título debe tener al menos 3 caracteres');

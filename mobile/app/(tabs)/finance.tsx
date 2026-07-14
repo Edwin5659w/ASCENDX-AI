@@ -11,7 +11,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { financeApi } from '@/src/api/services';
 import { BarChartCard } from '@/src/components/charts/BarChartCard';
@@ -23,6 +22,7 @@ import { TradingJournal } from '@/src/components/TradingJournal';
 import { useAuth } from '@/src/context/AuthContext';
 import { useMoneyFormat } from '@/src/hooks/useMoneyFormat';
 import { usePaginatedList } from '@/src/hooks/usePaginatedList';
+import { useThrottledFocusEffect } from '@/src/hooks/useThrottledFocusEffect';
 import type { FinanceRecord, FinanceSummary } from '@/src/types/api';
 import { theme } from '@/constants/theme';
 import {
@@ -76,7 +76,7 @@ export default function FinanceScreen() {
     await Promise.all([refresh(), loadSummary()]);
   }, [refresh, loadSummary]);
 
-  useFocusEffect(
+  useThrottledFocusEffect(
     useCallback(() => {
       setInitialLoading(true);
       reload().finally(() => setInitialLoading(false));

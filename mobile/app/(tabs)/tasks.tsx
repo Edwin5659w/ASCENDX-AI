@@ -11,7 +11,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { goalsApi, tasksApi } from '@/src/api/services';
 import { Button } from '@/src/components/ui/Button';
@@ -21,6 +20,7 @@ import { XpBurst } from '@/src/components/XpBurst';
 import { useAuth } from '@/src/context/AuthContext';
 import { useToast } from '@/src/context/ToastContext';
 import { usePaginatedList } from '@/src/hooks/usePaginatedList';
+import { useThrottledFocusEffect } from '@/src/hooks/useThrottledFocusEffect';
 import { applyGamificationFeedback } from '@/src/lib/gamification-feedback';
 import { celebrateHaptic } from '@/src/lib/haptics';
 import { XP } from '../../../shared/retention';
@@ -54,9 +54,11 @@ export default function TasksScreen() {
     await Promise.all([refresh(), loadGoals()]);
   }, [refresh, loadGoals]);
 
-  useFocusEffect(useCallback(() => { void reload(); }, [reload]));
-
-  const onRefresh = async () => {
+  useThrottledFocusEffect(
+    useCallback(() => {
+      void reload();
+    }, [reload]),
+  );  const onRefresh = async () => {
     setRefreshing(true);
     await reload();
     setRefreshing(false);

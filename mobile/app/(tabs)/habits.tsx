@@ -10,7 +10,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { habitsApi, userApi } from '@/src/api/services';
 import { Button } from '@/src/components/ui/Button';
@@ -24,6 +23,7 @@ import { ensureNotificationPermission } from '@/src/lib/notifications';
 import { useAuth } from '@/src/context/AuthContext';
 import { useToast } from '@/src/context/ToastContext';
 import { usePaginatedList } from '@/src/hooks/usePaginatedList';
+import { useThrottledFocusEffect } from '@/src/hooks/useThrottledFocusEffect';
 import { applyGamificationFeedback } from '@/src/lib/gamification-feedback';
 import { celebrateHaptic } from '@/src/lib/haptics';
 import { XpBurst } from '@/src/components/XpBurst';
@@ -66,7 +66,7 @@ export default function HabitsScreen() {
     }
   }, [refresh]);
 
-  useFocusEffect(
+  useThrottledFocusEffect(
     useCallback(() => {
       void reload();
     }, [reload]),

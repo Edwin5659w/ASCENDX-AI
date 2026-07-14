@@ -101,9 +101,7 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
-      if (user?.onboardingDone && user.productTourDone === false) {
-        setTourOpen(true);
-      }
+      // Tour no se abre solo: Welcome + FirstWin bastan. Guía disponible bajo demanda.
       if (!proCheckoutRanRef.current) {
         proCheckoutRanRef.current = true;
         void consumePendingProCheckout().then(async (pending) => {
@@ -124,6 +122,11 @@ export default function DashboardScreen() {
         welcomeCheckedRef.current = true;
         void peekWelcomePending().then((pending) => {
           if (pending) setWelcomeOpen(true);
+          else if (user?.onboardingDone && user.productTourDone === false) {
+            void shouldAskNotificationOptIn().then((ask) => {
+              if (ask) setNotifOptInOpen(true);
+            });
+          }
         });
       }
       if (!dailyBonusShownRef.current) {
@@ -212,10 +215,13 @@ export default function DashboardScreen() {
         onDismiss={() => {
           setWelcomeOpen(false);
           void clearWelcomePending();
+          void shouldAskNotificationOptIn().then((ask) => {
+            if (ask) setNotifOptInOpen(true);
+          });
         }}
       />
       <NotificationOptInModal
-        visible={notifOptInOpen && !tourOpen}
+        visible={notifOptInOpen && !tourOpen && !welcomeOpen}
         onDismiss={() => setNotifOptInOpen(false)}
         onDone={(result) => {
           if (result === 'enabled') {
@@ -226,6 +232,12 @@ export default function DashboardScreen() {
         }}
       />
 
+      {user?.productTourDone === false && !welcomeOpen && !tourOpen ? (
+        <Pressable style={styles.guideChip} onPress={() => setTourOpen(true)}>
+          <FontAwesome name="map-o" size={14} color={theme.colors.primaryLight} />
+          <Text style={styles.guideChipText}>¿Cómo funciona ASCENDX? (30 s)</Text>
+        </Pressable>
+      ) : null}
       <LinearGradient colors={['#1a1033', '#0a0a0f']} style={styles.header}>
         <View style={styles.headerTop}>
           <View style={{ flex: 1 }}>
@@ -382,6 +394,21 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   content: { paddingBottom: 32 },
+  guideChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginHorizontal: theme.spacing.md,
+    marginBottom: 8,
+    marginTop: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.35)',
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+  },
+  guideChipText: { color: theme.colors.primaryLight, fontSize: 13, fontWeight: '600' },
   boot: {
     flex: 1,
     justifyContent: 'center',

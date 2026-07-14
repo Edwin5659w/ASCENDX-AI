@@ -31,12 +31,11 @@ export function WelcomeModal({ visible, userName, onDismiss }: WelcomeModalProps
             <FontAwesome name="rocket" size={32} color={theme.colors.primaryLight} />
           </View>
 
-          <Text style={styles.title}>¡Listo, {firstName}! 🎉</Text>
-          <Text style={styles.subtitle}>+{XP.ONBOARDING_COMPLETE} XP de bienvenida desbloqueados</Text>
+          <Text style={styles.title}>¡Listo, {firstName}!</Text>
+          <Text style={styles.subtitle}>+{XP.ONBOARDING_COMPLETE} XP de bienvenida</Text>
 
           <Text style={styles.body}>
-            Ya tienes objetivo, tareas y hábito configurados. Completa tu primera tarea para ganar XP al
-            instante.
+            Completa tu primera tarea ahora. Es el primer paso de tu Life OS.
           </Text>
 
           <View style={styles.tips}>
