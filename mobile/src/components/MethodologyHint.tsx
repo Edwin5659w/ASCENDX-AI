@@ -1,11 +1,46 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { METHODOLOGIES, type MethodologyModule } from '../../../shared/methodologies';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
+
+function createStyles(theme: AppTheme) {
+  return {
+    wrap: {
+      marginHorizontal: theme.spacing.md,
+      marginBottom: theme.spacing.md,
+      borderRadius: theme.radius.md,
+      borderWidth: 1,
+      borderColor: theme.colors.primary + '33',
+      backgroundColor: theme.colors.primary + '14',
+      overflow: 'hidden' as const,
+    },
+    header: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 10,
+      padding: 12,
+    },
+    title: { flex: 1, fontSize: 13, color: theme.colors.textMuted },
+    name: { color: theme.colors.primaryLight, fontWeight: '700' as const },
+    tagline: { color: theme.colors.textMuted },
+    body: {
+      paddingHorizontal: 12,
+      paddingBottom: 12,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
+    },
+    help: { color: theme.colors.textMuted, fontSize: 13, marginTop: 8, marginBottom: 8, lineHeight: 20 },
+    step: { color: theme.colors.textMuted, fontSize: 12, lineHeight: 18, marginBottom: 4 },
+  };
+}
 
 export function MethodologyHint({ module }: { module: MethodologyModule }) {
   const [open, setOpen] = useState(false);
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const m = METHODOLOGIES[module];
 
   return (
@@ -31,32 +66,3 @@ export function MethodologyHint({ module }: { module: MethodologyModule }) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: {
-    marginHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.md,
-    borderRadius: theme.radius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.primary + '33',
-    backgroundColor: theme.colors.primary + '14',
-    overflow: 'hidden',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    padding: 12,
-  },
-  title: { flex: 1, fontSize: 13, color: theme.colors.textMuted },
-  name: { color: theme.colors.primaryLight, fontWeight: '700' },
-  tagline: { color: theme.colors.textMuted },
-  body: {
-    paddingHorizontal: 12,
-    paddingBottom: 12,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-  },
-  help: { color: theme.colors.textMuted, fontSize: 13, marginTop: 8, marginBottom: 8, lineHeight: 20 },
-  step: { color: theme.colors.textMuted, fontSize: 12, lineHeight: 18, marginBottom: 4 },
-});

@@ -3,7 +3,6 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
   Animated,
@@ -14,7 +13,9 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { LinearGradient } from 'expo-linear-gradient';
 import { PRODUCT_TOUR_STEPS, type ProductTourIcon } from '../../../../shared/product-tour';
 import { BrandLogo } from '@/src/components/brand/BrandLogo';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 import { userApi } from '@/src/api/services';
 import { XP } from '../../../../shared/retention';
 import { PLAN_LIMITS, PLAN_PRICING } from '../../../../shared/plans';
@@ -36,8 +37,118 @@ interface ProductTourProps {
   onClose: () => void;
 }
 
+function createStyles(theme: AppTheme) {
+  return {
+    root: { flex: 1, backgroundColor: theme.colors.background },
+    progressWrap: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+    progressHeader: {
+      flexDirection: 'row' as const,
+      justifyContent: 'space-between' as const,
+      marginBottom: 8,
+    },
+    progressLabel: { color: theme.colors.textMuted, fontSize: 12, fontWeight: '600' as const },
+    skip: { color: theme.colors.textMuted, fontSize: 12 },
+    progressTrack: {
+      height: 10,
+      backgroundColor: theme.colors.surfaceLight,
+      borderRadius: 8,
+      overflow: 'hidden' as const,
+    },
+    progressFill: { height: '100%' as const, borderRadius: 8 },
+    scroll: { paddingHorizontal: 24, paddingBottom: 24, alignItems: 'center' as const },
+    logoWrap: { marginVertical: 24 },
+    iconCircle: {
+      width: 112,
+      height: 112,
+      borderRadius: 28,
+      backgroundColor: theme.colors.surface,
+      borderWidth: 2,
+      borderColor: theme.colors.primary + '55',
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      marginVertical: 24,
+    },
+    bubble: {
+      width: '100%' as const,
+      backgroundColor: theme.colors.surface,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      padding: 20,
+      marginBottom: 16,
+    },
+    title: {
+      color: theme.colors.text,
+      fontSize: 22,
+      fontWeight: '800' as const,
+      textAlign: 'center' as const,
+      marginBottom: 10,
+    },
+    body: {
+      color: theme.colors.textMuted,
+      fontSize: 15,
+      lineHeight: 22,
+      textAlign: 'center' as const,
+    },
+    bulletRow: {
+      flexDirection: 'row' as const,
+      alignItems: 'flex-start' as const,
+      gap: 10,
+      width: '100%' as const,
+      backgroundColor: theme.colors.surfaceLight,
+      borderRadius: 12,
+      padding: 12,
+      marginBottom: 8,
+    },
+    check: { color: '#34d399', fontSize: 14, fontWeight: '700' as const },
+    bulletText: { flex: 1, color: theme.colors.text, fontSize: 14, lineHeight: 20 },
+    compareBox: {
+      width: '100%' as const,
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      padding: 14,
+      marginTop: 8,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    compareRow: { color: theme.colors.textMuted, fontSize: 13, marginBottom: 6, lineHeight: 18 },
+    compareFree: { color: '#34d399', fontWeight: '700' as const },
+    comparePro: { color: theme.colors.primaryLight, fontWeight: '700' as const },
+    xpRow: { flexDirection: 'row' as const, gap: 12, width: '100%' as const, marginTop: 8 },
+    xpChip: {
+      flex: 1,
+      backgroundColor: theme.colors.primary + '22',
+      borderRadius: 12,
+      padding: 12,
+      alignItems: 'center' as const,
+      borderWidth: 1,
+      borderColor: theme.colors.primary + '44',
+    },
+    xpVal: { color: theme.colors.primaryLight, fontWeight: '800' as const, fontSize: 18 },
+    xpLbl: { color: theme.colors.textMuted, fontSize: 10, marginTop: 2 },
+    footer: {
+      padding: 20,
+      paddingBottom: 36,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
+    },
+    cta: { borderRadius: 16, overflow: 'hidden' as const, marginBottom: 8 },
+    ctaGrad: { paddingVertical: 16, alignItems: 'center' as const },
+    ctaText: { color: '#fff', fontSize: 17, fontWeight: '800' as const },
+    secondary: {
+      color: theme.colors.textMuted,
+      textAlign: 'center' as const,
+      fontSize: 14,
+      paddingVertical: 10,
+    },
+    hint: { color: theme.colors.textMuted, textAlign: 'center' as const, fontSize: 11 },
+  };
+}
+
 export function ProductTour({ visible, userName, onClose }: ProductTourProps) {
   const router = useRouter();
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [step, setStep] = useState(0);
   const [finishing, setFinishing] = useState(false);
   const bounce = useRef(new Animated.Value(0)).current;
@@ -62,8 +173,18 @@ export function ProductTour({ visible, userName, onClose }: ProductTourProps) {
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(bounce, { toValue: -8, duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-        Animated.timing(bounce, { toValue: 0, duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+        Animated.timing(bounce, {
+          toValue: -8,
+          duration: 900,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(bounce, {
+          toValue: 0,
+          duration: 900,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
       ]),
     );
     loop.start();
@@ -191,79 +312,3 @@ export function ProductTour({ visible, userName, onClose }: ProductTourProps) {
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: theme.colors.background },
-  progressWrap: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
-  progressHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  progressLabel: { color: theme.colors.textMuted, fontSize: 12, fontWeight: '600' },
-  skip: { color: theme.colors.textMuted, fontSize: 12 },
-  progressTrack: { height: 10, backgroundColor: theme.colors.surfaceLight, borderRadius: 8, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 8 },
-  scroll: { paddingHorizontal: 24, paddingBottom: 24, alignItems: 'center' },
-  logoWrap: { marginVertical: 24 },
-  iconCircle: {
-    width: 112,
-    height: 112,
-    borderRadius: 28,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 2,
-    borderColor: theme.colors.primary + '55',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 24,
-  },
-  bubble: {
-    width: '100%',
-    backgroundColor: theme.colors.surface,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 20,
-    marginBottom: 16,
-  },
-  title: { color: theme.colors.text, fontSize: 22, fontWeight: '800', textAlign: 'center', marginBottom: 10 },
-  body: { color: theme.colors.textMuted, fontSize: 15, lineHeight: 22, textAlign: 'center' },
-  bulletRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    width: '100%',
-    backgroundColor: theme.colors.surface + '88',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-  },
-  check: { color: '#34d399', fontSize: 14, fontWeight: '700' },
-  bulletText: { flex: 1, color: theme.colors.text, fontSize: 14, lineHeight: 20 },
-  compareBox: {
-    width: '100%',
-    backgroundColor: theme.colors.surface,
-    borderRadius: 12,
-    padding: 14,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  compareRow: { color: theme.colors.textMuted, fontSize: 13, marginBottom: 6, lineHeight: 18 },
-  compareFree: { color: '#34d399', fontWeight: '700' },
-  comparePro: { color: theme.colors.primaryLight, fontWeight: '700' },
-  xpRow: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 8 },
-  xpChip: {
-    flex: 1,
-    backgroundColor: theme.colors.primary + '22',
-    borderRadius: 12,
-    padding: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.primary + '44',
-  },
-  xpVal: { color: theme.colors.primaryLight, fontWeight: '800', fontSize: 18 },
-  xpLbl: { color: theme.colors.textMuted, fontSize: 10, marginTop: 2 },
-  footer: { padding: 20, paddingBottom: 36, borderTopWidth: 1, borderTopColor: theme.colors.border },
-  cta: { borderRadius: 16, overflow: 'hidden', marginBottom: 8 },
-  ctaGrad: { paddingVertical: 16, alignItems: 'center' },
-  ctaText: { color: '#fff', fontSize: 17, fontWeight: '800' },
-  secondary: { color: theme.colors.textMuted, textAlign: 'center', fontSize: 14, paddingVertical: 10 },
-  hint: { color: theme.colors.textMuted, textAlign: 'center', fontSize: 11 },
-});

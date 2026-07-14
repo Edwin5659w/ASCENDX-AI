@@ -1,7 +1,18 @@
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { theme } from '@/constants/theme';
+import { ActivityIndicator, View } from 'react-native';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
+
+function createStyles(_theme: AppTheme) {
+  return {
+    wrap: { paddingVertical: 16, alignItems: 'center' as const },
+  };
+}
 
 export function LoadMoreFooter({ loading }: { loading: boolean }) {
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
+
   if (!loading) return null;
   return (
     <View style={styles.wrap}>
@@ -9,7 +20,3 @@ export function LoadMoreFooter({ loading }: { loading: boolean }) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: { paddingVertical: 16, alignItems: 'center' },
-});

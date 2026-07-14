@@ -1,15 +1,17 @@
 import Svg, { Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
-import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
-import { theme } from '@/constants/theme';
+import { Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import type { AppTheme } from '@/constants/theme';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 
 type BrandLogoSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
+/** Logo sizes are mode-independent brand constants. */
 const heights: Record<BrandLogoSize, number> = {
-  xs: theme.logo.sizes.xs,
-  sm: theme.logo.sizes.sm,
-  md: theme.logo.sizes.md,
-  lg: theme.logo.sizes.lg,
-  xl: theme.logo.sizes.xl,
+  xs: 32,
+  sm: 48,
+  md: 72,
+  lg: 120,
+  xl: 180,
 };
 
 interface BrandLogoProps {
@@ -17,6 +19,14 @@ interface BrandLogoProps {
   style?: StyleProp<ViewStyle>;
   animate?: boolean;
   breathe?: boolean;
+}
+
+function createStyles(theme: AppTheme) {
+  return {
+    row: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8 },
+    title: { color: theme.colors.primaryLight, fontWeight: '800' as const, letterSpacing: -0.5 },
+    sub: { color: theme.colors.accent, fontWeight: '600' as const },
+  };
 }
 
 function Monogram({ size }: { size: number }) {
@@ -41,6 +51,7 @@ function Monogram({ size }: { size: number }) {
 }
 
 export function BrandLogo({ size = 'md', style }: BrandLogoProps) {
+  const styles = useThemedStyles(createStyles);
   const h = heights[size];
   const showText = size !== 'xs';
 
@@ -56,9 +67,3 @@ export function BrandLogo({ size = 'md', style }: BrandLogoProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  title: { color: theme.colors.primaryLight, fontWeight: '800', letterSpacing: -0.5 },
-  sub: { color: theme.colors.accent, fontWeight: '600' },
-});

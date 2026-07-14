@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import {
@@ -9,14 +9,61 @@ import {
 } from '../../../shared/first-steps';
 import type { UserStats } from '@/src/types/api';
 import { Card } from '@/src/components/ui/Card';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 
 interface FirstStepsCardProps {
   stats: UserStats | null;
 }
 
+function createStyles(theme: AppTheme) {
+  return {
+    card: {
+      marginHorizontal: theme.spacing.md,
+      marginBottom: theme.spacing.md,
+      borderColor: 'rgba(34, 211, 238, 0.35)',
+      borderWidth: 1,
+    },
+    title: { color: theme.colors.text, fontSize: 17, fontWeight: '700' as const, marginBottom: 4 },
+    subtitle: { color: theme.colors.textMuted, fontSize: 13, marginBottom: 12 },
+    track: {
+      height: 6,
+      backgroundColor: theme.colors.border,
+      borderRadius: 3,
+      overflow: 'hidden' as const,
+      marginBottom: 14,
+    },
+    fill: { height: '100%' as const, backgroundColor: theme.colors.accent, borderRadius: 3 },
+    row: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 12,
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    rowDone: { opacity: 0.65 },
+    rowText: { flex: 1 },
+    rowLabel: { color: theme.colors.text, fontSize: 14, fontWeight: '500' as const },
+    rowLabelDone: { textDecorationLine: 'line-through' as const, color: theme.colors.textMuted },
+    rowHint: { color: theme.colors.textMuted, fontSize: 11, marginTop: 2 },
+    badgeHint: {
+      color: theme.colors.warning,
+      fontSize: 12,
+      marginTop: 12,
+      lineHeight: 18,
+    },
+    cta: { marginTop: 12, alignItems: 'center' as const },
+    ctaText: { color: theme.colors.accent, fontSize: 14, fontWeight: '600' as const },
+  };
+}
+
 export function FirstStepsCard({ stats }: FirstStepsCardProps) {
   const router = useRouter();
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
+
   if (!stats) return null;
 
   const steps = buildFirstSteps({
@@ -69,43 +116,3 @@ export function FirstStepsCard({ stats }: FirstStepsCardProps) {
     </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    marginHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.md,
-    borderColor: 'rgba(34, 211, 238, 0.35)',
-    borderWidth: 1,
-  },
-  title: { color: theme.colors.text, fontSize: 17, fontWeight: '700', marginBottom: 4 },
-  subtitle: { color: theme.colors.textMuted, fontSize: 13, marginBottom: 12 },
-  track: {
-    height: 6,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginBottom: 14,
-  },
-  fill: { height: '100%', backgroundColor: theme.colors.accent, borderRadius: 3 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  rowDone: { opacity: 0.65 },
-  rowText: { flex: 1 },
-  rowLabel: { color: theme.colors.text, fontSize: 14, fontWeight: '500' },
-  rowLabelDone: { textDecorationLine: 'line-through', color: theme.colors.textMuted },
-  rowHint: { color: theme.colors.textMuted, fontSize: 11, marginTop: 2 },
-  badgeHint: {
-    color: theme.colors.warning,
-    fontSize: 12,
-    marginTop: 12,
-    lineHeight: 18,
-  },
-  cta: { marginTop: 12, alignItems: 'center' },
-  ctaText: { color: theme.colors.accent, fontSize: 14, fontWeight: '600' },
-});

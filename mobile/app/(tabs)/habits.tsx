@@ -6,7 +6,6 @@ import {
   Modal,
   Pressable,
   RefreshControl,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -31,7 +30,10 @@ import { celebrateHaptic } from '@/src/lib/haptics';
 import { XpBurst } from '@/src/components/XpBurst';
 import { XP } from '../../../shared/retention';
 import type { Habit, PlanUsage } from '@/src/types/api';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
+
 function streakBadge(milestone: number | null | undefined, streak: number) {
   if (milestone === 30) return '🏆 Leyenda';
   if (milestone === 21) return '⭐ 3 semanas';
@@ -40,7 +42,80 @@ function streakBadge(milestone: number | null | undefined, streak: number) {
   return `🔥 ${streak}`;
 }
 
+function createStyles(theme: AppTheme) {
+  return {
+    container: { flex: 1, backgroundColor: theme.colors.background },
+    statsBar: {
+      flexDirection: 'row' as const,
+      marginHorizontal: theme.spacing.md,
+      marginTop: theme.spacing.sm,
+      padding: theme.spacing.md,
+      backgroundColor: theme.colors.surfaceLight,
+      borderRadius: theme.radius.md,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    stat: { flex: 1, alignItems: 'center' as const },
+    statNum: { color: theme.colors.text, fontSize: 18, fontWeight: '700' as const },
+    statLbl: { color: theme.colors.textMuted, fontSize: 11, marginTop: 2 },
+    addSection: {
+      padding: theme.spacing.md,
+      paddingBottom: 0,
+      gap: 8,
+    },
+    freqRow: { flexDirection: 'row' as const, gap: 8 },
+    freqBtn: { flex: 1 },
+    addRow: { flexDirection: 'row' as const, gap: 8, alignItems: 'center' as const },
+    input: {
+      flex: 1,
+      backgroundColor: theme.colors.surfaceLight,
+      borderRadius: theme.radius.md,
+      padding: 12,
+      color: theme.colors.text,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    addBtn: { width: 52, paddingHorizontal: 0 },
+    list: { padding: theme.spacing.md, paddingTop: 8 },
+    card: {
+      position: 'relative' as const,
+      paddingVertical: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+      overflow: 'visible' as const,
+    },
+    row: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 10 },
+    rowMain: { flex: 1, flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12 },
+    content: { flex: 1 },
+    title: { color: theme.colors.text, fontSize: 16 },
+    freq: { color: theme.colors.textMuted, fontSize: 12, marginTop: 2 },
+    streak: { fontSize: 13, color: theme.colors.warning, maxWidth: 100, textAlign: 'right' as const },
+    modalBackdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      justifyContent: 'center' as const,
+      padding: theme.spacing.lg,
+    },
+    modalCard: {
+      backgroundColor: theme.colors.surfaceLight,
+      borderRadius: theme.radius.lg,
+      padding: theme.spacing.lg,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    modalTitle: { color: theme.colors.text, fontSize: 18, fontWeight: '600' as const, marginBottom: theme.spacing.md },
+    modalHint: { color: theme.colors.textMuted, fontSize: 12, marginBottom: 12 },
+    timeRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8 },
+    timeInput: { flex: 1, textAlign: 'center' as const },
+    timeSep: { color: theme.colors.text, fontSize: 20 },
+    modalActions: { flexDirection: 'row' as const, gap: 8, marginTop: theme.spacing.md },
+    modalBtn: { flex: 1 },
+  };
+}
+
 export default function HabitsScreen() {
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const { refreshUser } = useAuth();
   const { showToast } = useToast();
   const fetchHabits = useCallback((page: number, limit: number) => habitsApi.list(page, limit), []);
@@ -390,72 +465,3 @@ export default function HabitsScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  statsBar: {
-    flexDirection: 'row',
-    marginHorizontal: theme.spacing.md,
-    marginTop: theme.spacing.sm,
-    padding: theme.spacing.md,
-    backgroundColor: theme.colors.surfaceLight,
-    borderRadius: theme.radius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  stat: { flex: 1, alignItems: 'center' },
-  statNum: { color: theme.colors.text, fontSize: 18, fontWeight: '700' },
-  statLbl: { color: theme.colors.textMuted, fontSize: 11, marginTop: 2 },
-  addSection: {
-    padding: theme.spacing.md,
-    paddingBottom: 0,
-    gap: 8,
-  },
-  freqRow: { flexDirection: 'row', gap: 8 },
-  freqBtn: { flex: 1 },
-  addRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  input: {
-    flex: 1,
-    backgroundColor: theme.colors.surfaceLight,
-    borderRadius: theme.radius.md,
-    padding: 12,
-    color: theme.colors.text,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  addBtn: { width: 52, paddingHorizontal: 0 },
-  list: { padding: theme.spacing.md, paddingTop: 8 },
-  card: {
-    position: 'relative',
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    overflow: 'visible',
-  },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  content: { flex: 1 },
-  title: { color: theme.colors.text, fontSize: 16 },
-  freq: { color: theme.colors.textMuted, fontSize: 12, marginTop: 2 },
-  streak: { fontSize: 13, color: theme.colors.warning, maxWidth: 100, textAlign: 'right' },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    padding: theme.spacing.lg,
-  },
-  modalCard: {
-    backgroundColor: theme.colors.surfaceLight,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  modalTitle: { color: theme.colors.text, fontSize: 18, fontWeight: '600', marginBottom: theme.spacing.md },
-  modalHint: { color: theme.colors.textMuted, fontSize: 12, marginBottom: 12 },
-  timeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  timeInput: { flex: 1, textAlign: 'center' },
-  timeSep: { color: theme.colors.text, fontSize: 20 },
-  modalActions: { flexDirection: 'row', gap: 8, marginTop: theme.spacing.md },
-  modalBtn: { flex: 1 },
-});

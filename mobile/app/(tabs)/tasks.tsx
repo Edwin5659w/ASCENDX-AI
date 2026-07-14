@@ -7,7 +7,6 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -27,9 +26,107 @@ import { applyGamificationFeedback } from '@/src/lib/gamification-feedback';
 import { celebrateHaptic } from '@/src/lib/haptics';
 import { XP } from '../../../shared/retention';
 import type { Goal, Task } from '@/src/types/api';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
+
+function createStyles(theme: AppTheme) {
+  return {
+    container: { flex: 1, backgroundColor: theme.colors.background },
+    addRow: {
+      flexDirection: 'row' as const,
+      paddingHorizontal: theme.spacing.md,
+      paddingTop: theme.spacing.sm,
+      gap: 8,
+      alignItems: 'center' as const,
+    },
+    input: {
+      flex: 1,
+      backgroundColor: theme.colors.surfaceLight,
+      borderRadius: theme.radius.md,
+      padding: 12,
+      color: theme.colors.text,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    dateInput: {
+      marginHorizontal: theme.spacing.md,
+      marginBottom: 8,
+      backgroundColor: theme.colors.surfaceLight,
+      borderRadius: theme.radius.md,
+      padding: 10,
+      color: theme.colors.text,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      fontSize: 13,
+    },
+    addBtn: { width: 52, paddingHorizontal: 0 },
+    goalPicker: {
+      paddingHorizontal: theme.spacing.md,
+      marginBottom: 8,
+      maxHeight: 40,
+    },
+    chip: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 16,
+      backgroundColor: theme.colors.surfaceLight,
+      marginRight: 8,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    chipActive: {
+      borderColor: theme.colors.primary,
+      backgroundColor: theme.colors.primary + '22',
+    },
+    chipText: { color: theme.colors.text, fontSize: 12, maxWidth: 140 },
+    list: { padding: theme.spacing.md, paddingTop: 0 },
+    taskRow: {
+      position: 'relative' as const,
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 12,
+      paddingVertical: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+      overflow: 'visible' as const,
+    },
+    taskMain: {
+      flex: 1,
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 12,
+    },
+    taskContent: { flex: 1 },
+    taskTitle: { color: theme.colors.text, fontSize: 16 },
+    completed: {
+      textDecorationLine: 'line-through' as const,
+      color: theme.colors.textMuted,
+    },
+    goalTag: { color: theme.colors.primaryLight, fontSize: 12, marginTop: 2 },
+    dueTag: { color: theme.colors.textMuted, fontSize: 11, marginTop: 2 },
+    streak: { fontSize: 12, color: theme.colors.warning },
+    modalBg: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.7)',
+      justifyContent: 'center' as const,
+      padding: 24,
+    },
+    modalBox: {
+      backgroundColor: theme.colors.surfaceLight,
+      borderRadius: theme.radius.lg,
+      padding: 20,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    modalTitle: { color: theme.colors.text, fontSize: 18, fontWeight: '700' as const, marginBottom: 12 },
+    modalActions: { flexDirection: 'row' as const, justifyContent: 'flex-end' as const, gap: 8, marginTop: 12 },
+  };
+}
 
 export default function TasksScreen() {
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const { refreshUser } = useAuth();
   const { showToast } = useToast();
   const fetchTasks = useCallback((page: number, limit: number) => tasksApi.list(page, limit), []);
@@ -295,95 +392,3 @@ export default function TasksScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  addRow: {
-    flexDirection: 'row',
-    paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.sm,
-    gap: 8,
-    alignItems: 'center',
-  },
-  input: {
-    flex: 1,
-    backgroundColor: theme.colors.surfaceLight,
-    borderRadius: theme.radius.md,
-    padding: 12,
-    color: theme.colors.text,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  dateInput: {
-    marginHorizontal: theme.spacing.md,
-    marginBottom: 8,
-    backgroundColor: theme.colors.surfaceLight,
-    borderRadius: theme.radius.md,
-    padding: 10,
-    color: theme.colors.text,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    fontSize: 13,
-  },
-  addBtn: { width: 52, paddingHorizontal: 0 },
-  goalPicker: {
-    paddingHorizontal: theme.spacing.md,
-    marginBottom: 8,
-    maxHeight: 40,
-  },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: theme.colors.surfaceLight,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  chipActive: {
-    borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.primary + '22',
-  },
-  chipText: { color: theme.colors.text, fontSize: 12, maxWidth: 140 },
-  list: { padding: theme.spacing.md, paddingTop: 0 },
-  taskRow: {
-    position: 'relative',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    overflow: 'visible',
-  },
-  taskMain: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  taskContent: { flex: 1 },
-  taskTitle: { color: theme.colors.text, fontSize: 16 },
-  completed: {
-    textDecorationLine: 'line-through',
-    color: theme.colors.textMuted,
-  },
-  goalTag: { color: theme.colors.primaryLight, fontSize: 12, marginTop: 2 },
-  dueTag: { color: theme.colors.textMuted, fontSize: 11, marginTop: 2 },
-  streak: { fontSize: 12, color: theme.colors.warning },
-  modalBg: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  modalBox: {
-    backgroundColor: theme.colors.surfaceLight,
-    borderRadius: theme.radius.lg,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  modalTitle: { color: theme.colors.text, fontSize: 18, fontWeight: '700', marginBottom: 12 },
-  modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 12 },
-});

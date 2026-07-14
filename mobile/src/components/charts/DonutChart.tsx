@@ -1,6 +1,7 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 
 export interface DonutSegment {
   name: string;
@@ -16,6 +17,59 @@ interface DonutChartProps {
   centerHint?: string;
 }
 
+function createStyles(theme: AppTheme) {
+  return {
+    wrap: { alignItems: 'center' as const },
+    empty: {
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      borderRadius: 80,
+      borderWidth: 2,
+      borderColor: theme.colors.border,
+    },
+    emptyText: { color: theme.colors.textMuted, fontSize: 13 },
+    centerLabel: {
+      position: 'absolute' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+    },
+    centerValue: {
+      color: theme.colors.text,
+      fontSize: 18,
+      fontWeight: '700' as const,
+    },
+    centerHint: {
+      color: theme.colors.textMuted,
+      fontSize: 11,
+    },
+    legend: {
+      marginTop: theme.spacing.md,
+      width: '100%' as const,
+      gap: 8,
+    },
+    legendRow: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 8,
+    },
+    dot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+    },
+    legendName: {
+      flex: 1,
+      color: theme.colors.textMuted,
+      fontSize: 13,
+    },
+    legendValue: {
+      color: theme.colors.text,
+      fontWeight: '600' as const,
+      fontSize: 13,
+    },
+  };
+}
+
 export function DonutChart({
   data,
   size = 160,
@@ -23,6 +77,7 @@ export function DonutChart({
   centerValue,
   centerHint = 'total',
 }: DonutChartProps) {
+  const styles = useThemedStyles(createStyles);
   const total = data.reduce((sum, d) => sum + d.value, 0);
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -80,54 +135,3 @@ export function DonutChart({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: { alignItems: 'center' },
-  empty: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 80,
-    borderWidth: 2,
-    borderColor: theme.colors.border,
-  },
-  emptyText: { color: theme.colors.textMuted, fontSize: 13 },
-  centerLabel: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  centerValue: {
-    color: theme.colors.text,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  centerHint: {
-    color: theme.colors.textMuted,
-    fontSize: 11,
-  },
-  legend: {
-    marginTop: theme.spacing.md,
-    width: '100%',
-    gap: 8,
-  },
-  legendRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  legendName: {
-    flex: 1,
-    color: theme.colors.textMuted,
-    fontSize: 13,
-  },
-  legendValue: {
-    color: theme.colors.text,
-    fontWeight: '600',
-    fontSize: 13,
-  },
-});

@@ -1,8 +1,10 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { QUICK_ACTIONS } from '../../../shared/dashboard-helpers';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 
 const ICONS: Record<string, React.ComponentProps<typeof FontAwesome>['name']> = {
   tasks: 'check-square-o',
@@ -12,8 +14,36 @@ const ICONS: Record<string, React.ComponentProps<typeof FontAwesome>['name']> = 
   chat: 'comments-o',
 };
 
+function createStyles(theme: AppTheme) {
+  return {
+    wrap: { marginBottom: theme.spacing.md },
+    title: {
+      color: theme.colors.textMuted,
+      fontSize: 12,
+      fontWeight: '600' as const,
+      textTransform: 'uppercase' as const,
+      letterSpacing: 0.5,
+      marginHorizontal: theme.spacing.md,
+      marginBottom: 8,
+    },
+    row: { paddingHorizontal: theme.spacing.md, gap: 10 },
+    chip: {
+      width: 108,
+      padding: 12,
+      borderRadius: theme.radius.md,
+      backgroundColor: theme.colors.surfaceLight,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    chipLabel: { color: theme.colors.text, fontSize: 13, fontWeight: '600' as const, marginTop: 8 },
+    chipHint: { color: theme.colors.textMuted, fontSize: 10, marginTop: 2 },
+  };
+}
+
 export function DashboardQuickActions() {
   const router = useRouter();
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
 
   return (
     <View style={styles.wrap}>
@@ -33,27 +63,3 @@ export function DashboardQuickActions() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: { marginBottom: theme.spacing.md },
-  title: {
-    color: theme.colors.textMuted,
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginHorizontal: theme.spacing.md,
-    marginBottom: 8,
-  },
-  row: { paddingHorizontal: theme.spacing.md, gap: 10 },
-  chip: {
-    width: 108,
-    padding: 12,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.surfaceLight,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  chipLabel: { color: theme.colors.text, fontSize: 13, fontWeight: '600', marginTop: 8 },
-  chipHint: { color: theme.colors.textMuted, fontSize: 10, marginTop: 2 },
-});

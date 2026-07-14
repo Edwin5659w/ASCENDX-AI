@@ -1,13 +1,46 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { Card } from '../ui/Card';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 
 const DEFAULT_SEC = 25 * 60;
 const STORAGE_KEY = 'ascendx_pomodoro_left';
 
+function createStyles(theme: AppTheme) {
+  return {
+    card: { marginBottom: theme.spacing.md },
+    title: { color: theme.colors.textMuted, fontSize: 13, marginBottom: 6 },
+    time: {
+      color: theme.colors.primaryLight,
+      fontSize: 32,
+      fontWeight: '800' as const,
+      fontVariant: ['tabular-nums' as const],
+      marginBottom: 12,
+    },
+    row: { flexDirection: 'row' as const, gap: 8 },
+    primary: {
+      flex: 1,
+      backgroundColor: theme.colors.primary,
+      borderRadius: 12,
+      paddingVertical: 12,
+      alignItems: 'center' as const,
+    },
+    primaryText: { color: '#fff', fontWeight: '700' as const },
+    secondary: {
+      paddingHorizontal: 16,
+      justifyContent: 'center' as const,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    secondaryText: { color: theme.colors.textMuted },
+  };
+}
+
 export function PomodoroTimer() {
+  const styles = useThemedStyles(createStyles);
   const [seconds, setSeconds] = useState(DEFAULT_SEC);
   const [running, setRunning] = useState(false);
 
@@ -35,10 +68,14 @@ export function PomodoroTimer() {
   return (
     <Card style={styles.card}>
       <Text style={styles.title}>Pomodoro · 25 min foco</Text>
-      <Text style={styles.time}>{mm}:{ss}</Text>
+      <Text style={styles.time}>
+        {mm}:{ss}
+      </Text>
       <View style={styles.row}>
         <Pressable style={styles.primary} onPress={() => setRunning(!running)}>
-          <Text style={styles.primaryText}>{running ? 'Pausar' : seconds < DEFAULT_SEC ? 'Reanudar' : 'Iniciar'}</Text>
+          <Text style={styles.primaryText}>
+            {running ? 'Pausar' : seconds < DEFAULT_SEC ? 'Reanudar' : 'Iniciar'}
+          </Text>
         </Pressable>
         <Pressable
           style={styles.secondary}
@@ -52,14 +89,3 @@ export function PomodoroTimer() {
     </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  card: { marginBottom: theme.spacing.md },
-  title: { color: theme.colors.textMuted, fontSize: 13, marginBottom: 6 },
-  time: { color: theme.colors.primaryLight, fontSize: 32, fontWeight: '800', fontVariant: ['tabular-nums'], marginBottom: 12 },
-  row: { flexDirection: 'row', gap: 8 },
-  primary: { flex: 1, backgroundColor: theme.colors.primary, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
-  primaryText: { color: '#fff', fontWeight: '700' },
-  secondary: { paddingHorizontal: 16, justifyContent: 'center', borderRadius: 12, borderWidth: 1, borderColor: theme.colors.border },
-  secondaryText: { color: theme.colors.textMuted },
-});

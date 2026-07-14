@@ -7,7 +7,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -24,7 +23,9 @@ import { MethodologyStrip } from '@/src/components/MethodologyStrip';
 import { billingApi } from '@/src/api/services';
 import type { AIInsight, ChatMessage } from '@/src/types/api';
 import type { AIUsage } from '../../../shared/ai-prompts';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 import { CONTEXT_LEVEL_LABELS, insightTypeLabel } from '../../../shared/chat-helpers';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/src/context/AuthContext';
@@ -39,13 +40,117 @@ const INTRO: Record<AIContextLevel, string> = {
     'Hola, soy tu mentor ASCENDX. Tengo contexto de tus metas y hábitos. ¿Qué quieres mejorar hoy?',
 };
 
-const CONTEXT_COLORS: Record<AIContextLevel, string> = {
-  empty: theme.colors.textMuted,
-  partial: theme.colors.warning,
-  ready: theme.colors.success,
-};
+function getContextColors(theme: AppTheme): Record<AIContextLevel, string> {
+  return {
+    empty: theme.colors.textMuted,
+    partial: theme.colors.warning,
+    ready: theme.colors.success,
+  };
+}
+
+function createStyles(theme: AppTheme) {
+  return {
+    container: { flex: 1, backgroundColor: theme.colors.background },
+    boot: {
+      flex: 1,
+      justifyContent: 'center' as const,
+      alignItems: 'center' as const,
+      backgroundColor: theme.colors.background,
+      gap: 12,
+    },
+    bootText: { color: theme.colors.textMuted },
+    header: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'space-between' as const,
+      paddingHorizontal: theme.spacing.md,
+      paddingTop: theme.spacing.sm,
+    },
+    headerLeft: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, flexWrap: 'wrap' as const, flex: 1 },
+    headerTitle: { color: theme.colors.text, fontSize: 18, fontWeight: '700' as const },
+    badge: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 6,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 12,
+      borderWidth: 1,
+    },
+    badgeDot: { width: 6, height: 6, borderRadius: 3 },
+    badgeText: { fontSize: 11, fontWeight: '600' as const },
+    clearBtn: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6, padding: 8 },
+    clearText: { color: theme.colors.textMuted, fontSize: 12 },
+    insightsCard: {
+      marginHorizontal: theme.spacing.md,
+      marginBottom: theme.spacing.sm,
+      maxHeight: 150,
+    },
+    insightsTitle: { color: theme.colors.text, fontSize: 14, fontWeight: '600' as const, marginBottom: 8 },
+    insightRow: {
+      borderLeftWidth: 2,
+      borderLeftColor: 'rgba(139, 92, 246, 0.5)',
+      paddingLeft: 8,
+      marginBottom: 8,
+    },
+    insightType: {
+      color: theme.colors.primaryLight,
+      fontSize: 10,
+      fontWeight: '600' as const,
+      textTransform: 'uppercase' as const,
+    },
+    insightMsg: { color: theme.colors.textMuted, fontSize: 12, marginTop: 2, lineHeight: 17 },
+    messagesList: { flex: 1 },
+    list: { padding: theme.spacing.md, paddingBottom: 8 },
+    bubble: {
+      maxWidth: '88%' as const,
+      padding: 14,
+      borderRadius: 16,
+      marginBottom: 10,
+    },
+    userBubble: {
+      alignSelf: 'flex-end' as const,
+      backgroundColor: theme.colors.primary,
+      borderBottomRightRadius: 4,
+    },
+    aiBubble: {
+      alignSelf: 'flex-start' as const,
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderBottomLeftRadius: 4,
+    },
+    bubbleText: { color: theme.colors.text, fontSize: 15, lineHeight: 22 },
+    bubbleTime: { color: theme.colors.textMuted, fontSize: 10, marginTop: 8 },
+    typingRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 10 },
+    typingText: { color: theme.colors.textMuted, fontSize: 13 },
+    footer: {
+      paddingHorizontal: theme.spacing.md,
+      paddingBottom: theme.spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
+    },
+    inputRow: { flexDirection: 'row' as const, gap: 8, alignItems: 'flex-end' as const },
+    input: {
+      flex: 1,
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      color: theme.colors.text,
+      fontSize: 16,
+      maxHeight: 100,
+    },
+    sendBtn: { minWidth: 48, paddingHorizontal: 0 },
+    disclaimer: { color: theme.colors.textMuted, fontSize: 10, textAlign: 'center' as const, marginTop: 8 },
+  };
+}
 
 function TypingIndicator() {
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={[styles.bubble, styles.aiBubble, styles.typingRow]}>
       <ActivityIndicator size="small" color={theme.colors.primaryLight} />
@@ -55,6 +160,9 @@ function TypingIndicator() {
 }
 
 export default function ChatScreen() {
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
+  const contextColors = getContextColors(theme);
   const { prefill } = useLocalSearchParams<{ prefill?: string }>();
   const router = useRouter();
   const { user, refreshUser } = useAuth();
@@ -253,9 +361,9 @@ export default function ChatScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.headerTitle}>Mentor IA</Text>
-          <View style={[styles.badge, { borderColor: CONTEXT_COLORS[contextLevel] + '66' }]}>
-            <View style={[styles.badgeDot, { backgroundColor: CONTEXT_COLORS[contextLevel] }]} />
-            <Text style={[styles.badgeText, { color: CONTEXT_COLORS[contextLevel] }]}>{ctxLabel}</Text>
+          <View style={[styles.badge, { borderColor: contextColors[contextLevel] + '66' }]}>
+            <View style={[styles.badgeDot, { backgroundColor: contextColors[contextLevel] }]} />
+            <Text style={[styles.badgeText, { color: contextColors[contextLevel] }]}>{ctxLabel}</Text>
           </View>
         </View>
         <Pressable onPress={clearChat} style={styles.clearBtn} hitSlop={8}>
@@ -332,96 +440,4 @@ export default function ChatScreen() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  boot: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background, gap: 12 },
-  bootText: { color: theme.colors.textMuted },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.sm,
-  },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1 },
-  headerTitle: { color: theme.colors.text, fontSize: 18, fontWeight: '700' },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  badgeDot: { width: 6, height: 6, borderRadius: 3 },
-  badgeText: { fontSize: 11, fontWeight: '600' },
-  clearBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 8 },
-  clearText: { color: theme.colors.textMuted, fontSize: 12 },
-  insightsCard: {
-    marginHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
-    maxHeight: 150,
-  },
-  insightsTitle: { color: theme.colors.text, fontSize: 14, fontWeight: '600', marginBottom: 8 },
-  insightRow: {
-    borderLeftWidth: 2,
-    borderLeftColor: 'rgba(139, 92, 246, 0.5)',
-    paddingLeft: 8,
-    marginBottom: 8,
-  },
-  insightType: {
-    color: theme.colors.primaryLight,
-    fontSize: 10,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-  },
-  insightMsg: { color: theme.colors.textMuted, fontSize: 12, marginTop: 2, lineHeight: 17 },
-  messagesList: { flex: 1 },
-  list: { padding: theme.spacing.md, paddingBottom: 8 },
-  bubble: {
-    maxWidth: '88%',
-    padding: 14,
-    borderRadius: 16,
-    marginBottom: 10,
-  },
-  userBubble: {
-    alignSelf: 'flex-end',
-    backgroundColor: theme.colors.primary,
-    borderBottomRightRadius: 4,
-  },
-  aiBubble: {
-    alignSelf: 'flex-start',
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderBottomLeftRadius: 4,
-  },
-  bubbleText: { color: theme.colors.text, fontSize: 15, lineHeight: 22 },
-  bubbleTime: { color: theme.colors.textMuted, fontSize: 10, marginTop: 8 },
-  typingRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  typingText: { color: theme.colors.textMuted, fontSize: 13 },
-  footer: {
-    paddingHorizontal: theme.spacing.md,
-    paddingBottom: theme.spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-  },
-  inputRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-end' },
-  input: {
-    flex: 1,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: theme.colors.text,
-    fontSize: 16,
-    maxHeight: 100,
-  },
-  sendBtn: { minWidth: 48, paddingHorizontal: 0 },
-  disclaimer: { color: theme.colors.textMuted, fontSize: 10, textAlign: 'center', marginTop: 8 },
-});
 

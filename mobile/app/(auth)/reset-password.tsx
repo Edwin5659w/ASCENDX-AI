@@ -1,17 +1,41 @@
 import { useMemo, useState } from 'react';
-import { StyleSheet, Text, View, Pressable, Alert } from 'react-native';
+import { Text, View, Pressable, Alert } from 'react-native';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { authApi } from '@/src/api/services';
 import { Button } from '@/src/components/ui/Button';
 import { ValidatedInput } from '@/src/components/auth/ValidatedInput';
 import { AuthScreenShell } from '@/src/components/brand/AuthScreenShell';
 import { validatePassword } from '@/src/lib/auth.rules';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
+
+function createStyles(theme: AppTheme) {
+  return {
+    form: { marginBottom: theme.spacing.lg },
+    muted: {
+      color: theme.colors.textMuted,
+      marginBottom: 16,
+      textAlign: 'center' as const,
+    },
+    error: {
+      color: theme.colors.danger,
+      marginBottom: theme.spacing.sm,
+      textAlign: 'center' as const,
+    },
+    link: {
+      color: theme.colors.accent,
+      textAlign: 'center' as const,
+      fontSize: 15,
+      marginTop: 12,
+    },
+  };
+}
 
 export default function ResetPasswordScreen() {
   const { token: tokenParam } = useLocalSearchParams<{ token?: string }>();
   const token = typeof tokenParam === 'string' ? tokenParam : tokenParam?.[0] ?? '';
   const router = useRouter();
+  const styles = useThemedStyles(createStyles);
 
   const [password, setPassword] = useState('');
   const [touched, setTouched] = useState(false);
@@ -72,10 +96,3 @@ export default function ResetPasswordScreen() {
     </AuthScreenShell>
   );
 }
-
-const styles = StyleSheet.create({
-  form: { marginBottom: theme.spacing.lg },
-  muted: { color: theme.colors.textMuted, marginBottom: 16, textAlign: 'center' },
-  error: { color: theme.colors.danger, marginBottom: theme.spacing.sm, textAlign: 'center' },
-  link: { color: theme.colors.accent, textAlign: 'center', fontSize: 15, marginTop: 12 },
-});

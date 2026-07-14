@@ -1,10 +1,12 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import {
   PASSWORD_REQUIREMENTS,
   PasswordChecks,
   STRENGTH_LABELS,
 } from '@/src/lib/auth.rules';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 
 const COLORS = ['#f87171', '#fb923c', '#fbbf24', '#a3e635', '#34d399'];
 
@@ -14,7 +16,21 @@ interface PasswordStrengthProps {
   visible: boolean;
 }
 
+function createStyles(theme: AppTheme) {
+  return {
+    wrap: { marginTop: 8, marginBottom: theme.spacing.sm },
+    bars: { flexDirection: 'row' as const, gap: 4, marginBottom: 8 },
+    bar: { flex: 1, height: 4, borderRadius: 2 },
+    strengthLabel: { color: theme.colors.textMuted, fontSize: 12, marginBottom: 6 },
+    req: { color: theme.colors.textMuted, fontSize: 12, marginBottom: 2 },
+    reqOk: { color: theme.colors.success },
+  };
+}
+
 export function PasswordStrength({ checks, strength, visible }: PasswordStrengthProps) {
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
+
   if (!visible) return null;
 
   return (
@@ -39,12 +55,3 @@ export function PasswordStrength({ checks, strength, visible }: PasswordStrength
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: { marginTop: 8, marginBottom: theme.spacing.sm },
-  bars: { flexDirection: 'row', gap: 4, marginBottom: 8 },
-  bar: { flex: 1, height: 4, borderRadius: 2 },
-  strengthLabel: { color: theme.colors.textMuted, fontSize: 12, marginBottom: 6 },
-  req: { color: theme.colors.textMuted, fontSize: 12, marginBottom: 2 },
-  reqOk: { color: theme.colors.success },
-});

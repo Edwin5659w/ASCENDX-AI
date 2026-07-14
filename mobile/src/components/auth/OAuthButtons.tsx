@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View, Platform } from 'react-native';
+import { Pressable, Text, View, Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -12,6 +13,27 @@ interface OAuthButtonsProps {
   onGoogleSuccess: (idToken: string) => Promise<void>;
   onAppleSuccess: (identityToken: string, fullName?: string) => Promise<void>;
   onError: (message: string) => void;
+}
+
+function createStyles(theme: AppTheme) {
+  return {
+    wrap: { marginTop: theme.spacing.md, gap: 10 },
+    dividerRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, marginBottom: 4 },
+    line: { flex: 1, height: 1, backgroundColor: theme.colors.border },
+    dividerText: { color: theme.colors.textMuted, fontSize: 12 },
+    btn: {
+      backgroundColor: theme.colors.surfaceLight,
+      borderRadius: 12,
+      paddingVertical: 13,
+      alignItems: 'center' as const,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    btnDisabled: { opacity: 0.5 },
+    btnText: { color: theme.colors.text, fontWeight: '600' as const },
+    appleBtn: { width: '100%' as const, height: 48 },
+    refHint: { color: theme.colors.textMuted, fontSize: 11, textAlign: 'center' as const },
+  };
 }
 
 function googleConfiguredForPlatform(): boolean {
@@ -31,6 +53,7 @@ function GoogleSignInButton({
   onGoogleSuccess: (idToken: string) => Promise<void>;
   onError: (message: string) => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   const [request, response, promptAsync] = Google.useAuthRequest({
     webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
     iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
@@ -60,6 +83,7 @@ function GoogleSignInButton({
 }
 
 export function OAuthButtons({ referralCode, onGoogleSuccess, onAppleSuccess, onError }: OAuthButtonsProps) {
+  const styles = useThemedStyles(createStyles);
   const showGoogle = googleConfiguredForPlatform();
   const showApple = Platform.OS === 'ios';
 
@@ -110,22 +134,3 @@ export function OAuthButtons({ referralCode, onGoogleSuccess, onAppleSuccess, on
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: { marginTop: theme.spacing.md, gap: 10 },
-  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  line: { flex: 1, height: 1, backgroundColor: theme.colors.border },
-  dividerText: { color: theme.colors.textMuted, fontSize: 12 },
-  btn: {
-    backgroundColor: theme.colors.surfaceLight,
-    borderRadius: 12,
-    paddingVertical: 13,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  btnDisabled: { opacity: 0.5 },
-  btnText: { color: theme.colors.text, fontWeight: '600' },
-  appleBtn: { width: '100%', height: 48 },
-  refHint: { color: theme.colors.textMuted, fontSize: 11, textAlign: 'center' },
-});

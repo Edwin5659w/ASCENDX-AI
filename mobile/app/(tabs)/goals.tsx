@@ -4,7 +4,6 @@ import {
   FlatList,
   Modal,
   Pressable,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -20,15 +19,92 @@ import { MethodologyStrip } from '@/src/components/MethodologyStrip';
 import { usePaginatedList } from '@/src/hooks/usePaginatedList';
 import { useThrottledFocusEffect } from '@/src/hooks/useThrottledFocusEffect';
 import type { Goal, PlanUsage } from '@/src/types/api';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 
-const priorityColors = {
-  LOW: theme.colors.textMuted,
-  MEDIUM: theme.colors.accent,
-  HIGH: theme.colors.danger,
-};
+function createStyles(theme: AppTheme) {
+  return {
+    container: { flex: 1, backgroundColor: theme.colors.background },
+    addRow: {
+      flexDirection: 'row' as const,
+      paddingHorizontal: theme.spacing.md,
+      paddingTop: theme.spacing.sm,
+      gap: 8,
+      alignItems: 'center' as const,
+    },
+    input: {
+      flex: 1,
+      backgroundColor: theme.colors.surfaceLight,
+      borderRadius: theme.radius.md,
+      padding: 12,
+      color: theme.colors.text,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      marginBottom: 8,
+    },
+    addBtn: { width: 52, paddingHorizontal: 0 },
+    list: { padding: theme.spacing.md, paddingTop: 0, gap: 12 },
+    card: { marginBottom: 12 },
+    cardHeader: {
+      flexDirection: 'row' as const,
+      justifyContent: 'space-between' as const,
+      alignItems: 'flex-start' as const,
+      marginBottom: 12,
+      gap: 8,
+    },
+    cardActions: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 10 },
+    cardTitle: { color: theme.colors.text, fontSize: 16, fontWeight: '600' as const, flex: 1 },
+    badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+    badgeText: { fontSize: 10, fontWeight: '700' as const },
+    progressBg: {
+      height: 6,
+      backgroundColor: theme.colors.surface,
+      borderRadius: 3,
+      overflow: 'hidden' as const,
+    },
+    progressFill: {
+      height: '100%' as const,
+      backgroundColor: theme.colors.primary,
+      borderRadius: 3,
+    },
+    progressLabel: { color: theme.colors.textMuted, fontSize: 12, marginTop: 6 },
+    modalBg: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.7)',
+      justifyContent: 'center' as const,
+      padding: 24,
+    },
+    modalBox: {
+      backgroundColor: theme.colors.surfaceLight,
+      borderRadius: theme.radius.lg,
+      padding: 20,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    modalTitle: { color: theme.colors.text, fontSize: 18, fontWeight: '700' as const, marginBottom: 12 },
+    priorityRow: { flexDirection: 'row' as const, gap: 8, marginBottom: 8 },
+    chip: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    chipActive: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primary + '22' },
+    chipText: { color: theme.colors.text, fontSize: 11 },
+    modalActions: { flexDirection: 'row' as const, justifyContent: 'flex-end' as const, gap: 8, marginTop: 8 },
+  };
+}
 
 export default function GoalsScreen() {
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
+  const priorityColors = {
+    LOW: theme.colors.textMuted,
+    MEDIUM: theme.colors.accent,
+    HIGH: theme.colors.danger,
+  };
   const fetchGoals = useCallback((page: number, limit: number) => goalsApi.list(page, limit), []);
   const { items: goals, loadingMore, hasMore, refresh, loadMore } = usePaginatedList<Goal>(fetchGoals);
   const [planUsage, setPlanUsage] = useState<PlanUsage | null>(null);
@@ -205,76 +281,4 @@ export default function GoalsScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  addRow: {
-    flexDirection: 'row',
-    paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.sm,
-    gap: 8,
-    alignItems: 'center',
-  },
-  input: {
-    flex: 1,
-    backgroundColor: theme.colors.surfaceLight,
-    borderRadius: theme.radius.md,
-    padding: 12,
-    color: theme.colors.text,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginBottom: 8,
-  },
-  addBtn: { width: 52, paddingHorizontal: 0 },
-  list: { padding: theme.spacing.md, paddingTop: 0, gap: 12 },
-  card: { marginBottom: 12 },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-    gap: 8,
-  },
-  cardActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  cardTitle: { color: theme.colors.text, fontSize: 16, fontWeight: '600', flex: 1 },
-  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  badgeText: { fontSize: 10, fontWeight: '700' },
-  progressBg: {
-    height: 6,
-    backgroundColor: theme.colors.surface,
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: theme.colors.primary,
-    borderRadius: 3,
-  },
-  progressLabel: { color: theme.colors.textMuted, fontSize: 12, marginTop: 6 },
-  modalBg: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  modalBox: {
-    backgroundColor: theme.colors.surfaceLight,
-    borderRadius: theme.radius.lg,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  modalTitle: { color: theme.colors.text, fontSize: 18, fontWeight: '700', marginBottom: 12 },
-  priorityRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  chipActive: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primary + '22' },
-  chipText: { color: theme.colors.text, fontSize: 11 },
-  modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 8 },
-});
 

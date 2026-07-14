@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, Share, Text, TextInput, View } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Card } from '@/src/components/ui/Card';
 import { userApi } from '@/src/api/services';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 import { useToast } from '@/src/context/ToastContext';
 
 interface Partner {
@@ -13,8 +15,65 @@ interface Partner {
   ascendLabel: string;
 }
 
+function createStyles(theme: AppTheme) {
+  return {
+    card: { marginBottom: theme.spacing.md },
+    header: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, marginBottom: 6 },
+    title: { color: theme.colors.text, fontSize: 16, fontWeight: '700' as const },
+    sub: { color: theme.colors.textMuted, fontSize: 13, marginBottom: 12 },
+    codeRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 10, marginBottom: 12 },
+    code: {
+      flex: 1,
+      color: theme.colors.text,
+      fontSize: 18,
+      fontWeight: '800' as const,
+      letterSpacing: 2,
+      backgroundColor: theme.colors.surfaceLight,
+      padding: 12,
+      borderRadius: 12,
+      textAlign: 'center' as const,
+    },
+    shareBtn: {
+      backgroundColor: theme.colors.primary,
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+    },
+    input: {
+      backgroundColor: theme.colors.surfaceLight,
+      borderRadius: 12,
+      padding: 12,
+      color: theme.colors.text,
+      marginBottom: 10,
+      letterSpacing: 1,
+    },
+    linkBtn: {
+      backgroundColor: theme.colors.primary,
+      borderRadius: 12,
+      paddingVertical: 12,
+      alignItems: 'center' as const,
+    },
+    linkBtnDisabled: { opacity: 0.6 },
+    linkBtnText: { color: '#fff', fontWeight: '700' as const },
+    list: { marginTop: 14, gap: 8 },
+    partner: {
+      flexDirection: 'row' as const,
+      justifyContent: 'space-between' as const,
+      paddingVertical: 8,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
+    },
+    partnerName: { color: theme.colors.text, fontWeight: '600' as const },
+    partnerScore: { color: theme.colors.textMuted, fontSize: 13 },
+  };
+}
+
 export function AccountabilityPanel() {
   const { showToast } = useToast();
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [code, setCode] = useState('');
   const [partners, setPartners] = useState<Partner[]>([]);
   const [linkCode, setLinkCode] = useState('');
@@ -99,56 +158,3 @@ export function AccountabilityPanel() {
     </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  card: { marginBottom: theme.spacing.md },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  title: { color: theme.colors.text, fontSize: 16, fontWeight: '700' },
-  sub: { color: theme.colors.textMuted, fontSize: 13, marginBottom: 12 },
-  codeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
-  code: {
-    flex: 1,
-    color: theme.colors.text,
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: 2,
-    backgroundColor: theme.colors.surfaceLight,
-    padding: 12,
-    borderRadius: 12,
-    textAlign: 'center',
-  },
-  shareBtn: {
-    backgroundColor: theme.colors.primary,
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  input: {
-    backgroundColor: theme.colors.surfaceLight,
-    borderRadius: 12,
-    padding: 12,
-    color: theme.colors.text,
-    marginBottom: 10,
-    letterSpacing: 1,
-  },
-  linkBtn: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  linkBtnDisabled: { opacity: 0.6 },
-  linkBtnText: { color: '#fff', fontWeight: '700' },
-  list: { marginTop: 14, gap: 8 },
-  partner: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-  },
-  partnerName: { color: theme.colors.text, fontWeight: '600' },
-  partnerScore: { color: theme.colors.textMuted, fontSize: 13 },
-});

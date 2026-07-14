@@ -4,7 +4,6 @@ import {
   Alert,
   Modal,
   Pressable,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -15,7 +14,9 @@ import { Button } from '@/src/components/ui/Button';
 import { Card } from '@/src/components/ui/Card';
 import { EmptyState } from '@/src/components/EmptyState';
 import type { Trade, TradeSummary } from '@/src/types/api';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 import { useMoneyFormat } from '@/src/hooks/useMoneyFormat';
 import {
   TRADE_EMOTION_TAGS,
@@ -23,8 +24,91 @@ import {
   formatTradeSide,
 } from '../../../shared/trading-helpers';
 
+function createStyles(theme: AppTheme) {
+  return {
+    disclaimer: {
+      color: theme.colors.textMuted,
+      fontSize: 11,
+      lineHeight: 16,
+      marginBottom: 12,
+      fontStyle: 'italic' as const,
+    },
+    summaryCard: { marginBottom: 12 },
+    summaryRow: {
+      flexDirection: 'row' as const,
+      justifyContent: 'space-between' as const,
+      paddingVertical: 6,
+    },
+    summaryLabel: { color: theme.colors.textMuted },
+    summaryValue: { color: theme.colors.text, fontWeight: '700' as const },
+    wl: { color: theme.colors.textMuted, fontSize: 12, marginTop: 4 },
+    positive: { color: theme.colors.success },
+    negative: { color: theme.colors.danger },
+    addBtn: { marginBottom: 16 },
+    tradeRow: {
+      flexDirection: 'row' as const,
+      alignItems: 'flex-start' as const,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+      gap: 12,
+    },
+    tradeMain: { flex: 1 },
+    symbol: { color: theme.colors.text, fontSize: 16, fontWeight: '600' as const },
+    meta: { color: theme.colors.textMuted, fontSize: 13, marginTop: 2 },
+    emotion: { color: theme.colors.primaryLight, fontSize: 11, marginTop: 4 },
+    pnl: { fontSize: 13, marginTop: 4, fontWeight: '600' as const },
+    modalBackdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.65)',
+      justifyContent: 'flex-end' as const,
+    },
+    modalCard: {
+      backgroundColor: theme.colors.surfaceLight,
+      borderTopLeftRadius: theme.radius.lg,
+      borderTopRightRadius: theme.radius.lg,
+      padding: theme.spacing.lg,
+      maxHeight: '90%' as const,
+    },
+    modalTitle: {
+      color: theme.colors.text,
+      fontSize: 18,
+      fontWeight: '600' as const,
+      marginBottom: 12,
+    },
+    sideRow: { flexDirection: 'row' as const, gap: 8, marginBottom: 12 },
+    sideBtn: { flex: 1 },
+    input: {
+      backgroundColor: theme.colors.background,
+      borderRadius: theme.radius.md,
+      padding: 12,
+      color: theme.colors.text,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      marginBottom: 8,
+    },
+    noteInput: { minHeight: 72, textAlignVertical: 'top' as const },
+    chips: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 6, marginBottom: 8 },
+    chip: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: theme.radius.sm,
+      backgroundColor: theme.colors.background,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    chipActive: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primary + '22' },
+    chipText: { color: theme.colors.textMuted, fontSize: 11 },
+    chipTextActive: { color: theme.colors.primaryLight },
+    modalActions: { flexDirection: 'row' as const, gap: 8, marginTop: 8 },
+    modalBtn: { flex: 1 },
+  };
+}
+
 export function TradingJournal() {
   const { formatMoney } = useMoneyFormat();
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [summary, setSummary] = useState<TradeSummary | null>(null);
   const [symbol, setSymbol] = useState('');
@@ -243,73 +327,3 @@ export function TradingJournal() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  disclaimer: {
-    color: theme.colors.textMuted,
-    fontSize: 11,
-    lineHeight: 16,
-    marginBottom: 12,
-    fontStyle: 'italic',
-  },
-  summaryCard: { marginBottom: 12 },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
-  summaryLabel: { color: theme.colors.textMuted },
-  summaryValue: { color: theme.colors.text, fontWeight: '700' },
-  wl: { color: theme.colors.textMuted, fontSize: 12, marginTop: 4 },
-  positive: { color: theme.colors.success },
-  negative: { color: theme.colors.danger },
-  addBtn: { marginBottom: 16 },
-  tradeRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    gap: 12,
-  },
-  tradeMain: { flex: 1 },
-  symbol: { color: theme.colors.text, fontSize: 16, fontWeight: '600' },
-  meta: { color: theme.colors.textMuted, fontSize: 13, marginTop: 2 },
-  emotion: { color: theme.colors.primaryLight, fontSize: 11, marginTop: 4 },
-  pnl: { fontSize: 13, marginTop: 4, fontWeight: '600' },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-    justifyContent: 'flex-end',
-  },
-  modalCard: {
-    backgroundColor: theme.colors.surfaceLight,
-    borderTopLeftRadius: theme.radius.lg,
-    borderTopRightRadius: theme.radius.lg,
-    padding: theme.spacing.lg,
-    maxHeight: '90%',
-  },
-  modalTitle: { color: theme.colors.text, fontSize: 18, fontWeight: '600', marginBottom: 12 },
-  sideRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  sideBtn: { flex: 1 },
-  input: {
-    backgroundColor: theme.colors.background,
-    borderRadius: theme.radius.md,
-    padding: 12,
-    color: theme.colors.text,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginBottom: 8,
-  },
-  noteInput: { minHeight: 72, textAlignVertical: 'top' },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
-  chip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: theme.radius.sm,
-    backgroundColor: theme.colors.background,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  chipActive: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primary + '22' },
-  chipText: { color: theme.colors.textMuted, fontSize: 11 },
-  chipTextActive: { color: theme.colors.primaryLight },
-  modalActions: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  modalBtn: { flex: 1 },
-});

@@ -1,5 +1,4 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { theme } from '@/constants/theme';
 
 const ACCENTS = ['#7c3aed', '#c026d3', '#00a3ff', '#059669', '#d97706', '#e11d48'] as const;
 

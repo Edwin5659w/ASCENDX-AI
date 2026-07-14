@@ -4,7 +4,6 @@ import {
   Pressable,
   ScrollView,
   Share,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -16,12 +15,96 @@ import { userApi } from '@/src/api/services';
 import { Card } from '@/src/components/ui/Card';
 import { resolveBadges } from '@/src/lib/gamification';
 import type { UserStats } from '@/src/types/api';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
+
+function createStyles(theme: AppTheme) {
+  return {
+    container: { flex: 1, backgroundColor: theme.colors.background },
+    content: { padding: theme.spacing.md, paddingBottom: 40 },
+    boot: {
+      flex: 1,
+      justifyContent: 'center' as const,
+      alignItems: 'center' as const,
+      backgroundColor: theme.colors.background,
+    },
+    header: {
+      flexDirection: 'row' as const,
+      justifyContent: 'space-between' as const,
+      alignItems: 'flex-start' as const,
+      marginBottom: theme.spacing.lg,
+      gap: 12,
+    },
+    title: { color: theme.colors.text, fontSize: 22, fontWeight: '700' as const },
+    subtitle: { color: theme.colors.textMuted, fontSize: 13, marginTop: 4 },
+    shareBtn: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 6,
+      borderWidth: 1,
+      borderColor: 'rgba(139, 92, 246, 0.35)',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: theme.radius.sm,
+    },
+    shareText: { color: theme.colors.primaryLight, fontSize: 12, fontWeight: '600' as const },
+    section: {
+      color: theme.colors.textMuted,
+      fontSize: 11,
+      fontWeight: '600' as const,
+      letterSpacing: 1,
+      marginBottom: theme.spacing.sm,
+    },
+    grid: {
+      flexDirection: 'row' as const,
+      flexWrap: 'wrap' as const,
+      gap: 10,
+      marginBottom: theme.spacing.lg,
+    },
+    badgeUnlocked: {
+      width: '47%' as const,
+      flexGrow: 1,
+      minWidth: 140,
+      borderColor: 'rgba(139, 92, 246, 0.35)',
+      gap: 4,
+    },
+    badgeLocked: {
+      width: '47%' as const,
+      flexGrow: 1,
+      minWidth: 140,
+      opacity: 0.75,
+      gap: 4,
+    },
+    badgeTitle: {
+      color: theme.colors.text,
+      fontWeight: '600' as const,
+      fontSize: 14,
+      marginTop: 4,
+    },
+    badgeTitleLocked: {
+      color: theme.colors.textMuted,
+      fontWeight: '600' as const,
+      fontSize: 14,
+      marginTop: 4,
+    },
+    badgeSub: { color: theme.colors.textMuted, fontSize: 11, lineHeight: 15 },
+    badgeDate: { color: theme.colors.textMuted, fontSize: 10, marginTop: 4 },
+    link: {
+      color: theme.colors.primaryLight,
+      fontSize: 13,
+      textAlign: 'center' as const,
+      marginTop: 8,
+    },
+  };
+}
 
 export default function AchievementsScreen() {
   const { user } = useAuth();
   const { showToast } = useToast();
   const router = useRouter();
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -116,56 +199,3 @@ export default function AchievementsScreen() {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  content: { padding: theme.spacing.md, paddingBottom: 40 },
-  boot: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: theme.spacing.lg,
-    gap: 12,
-  },
-  title: { color: theme.colors.text, fontSize: 22, fontWeight: '700' },
-  subtitle: { color: theme.colors.textMuted, fontSize: 13, marginTop: 4 },
-  shareBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.35)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: theme.radius.sm,
-  },
-  shareText: { color: theme.colors.primaryLight, fontSize: 12, fontWeight: '600' },
-  section: {
-    color: theme.colors.textMuted,
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 1,
-    marginBottom: theme.spacing.sm,
-  },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: theme.spacing.lg },
-  badgeUnlocked: {
-    width: '47%',
-    flexGrow: 1,
-    minWidth: 140,
-    borderColor: 'rgba(139, 92, 246, 0.35)',
-    gap: 4,
-  },
-  badgeLocked: {
-    width: '47%',
-    flexGrow: 1,
-    minWidth: 140,
-    opacity: 0.75,
-    gap: 4,
-  },
-  badgeTitle: { color: theme.colors.text, fontWeight: '600', fontSize: 14, marginTop: 4 },
-  badgeTitleLocked: { color: theme.colors.textMuted, fontWeight: '600', fontSize: 14, marginTop: 4 },
-  badgeSub: { color: theme.colors.textMuted, fontSize: 11, lineHeight: 15 },
-  badgeDate: { color: theme.colors.textMuted, fontSize: 10, marginTop: 4 },
-  link: { color: theme.colors.primaryLight, fontSize: 13, textAlign: 'center', marginTop: 8 },
-});

@@ -1,5 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
-import { theme } from '@/constants/theme';
+import { Text, View } from 'react-native';
+import type { AppTheme } from '@/constants/theme';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 
 const DAY_LABELS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
@@ -8,7 +9,30 @@ type Props = {
   weekCompletionRate?: number;
 };
 
+function createStyles(theme: AppTheme) {
+  return {
+    wrap: { marginTop: 8 },
+    row: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, gap: 4 },
+    cell: { alignItems: 'center' as const, flex: 1 },
+    dot: {
+      width: 22,
+      height: 22,
+      borderRadius: 6,
+      backgroundColor: theme.colors.surfaceLight,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    dotDone: {
+      backgroundColor: theme.colors.success,
+      borderColor: theme.colors.success,
+    },
+    label: { color: theme.colors.textMuted, fontSize: 10, marginTop: 4 },
+    rate: { color: theme.colors.textMuted, fontSize: 11, marginTop: 6 },
+  };
+}
+
 export function HabitWeekStrip({ weekHistory, weekCompletionRate }: Props) {
+  const styles = useThemedStyles(createStyles);
   const days = weekHistory ?? Array(7).fill(false);
   return (
     <View style={styles.wrap}>
@@ -26,23 +50,3 @@ export function HabitWeekStrip({ weekHistory, weekCompletionRate }: Props) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: { marginTop: 8 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', gap: 4 },
-  cell: { alignItems: 'center', flex: 1 },
-  dot: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    backgroundColor: theme.colors.surfaceLight,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  dotDone: {
-    backgroundColor: theme.colors.success,
-    borderColor: theme.colors.success,
-  },
-  label: { color: theme.colors.textMuted, fontSize: 10, marginTop: 4 },
-  rate: { color: theme.colors.textMuted, fontSize: 11, marginTop: 6 },
-});

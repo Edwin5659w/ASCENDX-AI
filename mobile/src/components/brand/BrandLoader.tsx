@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -7,13 +7,31 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 
 interface BrandLoaderProps {
   label?: string;
 }
 
+function createStyles(theme: AppTheme) {
+  return {
+    wrap: { alignItems: 'center' as const, gap: 12 },
+    ring: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      borderWidth: 2,
+      borderColor: theme.colors.border,
+      borderTopColor: theme.colors.brandCyan,
+      borderRightColor: theme.colors.brandMagenta,
+    },
+    label: { color: theme.colors.textMuted, fontSize: 14 },
+  };
+}
+
 export function BrandLoader({ label }: BrandLoaderProps) {
+  const styles = useThemedStyles(createStyles);
   const rotation = useSharedValue(0);
 
   useEffect(() => {
@@ -35,17 +53,3 @@ export function BrandLoader({ label }: BrandLoaderProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: { alignItems: 'center', gap: 12 },
-  ring: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.08)',
-    borderTopColor: theme.colors.brandCyan,
-    borderRightColor: theme.colors.brandMagenta,
-  },
-  label: { color: theme.colors.textMuted, fontSize: 14 },
-});

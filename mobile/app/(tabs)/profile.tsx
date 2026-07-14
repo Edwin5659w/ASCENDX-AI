@@ -5,7 +5,6 @@ import {
   Pressable,
   ScrollView,
   Share,
-  StyleSheet,
   Switch,
   Text,
   View,
@@ -19,7 +18,7 @@ import { useAuth } from '@/src/context/AuthContext';
 import { Card } from '@/src/components/ui/Card';
 import { Button } from '@/src/components/ui/Button';
 import { Input } from '@/src/components/ui/Input';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
 import { API_URL, checkApiHealth, formatApiError } from '@/src/api/client';
 import { userApi, billingApi } from '@/src/api/services';
 import { DEFAULT_CURRENCY, SUPPORTED_CURRENCIES } from '../../../shared/currencies';
@@ -29,6 +28,7 @@ import { ProfileAvatar } from '@/src/components/profile/ProfileAvatar';
 import { ProfileSection } from '@/src/components/profile/ProfileSection';
 import { useToast } from '@/src/context/ToastContext';
 import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 import { useLocale } from '@/src/context/LocaleContext';
 import { isRevenueCatConfigured, purchasePro, restorePurchases, configureRevenueCat } from '@/src/lib/revenuecat';
 import { registerExpoPushToken } from '@/src/lib/notifications';
@@ -41,11 +41,120 @@ const PRICING_URL = process.env.EXPO_PUBLIC_WEB_URL
   ? `${process.env.EXPO_PUBLIC_WEB_URL}/pricing`
   : 'https://ascendx.ai/pricing';
 
+function createStyles(theme: AppTheme) {
+  return {
+    container: { flex: 1, backgroundColor: theme.colors.background },
+    scroll: {
+      padding: theme.spacing.lg,
+      alignItems: 'center' as const,
+      paddingBottom: 40,
+    },
+    name: { color: theme.colors.text, fontSize: 24, fontWeight: '700' as const, marginTop: 16 },
+    email: { color: theme.colors.textMuted, fontSize: 15, marginTop: 4 },
+    version: { color: theme.colors.textMuted, fontSize: 12, marginTop: 8 },
+    proBadge: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      marginTop: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 12,
+      backgroundColor: theme.colors.primary + '33',
+    },
+    proBadgeText: { color: theme.colors.primaryLight, fontSize: 12, fontWeight: '600' as const },
+    freeBadge: { color: theme.colors.textMuted, fontSize: 12, marginTop: 8 },
+    nameCard: { width: '100%' as const, marginTop: 8 },
+    statsCard: { width: '100%' as const, marginTop: 16 },
+    proCard: { width: '100%' as const, marginTop: 8, borderColor: 'rgba(139, 92, 246, 0.35)', borderWidth: 1 },
+    pastDueCard: {
+      width: '100%' as const,
+      marginTop: 8,
+      borderColor: 'rgba(245, 158, 11, 0.4)',
+      borderWidth: 1,
+      backgroundColor: 'rgba(245, 158, 11, 0.08)',
+    },
+    pastDueTitle: { color: theme.colors.warning, fontWeight: '700' as const, fontSize: 15, marginBottom: 6 },
+    pricingLink: { marginTop: 12, alignItems: 'center' as const },
+    pricingLinkText: { color: theme.colors.primaryLight, fontSize: 13 },
+    referralCard: { width: '100%' as const, marginTop: 8 },
+    refCode: {
+      color: theme.colors.accent,
+      fontSize: 22,
+      fontWeight: '700' as const,
+      letterSpacing: 2,
+      fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+      marginVertical: 8,
+      textAlign: 'center' as const,
+    },
+    refCount: { color: theme.colors.textMuted, fontSize: 12, marginBottom: 12, textAlign: 'center' as const },
+    shieldsCard: { width: '100%' as const, marginTop: 8 },
+    shieldsRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12 },
+    shieldsTitle: { color: theme.colors.text, fontWeight: '600' as const, fontSize: 14 },
+    achievementsLink: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      gap: 8,
+      marginTop: 12,
+      paddingVertical: 10,
+    },
+    achievementsLinkText: { color: theme.colors.primaryLight, fontWeight: '600' as const, fontSize: 14 },
+    dangerCard: {
+      width: '100%' as const,
+      marginTop: 8,
+      borderColor: 'rgba(248, 113, 113, 0.35)',
+      borderWidth: 1,
+    },
+    dangerTitle: { color: theme.colors.danger, fontWeight: '600' as const, marginBottom: 8 },
+    prefsCard: { width: '100%' as const, marginTop: 8 },
+    prefsHint: { color: theme.colors.textMuted, fontSize: 13, lineHeight: 18, marginBottom: 12 },
+    currencyGrid: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 8 },
+    currencyChip: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: theme.radius.sm,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.background,
+    },
+    currencyChipActive: {
+      borderColor: theme.colors.primary,
+      backgroundColor: theme.colors.primary + '22',
+    },
+    currencyChipText: { color: theme.colors.textMuted, fontWeight: '600' as const, fontSize: 13 },
+    currencyChipTextActive: { color: theme.colors.primaryLight },
+    switchRow: { flexDirection: 'row' as const, alignItems: 'flex-start' as const, gap: 12 },
+    switchCopy: { flex: 1 },
+    passwordCard: { width: '100%' as const, marginTop: 8, gap: 4 },
+    sectionTitle: { color: theme.colors.text, fontWeight: '600' as const, marginBottom: 8 },
+    pushCard: { width: '100%' as const, marginTop: 8 },
+    pushTitle: { color: theme.colors.text, fontWeight: '600' as const, marginBottom: 8 },
+    pushHint: { color: theme.colors.textMuted, fontSize: 13, lineHeight: 18, marginBottom: 12 },
+    testPushButton: { marginTop: 12 },
+    statRow: {
+      flexDirection: 'row' as const,
+      justifyContent: 'space-between' as const,
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    statLabel: { color: theme.colors.textMuted },
+    statValue: { color: theme.colors.text, fontWeight: '600' as const },
+    statValueSmall: { color: theme.colors.success, fontWeight: '600' as const, fontSize: 13 },
+    apiLabel: { color: theme.colors.textMuted, fontSize: 11, marginTop: 24, textAlign: 'center' as const },
+    apiTestBtn: { width: '100%' as const, marginTop: 12 },
+    logout: { width: '100%' as const, marginTop: 16 },
+    legalRow: { flexDirection: 'row' as const, gap: 20, marginTop: 12, marginBottom: 24 },
+    legalLink: { color: theme.colors.textMuted, fontSize: 12 },
+  };
+}
+
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout, refreshUser } = useAuth();
   const { showToast } = useToast();
-  const { mode, setMode } = useAppTheme();
+  const { theme, mode, setMode } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const { locale, setLocale, t } = useLocale();
   const [pushBusy, setPushBusy] = useState(false);
   const [testPushBusy, setTestPushBusy] = useState(false);
@@ -695,109 +804,3 @@ export default function ProfileScreen() {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  scroll: {
-    padding: theme.spacing.lg,
-    alignItems: 'center',
-    paddingBottom: 40,
-  },
-  name: { color: theme.colors.text, fontSize: 24, fontWeight: '700', marginTop: 16 },
-  email: { color: theme.colors.textMuted, fontSize: 15, marginTop: 4 },
-  version: { color: theme.colors.textMuted, fontSize: 12, marginTop: 8 },
-  proBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    backgroundColor: theme.colors.primary + '33',
-  },
-  proBadgeText: { color: theme.colors.primaryLight, fontSize: 12, fontWeight: '600' },
-  freeBadge: { color: theme.colors.textMuted, fontSize: 12, marginTop: 8 },
-  nameCard: { width: '100%', marginTop: 8 },
-  statsCard: { width: '100%', marginTop: 16 },
-  proCard: { width: '100%', marginTop: 8, borderColor: 'rgba(139, 92, 246, 0.35)', borderWidth: 1 },
-  pastDueCard: {
-    width: '100%',
-    marginTop: 8,
-    borderColor: 'rgba(245, 158, 11, 0.4)',
-    borderWidth: 1,
-    backgroundColor: 'rgba(245, 158, 11, 0.08)',
-  },
-  pastDueTitle: { color: theme.colors.warning, fontWeight: '700', fontSize: 15, marginBottom: 6 },
-  pricingLink: { marginTop: 12, alignItems: 'center' },
-  pricingLinkText: { color: theme.colors.primaryLight, fontSize: 13 },
-  referralCard: { width: '100%', marginTop: 8 },
-  refCode: {
-    color: theme.colors.accent,
-    fontSize: 22,
-    fontWeight: '700',
-    letterSpacing: 2,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    marginVertical: 8,
-    textAlign: 'center',
-  },
-  refCount: { color: theme.colors.textMuted, fontSize: 12, marginBottom: 12, textAlign: 'center' },
-  shieldsCard: { width: '100%', marginTop: 8 },
-  shieldsRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  shieldsTitle: { color: theme.colors.text, fontWeight: '600', fontSize: 14 },
-  achievementsLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: 12,
-    paddingVertical: 10,
-  },
-  achievementsLinkText: { color: theme.colors.primaryLight, fontWeight: '600', fontSize: 14 },
-  dangerCard: {
-    width: '100%',
-    marginTop: 8,
-    borderColor: 'rgba(248, 113, 113, 0.35)',
-    borderWidth: 1,
-  },
-  dangerTitle: { color: theme.colors.danger, fontWeight: '600', marginBottom: 8 },
-  prefsCard: { width: '100%', marginTop: 8 },
-  prefsHint: { color: theme.colors.textMuted, fontSize: 13, lineHeight: 18, marginBottom: 12 },
-  currencyGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  currencyChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: theme.radius.sm,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.background,
-  },
-  currencyChipActive: {
-    borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.primary + '22',
-  },
-  currencyChipText: { color: theme.colors.textMuted, fontWeight: '600', fontSize: 13 },
-  currencyChipTextActive: { color: theme.colors.primaryLight },
-  switchRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  switchCopy: { flex: 1 },
-  passwordCard: { width: '100%', marginTop: 8, gap: 4 },
-  sectionTitle: { color: theme.colors.text, fontWeight: '600', marginBottom: 8 },
-  pushCard: { width: '100%', marginTop: 8 },
-  pushTitle: { color: theme.colors.text, fontWeight: '600', marginBottom: 8 },
-  pushHint: { color: theme.colors.textMuted, fontSize: 13, lineHeight: 18, marginBottom: 12 },
-  testPushButton: { marginTop: 12 },
-  statRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  statLabel: { color: theme.colors.textMuted },
-  statValue: { color: theme.colors.text, fontWeight: '600' },
-  statValueSmall: { color: theme.colors.success, fontWeight: '600', fontSize: 13 },
-  apiLabel: { color: theme.colors.textMuted, fontSize: 11, marginTop: 24, textAlign: 'center' },
-  apiTestBtn: { width: '100%', marginTop: 12 },
-  logout: { width: '100%', marginTop: 16 },
-  legalRow: { flexDirection: 'row', gap: 20, marginTop: 12, marginBottom: 24 },
-  legalLink: { color: theme.colors.textMuted, fontSize: 12 },
-});

@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BrandLogo } from './BrandLogo';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 
 interface AuthScreenShellProps {
   children: ReactNode;
@@ -10,7 +12,33 @@ interface AuthScreenShellProps {
   title?: string;
 }
 
+function createStyles(theme: AppTheme) {
+  return {
+    container: { flex: 1 },
+    flex: { flex: 1 },
+    scroll: { flexGrow: 1, justifyContent: 'center' as const, padding: theme.spacing.lg },
+    header: { alignItems: 'center' as const, marginBottom: 32 },
+    title: {
+      marginTop: 20,
+      fontSize: 20,
+      fontWeight: '600' as const,
+      color: theme.colors.text,
+      textAlign: 'center' as const,
+    },
+    subtitle: {
+      marginTop: 20,
+      color: theme.colors.textMuted,
+      fontSize: 15,
+      textAlign: 'center' as const,
+    },
+    subtitleTight: { marginTop: 8 },
+  };
+}
+
 export function AuthScreenShell({ children, subtitle, title }: AuthScreenShellProps) {
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
+
   return (
     <LinearGradient colors={[...theme.gradient.authBg]} style={styles.container}>
       <KeyboardAvoidingView
@@ -28,24 +56,3 @@ export function AuthScreenShell({ children, subtitle, title }: AuthScreenShellPr
     </LinearGradient>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  flex: { flex: 1 },
-  scroll: { flexGrow: 1, justifyContent: 'center', padding: theme.spacing.lg },
-  header: { alignItems: 'center', marginBottom: 32 },
-  title: {
-    marginTop: 20,
-    fontSize: 20,
-    fontWeight: '600',
-    color: theme.colors.text,
-    textAlign: 'center',
-  },
-  subtitle: {
-    marginTop: 20,
-    color: theme.colors.textMuted,
-    fontSize: 15,
-    textAlign: 'center',
-  },
-  subtitleTight: { marginTop: 8 },
-});

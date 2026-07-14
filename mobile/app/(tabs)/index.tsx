@@ -4,7 +4,6 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -41,7 +40,9 @@ import { useToast } from '@/src/context/ToastContext';
 import { BarChartCard } from '@/src/components/charts/BarChartCard';
 import { Card } from '@/src/components/ui/Card';
 import type { UserStats } from '@/src/types/api';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 import { computeSetupScore, getTimeGreeting } from '../../../shared/dashboard-helpers';
 import { isEarlyDashboard } from '../../../shared/dashboard-progressive';
 import { RETENTION_MESSAGES } from '../../../shared/retention';
@@ -49,7 +50,153 @@ import { useMoneyFormat } from '@/src/hooks/useMoneyFormat';
 import { useThrottledFocusEffect } from '@/src/hooks/useThrottledFocusEffect';
 import { CONTEXT_LEVEL_LABELS } from '../../../shared/chat-helpers';
 
+function createStyles(theme: AppTheme) {
+  return {
+    container: { flex: 1, backgroundColor: theme.colors.background },
+    content: { paddingBottom: 32 },
+    guideChip: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 8,
+      marginHorizontal: theme.spacing.md,
+      marginBottom: 8,
+      marginTop: 4,
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: 'rgba(139, 92, 246, 0.35)',
+      backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    },
+    guideChipText: { color: theme.colors.primaryLight, fontSize: 13, fontWeight: '600' as const },
+    boot: {
+      flex: 1,
+      justifyContent: 'center' as const,
+      alignItems: 'center' as const,
+      backgroundColor: theme.colors.background,
+      gap: 12,
+    },
+    bootText: { color: theme.colors.textMuted },
+    header: {
+      padding: theme.spacing.lg,
+      paddingTop: 8,
+      marginBottom: theme.spacing.sm,
+    },
+    headerTop: { flexDirection: 'row' as const, alignItems: 'flex-start' as const, gap: 12 },
+    searchBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      backgroundColor: theme.colors.surface + '99',
+    },
+    greeting: { fontSize: 24, fontWeight: '700' as const, color: theme.colors.text },
+    tagline: { color: theme.colors.textMuted, fontSize: 14, marginTop: 6 },
+    badgeRow: { flexDirection: 'row' as const, marginTop: 10 },
+    iaBadge: {
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 12,
+      backgroundColor: theme.colors.primary + '22',
+      borderWidth: 1,
+      borderColor: theme.colors.primary + '44',
+    },
+    iaBadgeText: { color: theme.colors.primaryLight, fontSize: 11, fontWeight: '600' as const },
+    setupCard: { marginHorizontal: theme.spacing.md, marginBottom: theme.spacing.sm },
+    setupHeader: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, marginBottom: 8 },
+    setupLabel: { color: theme.colors.textMuted, fontSize: 13 },
+    setupPct: { color: theme.colors.primaryLight, fontWeight: '700' as const },
+    setupTrack: {
+      height: 6,
+      backgroundColor: theme.colors.surface,
+      borderRadius: 3,
+      overflow: 'hidden' as const,
+    },
+    setupFill: { height: '100%' as const, backgroundColor: theme.colors.primary, borderRadius: 3 },
+    trialBanner: {
+      marginHorizontal: theme.spacing.md,
+      marginBottom: theme.spacing.sm,
+      borderColor: theme.colors.primary + '55',
+      borderWidth: 1,
+      backgroundColor: theme.colors.primary + '15',
+    },
+    trialText: { color: theme.colors.primaryLight, fontSize: 13 },
+    ritualBtn: {
+      marginHorizontal: theme.spacing.md,
+      marginBottom: theme.spacing.sm,
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      gap: 8,
+      paddingVertical: 14,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: 'rgba(251,191,36,0.35)',
+      backgroundColor: 'rgba(251,191,36,0.1)',
+    },
+    ritualBtnText: { color: '#fcd34d', fontWeight: '600' as const, fontSize: 14 },
+    statsGrid: {
+      flexDirection: 'row' as const,
+      flexWrap: 'wrap' as const,
+      gap: 12,
+      paddingHorizontal: theme.spacing.md,
+      marginBottom: 4,
+    },
+    statPress: { flex: 1, minWidth: '45%' as const },
+    hintLine: {
+      color: theme.colors.textMuted,
+      fontSize: 12,
+      marginHorizontal: theme.spacing.md,
+      marginBottom: theme.spacing.md,
+    },
+    warningCard: {
+      marginHorizontal: theme.spacing.md,
+      marginBottom: theme.spacing.sm,
+      borderColor: theme.colors.warning,
+      borderWidth: 1,
+    },
+    warningTitle: { color: theme.colors.warning, fontWeight: '600' as const, marginBottom: 4 },
+    warningText: { color: theme.colors.text, fontSize: 14, lineHeight: 20 },
+    warningLink: { color: theme.colors.warning, fontSize: 13, fontWeight: '600' as const, marginTop: 8 },
+    sectionTitle: {
+      color: theme.colors.text,
+      fontSize: 18,
+      fontWeight: '600' as const,
+      marginHorizontal: theme.spacing.md,
+      marginTop: theme.spacing.lg,
+      marginBottom: theme.spacing.sm,
+    },
+    planCard: { marginHorizontal: theme.spacing.md },
+    planText: { color: theme.colors.text, lineHeight: 22, fontSize: 15 },
+    promptRow: { marginTop: 14, gap: 8 },
+    promptChip: {
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: 'rgba(139, 92, 246, 0.35)',
+      backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    },
+    promptChipText: { color: theme.colors.primaryLight, fontSize: 12 },
+    chatLink: { marginTop: 4, alignItems: 'flex-start' as const },
+    chatLinkText: { color: theme.colors.primaryLight, fontSize: 13, fontWeight: '600' as const },
+    errorCard: {
+      marginHorizontal: theme.spacing.md,
+      marginBottom: theme.spacing.sm,
+      borderColor: theme.colors.danger,
+      borderWidth: 1,
+    },
+    errorText: { color: theme.colors.text, fontSize: 14, marginBottom: 8 },
+    retryText: { color: theme.colors.primaryLight, fontWeight: '600' as const, fontSize: 14 },
+  };
+}
+
 export default function DashboardScreen() {
+  const { theme, mode } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const { user, refreshUser } = useAuth();
   const { formatMoney } = useMoneyFormat();
@@ -244,7 +391,9 @@ export default function DashboardScreen() {
           <Text style={styles.guideChipText}>¿Cómo funciona ASCENDX? (30 s)</Text>
         </Pressable>
       ) : null}
-      <LinearGradient colors={['#1a1033', '#0a0a0f']} style={styles.header}>
+      <LinearGradient
+        colors={mode === 'light' ? ['#ede9fe', '#f8fafc'] : ['#1a1033', '#0a0a0f']}
+        style={styles.header}>
         <View style={styles.headerTop}>
           <View style={{ flex: 1 }}>
             <Text style={styles.greeting}>{getTimeGreeting(user?.name)}</Text>
@@ -400,146 +549,4 @@ export default function DashboardScreen() {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  content: { paddingBottom: 32 },
-  guideChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginHorizontal: theme.spacing.md,
-    marginBottom: 8,
-    marginTop: 4,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.35)',
-    backgroundColor: 'rgba(139, 92, 246, 0.1)',
-  },
-  guideChipText: { color: theme.colors.primaryLight, fontSize: 13, fontWeight: '600' },
-  boot: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: theme.colors.background,
-    gap: 12,
-  },
-  bootText: { color: theme.colors.textMuted },
-  header: {
-    padding: theme.spacing.lg,
-    paddingTop: 8,
-    marginBottom: theme.spacing.sm,
-  },
-  headerTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  searchBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.surface + '99',
-  },
-  greeting: { fontSize: 24, fontWeight: '700', color: theme.colors.text },
-  tagline: { color: theme.colors.textMuted, fontSize: 14, marginTop: 6 },
-  badgeRow: { flexDirection: 'row', marginTop: 10 },
-  iaBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    backgroundColor: theme.colors.primary + '22',
-    borderWidth: 1,
-    borderColor: theme.colors.primary + '44',
-  },
-  iaBadgeText: { color: theme.colors.primaryLight, fontSize: 11, fontWeight: '600' },
-  setupCard: { marginHorizontal: theme.spacing.md, marginBottom: theme.spacing.sm },
-  setupHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  setupLabel: { color: theme.colors.textMuted, fontSize: 13 },
-  setupPct: { color: theme.colors.primaryLight, fontWeight: '700' },
-  setupTrack: {
-    height: 6,
-    backgroundColor: theme.colors.surface,
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  setupFill: { height: '100%', backgroundColor: theme.colors.primary, borderRadius: 3 },
-  trialBanner: {
-    marginHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
-    borderColor: theme.colors.primary + '55',
-    borderWidth: 1,
-    backgroundColor: theme.colors.primary + '15',
-  },
-  trialText: { color: theme.colors.primaryLight, fontSize: 13 },
-  ritualBtn: {
-    marginHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.35)',
-    backgroundColor: 'rgba(251,191,36,0.1)',
-  },
-  ritualBtnText: { color: '#fcd34d', fontWeight: '600', fontSize: 14 },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    paddingHorizontal: theme.spacing.md,
-    marginBottom: 4,
-  },
-  statPress: { flex: 1, minWidth: '45%' },
-  hintLine: {
-    color: theme.colors.textMuted,
-    fontSize: 12,
-    marginHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.md,
-  },
-  warningCard: {
-    marginHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
-    borderColor: theme.colors.warning,
-    borderWidth: 1,
-  },
-  warningTitle: { color: theme.colors.warning, fontWeight: '600', marginBottom: 4 },
-  warningText: { color: theme.colors.text, fontSize: 14, lineHeight: 20 },
-  warningLink: { color: theme.colors.warning, fontSize: 13, fontWeight: '600', marginTop: 8 },
-  sectionTitle: {
-    color: theme.colors.text,
-    fontSize: 18,
-    fontWeight: '600',
-    marginHorizontal: theme.spacing.md,
-    marginTop: theme.spacing.lg,
-    marginBottom: theme.spacing.sm,
-  },
-  planCard: { marginHorizontal: theme.spacing.md },
-  planText: { color: theme.colors.text, lineHeight: 22, fontSize: 15 },
-  promptRow: { marginTop: 14, gap: 8 },
-  promptChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.35)',
-    backgroundColor: 'rgba(139, 92, 246, 0.1)',
-  },
-  promptChipText: { color: theme.colors.primaryLight, fontSize: 12 },
-  chatLink: { marginTop: 4, alignItems: 'flex-start' },
-  chatLinkText: { color: theme.colors.primaryLight, fontSize: 13, fontWeight: '600' },
-  errorCard: {
-    marginHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
-    borderColor: theme.colors.danger,
-    borderWidth: 1,
-  },
-  errorText: { color: theme.colors.text, fontSize: 14, marginBottom: 8 },
-  retryText: { color: theme.colors.primaryLight, fontWeight: '600', fontSize: 14 },
-});
 

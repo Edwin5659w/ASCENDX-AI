@@ -1,13 +1,43 @@
-import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
+import { Text, TextInput, TextInputProps, View } from 'react-native';
 import { FieldValidation } from '@/src/lib/auth.rules';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 
 interface ValidatedInputProps extends TextInputProps {
   label: string;
   validation: FieldValidation;
 }
 
+function createStyles(theme: AppTheme) {
+  return {
+    container: { marginBottom: theme.spacing.md },
+    label: {
+      color: theme.colors.textMuted,
+      fontSize: 13,
+      marginBottom: 6,
+      fontWeight: '500' as const,
+    },
+    labelError: { color: theme.colors.danger },
+    labelSuccess: { color: theme.colors.success },
+    input: {
+      backgroundColor: theme.colors.surfaceLight,
+      borderRadius: theme.radius.md,
+      padding: 14,
+      color: theme.colors.text,
+      fontSize: 16,
+      borderWidth: 2,
+      borderColor: theme.colors.border,
+    },
+    inputError: { borderColor: theme.colors.danger },
+    inputSuccess: { borderColor: theme.colors.success },
+    error: { color: theme.colors.danger, fontSize: 12, marginTop: 4 },
+  };
+}
+
 export function ValidatedInput({ label, validation, style, ...props }: ValidatedInputProps) {
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const showError = validation.status === 'invalid';
   const showSuccess = validation.status === 'valid' && !!props.value;
 
@@ -34,27 +64,3 @@ export function ValidatedInput({ label, validation, style, ...props }: Validated
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { marginBottom: theme.spacing.md },
-  label: {
-    color: theme.colors.textMuted,
-    fontSize: 13,
-    marginBottom: 6,
-    fontWeight: '500',
-  },
-  labelError: { color: theme.colors.danger },
-  labelSuccess: { color: theme.colors.success },
-  input: {
-    backgroundColor: theme.colors.surfaceLight,
-    borderRadius: theme.radius.md,
-    padding: 14,
-    color: theme.colors.text,
-    fontSize: 16,
-    borderWidth: 2,
-    borderColor: theme.colors.border,
-  },
-  inputError: { borderColor: theme.colors.danger },
-  inputSuccess: { borderColor: theme.colors.success },
-  error: { color: theme.colors.danger, fontSize: 12, marginTop: 4 },
-});

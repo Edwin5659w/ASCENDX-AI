@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { Link } from 'expo-router';
 import { formatApiError } from '@/src/api/client';
 import { useAuth } from '@/src/context/AuthContext';
@@ -8,10 +8,37 @@ import { ValidatedInput } from '@/src/components/auth/ValidatedInput';
 import { AuthScreenShell } from '@/src/components/brand/AuthScreenShell';
 import { validateLoginEmail, validateLoginPassword } from '@/src/lib/auth.rules';
 import { OAuthButtons } from '@/src/components/auth/OAuthButtons';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
+
+function createStyles(theme: AppTheme) {
+  return {
+    form: { marginBottom: theme.spacing.md },
+    forgot: {
+      color: theme.colors.accent,
+      textAlign: 'center' as const,
+      fontSize: 14,
+      marginBottom: theme.spacing.lg,
+    },
+    showBtn: { marginTop: -8, marginBottom: theme.spacing.md },
+    showBtnText: {
+      color: theme.colors.primaryLight,
+      fontSize: 13,
+      textAlign: 'right' as const,
+    },
+    error: {
+      color: theme.colors.danger,
+      marginBottom: theme.spacing.sm,
+      textAlign: 'center' as const,
+    },
+    link: { color: theme.colors.textMuted, textAlign: 'center' as const, fontSize: 15 },
+    linkBold: { color: theme.colors.accent, fontWeight: '600' as const },
+  };
+}
 
 export default function LoginScreen() {
   const { login, loginWithGoogle, loginWithApple } = useAuth();
+  const styles = useThemedStyles(createStyles);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -94,13 +121,3 @@ export default function LoginScreen() {
     </AuthScreenShell>
   );
 }
-
-const styles = StyleSheet.create({
-  form: { marginBottom: theme.spacing.md },
-  forgot: { color: theme.colors.accent, textAlign: 'center', fontSize: 14, marginBottom: theme.spacing.lg },
-  showBtn: { marginTop: -8, marginBottom: theme.spacing.md },
-  showBtnText: { color: theme.colors.primaryLight, fontSize: 13, textAlign: 'right' },
-  error: { color: theme.colors.danger, marginBottom: theme.spacing.sm, textAlign: 'center' },
-  link: { color: theme.colors.textMuted, textAlign: 'center', fontSize: 15 },
-  linkBold: { color: theme.colors.accent, fontWeight: '600' },
-});

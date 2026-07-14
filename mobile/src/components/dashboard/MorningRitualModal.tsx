@@ -1,18 +1,80 @@
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { MORNING_RITUAL_STEPS } from '../../../../shared/morning-ritual';
 import { userApi } from '@/src/api/services';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 
 interface MorningRitualModalProps {
   visible: boolean;
   onClose: () => void;
 }
 
+function createStyles(theme: AppTheme) {
+  return {
+    overlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.8)',
+      justifyContent: 'center' as const,
+      padding: 20,
+    },
+    sheet: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: 'rgba(251,191,36,0.3)',
+      padding: 24,
+    },
+    close: { position: 'absolute' as const, top: 16, right: 16, zIndex: 1 },
+    iconWrap: {
+      alignSelf: 'center' as const,
+      width: 56,
+      height: 56,
+      borderRadius: 16,
+      backgroundColor: 'rgba(251,191,36,0.15)',
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      marginBottom: 12,
+    },
+    kicker: {
+      color: '#fbbf24',
+      fontSize: 11,
+      fontWeight: '700' as const,
+      textAlign: 'center' as const,
+      textTransform: 'uppercase' as const,
+    },
+    title: {
+      color: theme.colors.text,
+      fontSize: 20,
+      fontWeight: '800' as const,
+      textAlign: 'center' as const,
+      marginTop: 6,
+    },
+    body: {
+      color: theme.colors.textMuted,
+      fontSize: 14,
+      textAlign: 'center' as const,
+      lineHeight: 21,
+      marginVertical: 16,
+    },
+    cta: {
+      backgroundColor: theme.colors.primary,
+      borderRadius: 14,
+      paddingVertical: 14,
+      alignItems: 'center' as const,
+    },
+    ctaDisabled: { opacity: 0.6 },
+    ctaText: { color: '#fff', fontWeight: '700' as const, fontSize: 15 },
+  };
+}
+
 export function MorningRitualModal({ visible, onClose }: MorningRitualModalProps) {
   const router = useRouter();
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [step, setStep] = useState(0);
   const [finishing, setFinishing] = useState(false);
 
@@ -60,41 +122,3 @@ export function MorningRitualModal({ visible, onClose }: MorningRitualModalProps
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  sheet: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.3)',
-    padding: 24,
-  },
-  close: { position: 'absolute', top: 16, right: 16, zIndex: 1 },
-  iconWrap: {
-    alignSelf: 'center',
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: 'rgba(251,191,36,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  kicker: { color: '#fbbf24', fontSize: 11, fontWeight: '700', textAlign: 'center', textTransform: 'uppercase' },
-  title: { color: theme.colors.text, fontSize: 20, fontWeight: '800', textAlign: 'center', marginTop: 6 },
-  body: { color: theme.colors.textMuted, fontSize: 14, textAlign: 'center', lineHeight: 21, marginVertical: 16 },
-  cta: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  ctaDisabled: { opacity: 0.6 },
-  ctaText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-});

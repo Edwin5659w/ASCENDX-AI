@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { theme } from '@/constants/theme';
+import { Pressable, Text, View } from 'react-native';
+import type { AppTheme } from '@/constants/theme';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 import type { PlanUsage } from '@/src/types/api';
 
 interface PlanUsageBarProps {
@@ -8,7 +9,38 @@ interface PlanUsageBarProps {
   onUpgrade?: () => void;
 }
 
+function createStyles(theme: AppTheme) {
+  return {
+    wrap: {
+      marginBottom: 16,
+      padding: 14,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.card,
+    },
+    row: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, marginBottom: 8 },
+    label: { color: theme.colors.textMuted, fontSize: 12 },
+    countRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8 },
+    count: { color: theme.colors.text, fontSize: 12, fontWeight: '600' as const },
+    countWarn: { color: theme.colors.warning },
+    proLink: { color: theme.colors.primaryLight, fontSize: 12, fontWeight: '600' as const },
+    track: {
+      height: 6,
+      backgroundColor: theme.colors.background,
+      borderRadius: 99,
+      overflow: 'hidden' as const,
+    },
+    fill: { height: '100%' as const, borderRadius: 99 },
+    fillOk: { backgroundColor: theme.colors.accent },
+    fillNear: { backgroundColor: theme.colors.primaryLight },
+    fillWarn: { backgroundColor: theme.colors.warning },
+  };
+}
+
 export function PlanUsageBar({ usage, metric, onUpgrade }: PlanUsageBarProps) {
+  const styles = useThemedStyles(createStyles);
+
   if (!usage) return null;
 
   const { plan, limits, usage: u } = usage;
@@ -61,25 +93,3 @@ export function PlanUsageBar({ usage, metric, onUpgrade }: PlanUsageBarProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: {
-    marginBottom: 16,
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.card,
-  },
-  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  label: { color: theme.colors.textMuted, fontSize: 12 },
-  countRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  count: { color: theme.colors.text, fontSize: 12, fontWeight: '600' },
-  countWarn: { color: theme.colors.warning },
-  proLink: { color: theme.colors.primaryLight, fontSize: 12, fontWeight: '600' },
-  track: { height: 6, backgroundColor: theme.colors.background, borderRadius: 99, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 99 },
-  fillOk: { backgroundColor: theme.colors.accent },
-  fillNear: { backgroundColor: theme.colors.primaryLight },
-  fillWarn: { backgroundColor: theme.colors.warning },
-});

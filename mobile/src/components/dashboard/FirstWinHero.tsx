@@ -1,17 +1,56 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { XP } from '../../../../shared/retention';
 import { Card } from '@/src/components/ui/Card';
 import type { UserStats } from '@/src/types/api';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 
 interface FirstWinHeroProps {
   stats: UserStats | null;
 }
 
+function createStyles(theme: AppTheme) {
+  return {
+    card: {
+      marginHorizontal: theme.spacing.md,
+      marginBottom: theme.spacing.sm,
+      borderColor: 'rgba(245, 158, 11, 0.4)',
+      borderWidth: 1,
+      backgroundColor: 'rgba(245, 158, 11, 0.08)',
+    },
+    row: { gap: 14 },
+    body: { flex: 1 },
+    labelRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, marginBottom: 6 },
+    label: {
+      color: theme.colors.warning,
+      fontSize: 11,
+      fontWeight: '700' as const,
+      letterSpacing: 0.5,
+      textTransform: 'uppercase' as const,
+    },
+    title: { color: theme.colors.text, fontSize: 17, fontWeight: '700' as const, marginBottom: 4 },
+    desc: { color: theme.colors.textMuted, fontSize: 13, lineHeight: 19 },
+    btn: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      gap: 8,
+      backgroundColor: theme.colors.warning,
+      borderRadius: 12,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+    },
+    btnText: { color: '#000', fontSize: 14, fontWeight: '700' as const },
+  };
+}
+
 export function FirstWinHero({ stats }: FirstWinHeroProps) {
   const router = useRouter();
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
 
   if (!stats || stats.completedTasks > 0 || stats.totalTasks === 0) return null;
 
@@ -38,36 +77,3 @@ export function FirstWinHero({ stats }: FirstWinHeroProps) {
     </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    marginHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
-    borderColor: 'rgba(245, 158, 11, 0.4)',
-    borderWidth: 1,
-    backgroundColor: 'rgba(245, 158, 11, 0.08)',
-  },
-  row: { gap: 14 },
-  body: { flex: 1 },
-  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  label: {
-    color: theme.colors.warning,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  title: { color: theme.colors.text, fontSize: 17, fontWeight: '700', marginBottom: 4 },
-  desc: { color: theme.colors.textMuted, fontSize: 13, lineHeight: 19 },
-  btn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: theme.colors.warning,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  btnText: { color: '#000', fontSize: 14, fontWeight: '700' },
-});

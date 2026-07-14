@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { authApi } from '@/src/api/services';
 import { formatApiError } from '@/src/api/client';
@@ -7,10 +7,44 @@ import { Button } from '@/src/components/ui/Button';
 import { ValidatedInput } from '@/src/components/auth/ValidatedInput';
 import { AuthScreenShell } from '@/src/components/brand/AuthScreenShell';
 import { validateLoginEmail } from '@/src/lib/auth.rules';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
+
+function createStyles(theme: AppTheme) {
+  return {
+    form: { marginBottom: theme.spacing.lg },
+    box: { padding: theme.spacing.md, marginBottom: theme.spacing.lg },
+    info: {
+      color: theme.colors.textMuted,
+      fontSize: 14,
+      lineHeight: 22,
+      marginBottom: 12,
+      textAlign: 'center' as const,
+    },
+    devHint: {
+      color: theme.colors.warning,
+      fontSize: 12,
+      lineHeight: 18,
+      marginBottom: 16,
+      textAlign: 'center' as const,
+    },
+    error: {
+      color: theme.colors.danger,
+      marginBottom: theme.spacing.sm,
+      textAlign: 'center' as const,
+    },
+    link: { color: theme.colors.accent, textAlign: 'center' as const, fontSize: 15 },
+    linkBold: {
+      color: theme.colors.accent,
+      fontWeight: '600' as const,
+      textAlign: 'center' as const,
+    },
+  };
+}
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
+  const styles = useThemedStyles(createStyles);
   const [email, setEmail] = useState('');
   const [touched, setTouched] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -75,19 +109,3 @@ export default function ForgotPasswordScreen() {
     </AuthScreenShell>
   );
 }
-
-const styles = StyleSheet.create({
-  form: { marginBottom: theme.spacing.lg },
-  box: { padding: theme.spacing.md, marginBottom: theme.spacing.lg },
-  info: { color: theme.colors.textMuted, fontSize: 14, lineHeight: 22, marginBottom: 12, textAlign: 'center' },
-  devHint: {
-    color: theme.colors.warning,
-    fontSize: 12,
-    lineHeight: 18,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  error: { color: theme.colors.danger, marginBottom: theme.spacing.sm, textAlign: 'center' },
-  link: { color: theme.colors.accent, textAlign: 'center', fontSize: 15 },
-  linkBold: { color: theme.colors.accent, fontWeight: '600', textAlign: 'center' },
-});

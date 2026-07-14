@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Card } from '@/src/components/ui/Card';
 import { useAuth } from '@/src/context/AuthContext';
 import { useToast } from '@/src/context/ToastContext';
 import { userApi } from '@/src/api/services';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 
 function isFocusToday(dateStr?: string | null): boolean {
   if (!dateStr) return false;
@@ -18,9 +20,46 @@ function isFocusToday(dateStr?: string | null): boolean {
   );
 }
 
+function createStyles(theme: AppTheme) {
+  return {
+    card: {
+      marginHorizontal: theme.spacing.md,
+      marginBottom: theme.spacing.sm,
+      borderColor: 'rgba(0, 229, 255, 0.25)',
+      borderWidth: 1,
+    },
+    header: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, marginBottom: 8 },
+    title: { color: theme.colors.text, fontSize: 16, fontWeight: '600' as const },
+    hint: { color: theme.colors.textMuted, fontSize: 12, marginBottom: 10 },
+    focusText: { color: theme.colors.accent, fontSize: 15, fontWeight: '500' as const },
+    row: { flexDirection: 'row' as const, gap: 8 },
+    input: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: theme.radius.sm,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      color: theme.colors.text,
+      fontSize: 14,
+    },
+    btn: {
+      backgroundColor: theme.colors.accent,
+      paddingHorizontal: 16,
+      borderRadius: theme.radius.sm,
+      justifyContent: 'center' as const,
+    },
+    btnDisabled: { opacity: 0.5 },
+    btnText: { color: theme.colors.background, fontWeight: '700' as const, fontSize: 14 },
+  };
+}
+
 export function DailyFocus() {
   const { user, refreshUser } = useAuth();
   const { showToast } = useToast();
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [focus, setFocus] = useState(
     user?.dailyFocus && isFocusToday(user.dailyFocusDate) ? user.dailyFocus : '',
   );
@@ -77,36 +116,3 @@ export function DailyFocus() {
     </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    marginHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
-    borderColor: 'rgba(0, 229, 255, 0.25)',
-    borderWidth: 1,
-  },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  title: { color: theme.colors.text, fontSize: 16, fontWeight: '600' },
-  hint: { color: theme.colors.textMuted, fontSize: 12, marginBottom: 10 },
-  focusText: { color: theme.colors.accent, fontSize: 15, fontWeight: '500' },
-  row: { flexDirection: 'row', gap: 8 },
-  input: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.sm,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: theme.colors.text,
-    fontSize: 14,
-  },
-  btn: {
-    backgroundColor: theme.colors.accent,
-    paddingHorizontal: 16,
-    borderRadius: theme.radius.sm,
-    justifyContent: 'center',
-  },
-  btnDisabled: { opacity: 0.5 },
-  btnText: { color: theme.colors.background, fontWeight: '700', fontSize: 14 },
-});

@@ -1,11 +1,7 @@
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  ViewStyle,
-} from 'react-native';
-import { theme } from '@/constants/theme';
+import { ActivityIndicator, Pressable, Text, ViewStyle } from 'react-native';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 
 interface ButtonProps {
   title: string;
@@ -16,6 +12,43 @@ interface ButtonProps {
   style?: ViewStyle;
 }
 
+function createStyles(theme: AppTheme) {
+  return {
+    base: {
+      paddingVertical: 14,
+      paddingHorizontal: 24,
+      borderRadius: theme.radius.md,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+    },
+    primary: {
+      backgroundColor: theme.colors.primary,
+    },
+    secondary: {
+      backgroundColor: theme.colors.surfaceLight,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    ghost: {
+      backgroundColor: 'transparent',
+    },
+    pressed: {
+      opacity: 0.75,
+    },
+    text: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '600' as const,
+    },
+    ghostText: {
+      color: theme.colors.primary,
+    },
+    secondaryText: {
+      color: theme.colors.text,
+    },
+  };
+}
+
 export function Button({
   title,
   onPress,
@@ -24,6 +57,9 @@ export function Button({
   disabled,
   style,
 }: ButtonProps) {
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
+
   return (
     <Pressable
       onPress={onPress}
@@ -35,42 +71,17 @@ export function Button({
         style,
       ]}>
       {loading ? (
-        <ActivityIndicator color={variant === 'ghost' ? theme.colors.primary : '#fff'} />
+        <ActivityIndicator color={variant === 'primary' ? '#fff' : theme.colors.primary} />
       ) : (
-        <Text style={[styles.text, variant === 'ghost' && styles.ghostText]}>{title}</Text>
+        <Text
+          style={[
+            styles.text,
+            variant === 'ghost' && styles.ghostText,
+            variant === 'secondary' && styles.secondaryText,
+          ]}>
+          {title}
+        </Text>
       )}
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  base: {
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: theme.radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primary: {
-    backgroundColor: theme.colors.primary,
-  },
-  secondary: {
-    backgroundColor: theme.colors.surfaceLight,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  ghost: {
-    backgroundColor: 'transparent',
-  },
-  pressed: {
-    opacity: 0.75,
-  },
-  text: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  ghostText: {
-    color: theme.colors.primaryLight,
-  },
-});

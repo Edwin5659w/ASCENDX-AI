@@ -1,12 +1,41 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { onboardingStepIndex, type OnboardingStepId } from '../../../../shared/onboarding-helpers';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 
 interface OnboardingProgressProps {
   step: OnboardingStepId;
 }
 
+function createStyles(theme: AppTheme) {
+  return {
+    wrap: { marginBottom: 24 },
+    label: {
+      color: theme.colors.textMuted,
+      fontSize: 12,
+      textAlign: 'center' as const,
+      marginBottom: 8,
+      fontWeight: '600' as const,
+    },
+    track: {
+      flexDirection: 'row' as const,
+      gap: 6,
+      paddingHorizontal: 8,
+    },
+    segment: {
+      flex: 1,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: theme.colors.border,
+    },
+    segmentActive: {
+      backgroundColor: theme.colors.primary,
+    },
+  };
+}
+
 export function OnboardingProgress({ step }: OnboardingProgressProps) {
+  const styles = useThemedStyles(createStyles);
   const current = onboardingStepIndex(step);
   const total = 3;
 
@@ -26,28 +55,3 @@ export function OnboardingProgress({ step }: OnboardingProgressProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: { marginBottom: 24 },
-  label: {
-    color: theme.colors.textMuted,
-    fontSize: 12,
-    textAlign: 'center',
-    marginBottom: 8,
-    fontWeight: '600',
-  },
-  track: {
-    flexDirection: 'row',
-    gap: 6,
-    paddingHorizontal: 8,
-  },
-  segment: {
-    flex: 1,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: theme.colors.border,
-  },
-  segmentActive: {
-    backgroundColor: theme.colors.primary,
-  },
-});

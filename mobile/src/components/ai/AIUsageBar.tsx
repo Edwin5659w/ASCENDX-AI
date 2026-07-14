@@ -1,7 +1,9 @@
-import { StyleSheet, Text, View, Pressable } from 'react-native';
+import { Text, View, Pressable } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import type { AIUsage } from '../../../../shared/ai-prompts';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 
 interface AIUsageBarProps {
   usage: AIUsage | null;
@@ -9,7 +11,46 @@ interface AIUsageBarProps {
   onUpgrade?: () => void;
 }
 
+function createStyles(theme: AppTheme) {
+  return {
+    wrap: {
+      marginHorizontal: theme.spacing.md,
+      marginBottom: theme.spacing.sm,
+      padding: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: 'rgba(139, 92, 246, 0.25)',
+      backgroundColor: 'rgba(139, 92, 246, 0.08)',
+    },
+    wrapCompact: { paddingVertical: 8, paddingHorizontal: 10 },
+    wrapLimit: { borderColor: 'rgba(239, 68, 68, 0.4)', backgroundColor: 'rgba(239, 68, 68, 0.08)' },
+    wrapWarn: { borderColor: 'rgba(245, 158, 11, 0.35)', backgroundColor: 'rgba(245, 158, 11, 0.06)' },
+    row: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'space-between' as const,
+      marginBottom: 8,
+    },
+    left: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8 },
+    label: { color: theme.colors.text, fontSize: 13, fontWeight: '600' as const },
+    labelCompact: { fontSize: 12 },
+    labelLimit: { color: theme.colors.danger },
+    upgradeBtn: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4 },
+    upgradeText: { color: theme.colors.primaryLight, fontSize: 12, fontWeight: '700' as const },
+    track: {
+      height: 6,
+      backgroundColor: theme.colors.border,
+      borderRadius: 3,
+      overflow: 'hidden' as const,
+    },
+    fill: { height: '100%' as const, borderRadius: 3 },
+  };
+}
+
 export function AIUsageBar({ usage, compact = false, onUpgrade }: AIUsageBarProps) {
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
+
   if (!usage) return null;
 
   const pct = usage.limit > 0 ? Math.round((usage.used / usage.limit) * 100) : 0;
@@ -27,7 +68,11 @@ export function AIUsageBar({ usage, compact = false, onUpgrade }: AIUsageBarProp
       ]}>
       <View style={styles.row}>
         <View style={styles.left}>
-          <FontAwesome name="magic" size={compact ? 12 : 14} color={atLimit ? theme.colors.danger : theme.colors.primaryLight} />
+          <FontAwesome
+            name="magic"
+            size={compact ? 12 : 14}
+            color={atLimit ? theme.colors.danger : theme.colors.primaryLight}
+          />
           <Text style={[styles.label, compact && styles.labelCompact, atLimit && styles.labelLimit]}>
             Mentor IA · {usage.used}/{usage.limit}
           </Text>
@@ -45,27 +90,3 @@ export function AIUsageBar({ usage, compact = false, onUpgrade }: AIUsageBarProp
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: {
-    marginHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.25)',
-    backgroundColor: 'rgba(139, 92, 246, 0.08)',
-  },
-  wrapCompact: { paddingVertical: 8, paddingHorizontal: 10 },
-  wrapLimit: { borderColor: 'rgba(239, 68, 68, 0.4)', backgroundColor: 'rgba(239, 68, 68, 0.08)' },
-  wrapWarn: { borderColor: 'rgba(245, 158, 11, 0.35)', backgroundColor: 'rgba(245, 158, 11, 0.06)' },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
-  left: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  label: { color: theme.colors.text, fontSize: 13, fontWeight: '600' },
-  labelCompact: { fontSize: 12 },
-  labelLimit: { color: theme.colors.danger },
-  upgradeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  upgradeText: { color: theme.colors.primaryLight, fontSize: 12, fontWeight: '700' },
-  track: { height: 6, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 3 },
-});

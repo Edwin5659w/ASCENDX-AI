@@ -1,5 +1,5 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -30,18 +30,21 @@ function ThemedRoot({
 }) {
   const { theme, mode } = useAppTheme();
   const navTheme = useMemo(
-    () => ({
-      ...DarkTheme,
-      dark: mode === 'dark',
-      colors: {
-        ...DarkTheme.colors,
-        background: theme.colors.background,
-        card: theme.colors.surface,
-        text: theme.colors.text,
-        border: theme.colors.border,
-        primary: theme.colors.primary,
-      },
-    }),
+    () => {
+      const base = mode === 'dark' ? DarkTheme : DefaultTheme;
+      return {
+        ...base,
+        dark: mode === 'dark',
+        colors: {
+          ...base.colors,
+          background: theme.colors.background,
+          card: theme.colors.surface,
+          text: theme.colors.text,
+          border: theme.colors.border,
+          primary: theme.colors.primary,
+        },
+      };
+    },
     [theme, mode],
   );
 

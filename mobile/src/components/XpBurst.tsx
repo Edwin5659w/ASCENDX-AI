@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { Text } from 'react-native';
 import Animated, {
   Easing,
   runOnJS,
@@ -7,7 +7,8 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 
 interface XpBurstProps {
   amount: number;
@@ -15,8 +16,25 @@ interface XpBurstProps {
   onDone?: () => void;
 }
 
+function createStyles(theme: AppTheme) {
+  return {
+    burst: {
+      position: 'absolute' as const,
+      right: 8,
+      top: 4,
+      backgroundColor: theme.colors.primary + 'dd',
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 12,
+      zIndex: 2,
+    },
+    text: { color: '#fff', fontSize: 12, fontWeight: '800' as const },
+  };
+}
+
 /** Chip +XP que sube y se desvanece sobre la fila completada. */
 export function XpBurst({ amount, visible, onDone }: XpBurstProps) {
+  const styles = useThemedStyles(createStyles);
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(8);
 
@@ -44,17 +62,3 @@ export function XpBurst({ amount, visible, onDone }: XpBurstProps) {
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  burst: {
-    position: 'absolute',
-    right: 8,
-    top: 4,
-    backgroundColor: theme.colors.primary + 'dd',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    zIndex: 2,
-  },
-  text: { color: '#fff', fontSize: 12, fontWeight: '800' },
-});

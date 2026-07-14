@@ -1,7 +1,8 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Card } from '../ui/Card';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 
 interface AscensoScoreCardProps {
   score: number;
@@ -15,7 +16,46 @@ function scoreColors(score: number): [string, string] {
   return ['#f59e0b', '#f97316'];
 }
 
+function createStyles(theme: AppTheme) {
+  return {
+    card: { marginBottom: theme.spacing.md },
+    header: {
+      flexDirection: 'row' as const,
+      justifyContent: 'space-between' as const,
+      alignItems: 'center' as const,
+      marginBottom: 12,
+    },
+    copy: { flex: 1, paddingRight: 12 },
+    kicker: {
+      color: theme.colors.primaryLight,
+      fontSize: 11,
+      fontWeight: '700' as const,
+      letterSpacing: 0.5,
+    },
+    label: { color: theme.colors.text, fontSize: 17, fontWeight: '700' as const, marginTop: 2 },
+    badge: {
+      width: 64,
+      height: 64,
+      borderRadius: 16,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+    },
+    score: { color: '#fff', fontSize: 24, fontWeight: '900' as const },
+    track: {
+      height: 8,
+      backgroundColor: theme.colors.surfaceLight,
+      borderRadius: 999,
+      overflow: 'hidden' as const,
+      marginBottom: 10,
+    },
+    fill: { height: '100%' as const, borderRadius: 999 },
+    tip: { color: theme.colors.textMuted, fontSize: 12, marginTop: 4 },
+    ok: { color: theme.colors.success, fontSize: 12 },
+  };
+}
+
 export function AscensoScoreCard({ score, label, tips = [] }: AscensoScoreCardProps) {
+  const styles = useThemedStyles(createStyles);
   const [c1, c2] = scoreColors(score);
 
   return (
@@ -49,23 +89,3 @@ export function AscensoScoreCard({ score, label, tips = [] }: AscensoScoreCardPr
     </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  card: { marginBottom: theme.spacing.md },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  copy: { flex: 1, paddingRight: 12 },
-  kicker: { color: theme.colors.primaryLight, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
-  label: { color: theme.colors.text, fontSize: 17, fontWeight: '700', marginTop: 2 },
-  badge: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  score: { color: '#fff', fontSize: 24, fontWeight: '900' },
-  track: { height: 8, backgroundColor: theme.colors.surfaceLight, borderRadius: 999, overflow: 'hidden', marginBottom: 10 },
-  fill: { height: '100%', borderRadius: 999 },
-  tip: { color: theme.colors.textMuted, fontSize: 12, marginTop: 4 },
-  ok: { color: theme.colors.success, fontSize: 12 },
-});

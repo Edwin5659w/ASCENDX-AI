@@ -1,28 +1,30 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import type { ComponentProps } from 'react';
 import { Tabs } from 'expo-router';
-import { theme } from '@/constants/theme';
 import { BrandLogo } from '@/src/components/brand/BrandLogo';
+import { useAppTheme } from '@/src/context/AppThemeContext';
 
 function TabIcon({ name, color }: { name: ComponentProps<typeof FontAwesome>['name']; color: string }) {
   return <FontAwesome size={22} name={name} color={color} style={{ marginBottom: -2 }} />;
 }
 
 export default function TabLayout() {
+  const { theme } = useAppTheme();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: true,
         headerStyle: { backgroundColor: theme.colors.background },
         headerTintColor: theme.colors.text,
-        headerTitleStyle: { fontWeight: '600' },
+        headerTitleStyle: { fontWeight: '600', color: theme.colors.text },
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.border,
           height: 60,
           paddingBottom: 8,
         },
-        tabBarActiveTintColor: theme.colors.accent,
+        tabBarActiveTintColor: theme.colors.primary,
         headerLeft: () => <BrandLogo size="xs" style={{ marginLeft: 12 }} />,
         tabBarInactiveTintColor: theme.colors.textMuted,
       }}>
@@ -61,34 +63,10 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <TabIcon name="th-large" color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          href: null,
-          title: 'Perfil',
-        }}
-      />
-      <Tabs.Screen
-        name="goals"
-        options={{
-          href: null,
-          title: 'Objetivos',
-        }}
-      />
-      <Tabs.Screen
-        name="finance"
-        options={{
-          href: null,
-          title: 'Finanzas',
-        }}
-      />
-      <Tabs.Screen
-        name="achievements"
-        options={{
-          href: null,
-          title: 'Logros',
-        }}
-      />
+      <Tabs.Screen name="profile" options={{ href: null, title: 'Perfil' }} />
+      <Tabs.Screen name="goals" options={{ href: null, title: 'Objetivos' }} />
+      <Tabs.Screen name="finance" options={{ href: null, title: 'Finanzas' }} />
+      <Tabs.Screen name="achievements" options={{ href: null, title: 'Logros' }} />
     </Tabs>
   );
 }

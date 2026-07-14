@@ -1,17 +1,33 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { userApi } from '@/src/api/services';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 
 interface QuickSearchModalProps {
   visible: boolean;
   onClose: () => void;
 }
 
+function createStyles(theme: AppTheme) {
+  return {
+    sheet: { flex: 1, backgroundColor: theme.colors.background, paddingTop: 56, paddingHorizontal: 16 },
+    header: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 10, marginBottom: 16 },
+    input: { flex: 1, color: theme.colors.text, fontSize: 16, paddingVertical: 10 },
+    cancel: { color: theme.colors.accent, fontWeight: '600' as const },
+    hint: { color: theme.colors.textMuted, fontSize: 14, marginTop: 8 },
+    row: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: theme.colors.border },
+    rowTitle: { color: theme.colors.text, fontWeight: '600' as const },
+  };
+}
+
 export function QuickSearchModal({ visible, onClose }: QuickSearchModalProps) {
   const router = useRouter();
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [q, setQ] = useState('');
   const [results, setResults] = useState<{
     goals: { id: string; title: string }[];
@@ -90,13 +106,3 @@ export function QuickSearchModal({ visible, onClose }: QuickSearchModalProps) {
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  sheet: { flex: 1, backgroundColor: theme.colors.background, paddingTop: 56, paddingHorizontal: 16 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
-  input: { flex: 1, color: theme.colors.text, fontSize: 16, paddingVertical: 10 },
-  cancel: { color: theme.colors.accent, fontWeight: '600' },
-  hint: { color: theme.colors.textMuted, fontSize: 14, marginTop: 8 },
-  row: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: theme.colors.border },
-  rowTitle: { color: theme.colors.text, fontWeight: '600' },
-});

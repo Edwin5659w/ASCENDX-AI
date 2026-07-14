@@ -1,11 +1,24 @@
 import { Redirect } from 'expo-router';
 import { useAuth } from '@/src/context/AuthContext';
-import { View, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { BrandLoader } from '@/src/components/brand/BrandLoader';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
+
+function createStyles(theme: AppTheme) {
+  return {
+    center: {
+      flex: 1,
+      justifyContent: 'center' as const,
+      alignItems: 'center' as const,
+      backgroundColor: theme.colors.background,
+    },
+  };
+}
 
 export default function Index() {
   const { isAuthenticated, isLoading, user } = useAuth();
+  const styles = useThemedStyles(createStyles);
 
   if (isLoading) {
     return (
@@ -20,12 +33,3 @@ export default function Index() {
 
   return <Redirect href={href as any} />;
 }
-
-const styles = StyleSheet.create({
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: theme.colors.background,
-  },
-});

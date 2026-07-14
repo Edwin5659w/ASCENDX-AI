@@ -1,14 +1,63 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Card } from '@/src/components/ui/Card';
 import { userApi } from '@/src/api/services';
 import type { WeeklyRecapResult } from '@/src/types/api';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
+
+function createStyles(theme: AppTheme) {
+  return {
+    card: {
+      marginHorizontal: theme.spacing.md,
+      marginBottom: theme.spacing.sm,
+      borderColor: 'rgba(52, 211, 153, 0.25)',
+      borderWidth: 1,
+    },
+    lockedCard: {
+      marginHorizontal: theme.spacing.md,
+      marginBottom: theme.spacing.sm,
+      borderColor: 'rgba(251, 191, 36, 0.25)',
+      borderWidth: 1,
+    },
+    lockedRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12 },
+    lockIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 10,
+      backgroundColor: 'rgba(251, 191, 36, 0.15)',
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+    },
+    flex: { flex: 1 },
+    lockedTitle: { color: theme.colors.text, fontWeight: '600' as const, fontSize: 14 },
+    lockedHint: { color: theme.colors.textMuted, fontSize: 12 },
+    proBtn: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 4,
+      backgroundColor: theme.colors.primary,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: theme.radius.sm,
+    },
+    proBtnText: { color: '#fff', fontSize: 12, fontWeight: '600' as const },
+    header: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, marginBottom: 8 },
+    title: { color: theme.colors.text, fontSize: 16, fontWeight: '600' as const, flex: 1 },
+    score: { color: theme.colors.success, fontWeight: '700' as const, fontSize: 14 },
+    headline: { color: theme.colors.text, fontWeight: '600' as const, marginBottom: 6 },
+    bullet: { color: theme.colors.textMuted, fontSize: 13, lineHeight: 20 },
+    encouragement: { color: theme.colors.textMuted, fontSize: 12, marginTop: 8 },
+  };
+}
 
 export function WeeklyRecap() {
   const router = useRouter();
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [recap, setRecap] = useState<WeeklyRecapResult | null>(null);
   const [locked, setLocked] = useState(false);
 
@@ -62,46 +111,3 @@ export function WeeklyRecap() {
     </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    marginHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
-    borderColor: 'rgba(52, 211, 153, 0.25)',
-    borderWidth: 1,
-  },
-  lockedCard: {
-    marginHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
-    borderColor: 'rgba(251, 191, 36, 0.25)',
-    borderWidth: 1,
-  },
-  lockedRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  lockIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: 'rgba(251, 191, 36, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  flex: { flex: 1 },
-  lockedTitle: { color: theme.colors.text, fontWeight: '600', fontSize: 14 },
-  lockedHint: { color: theme.colors.textMuted, fontSize: 12 },
-  proBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: theme.radius.sm,
-  },
-  proBtnText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  title: { color: theme.colors.text, fontSize: 16, fontWeight: '600', flex: 1 },
-  score: { color: theme.colors.success, fontWeight: '700', fontSize: 14 },
-  headline: { color: theme.colors.text, fontWeight: '600', marginBottom: 6 },
-  bullet: { color: theme.colors.textMuted, fontSize: 13, lineHeight: 20 },
-  encouragement: { color: theme.colors.textMuted, fontSize: 12, marginTop: 8 },
-});

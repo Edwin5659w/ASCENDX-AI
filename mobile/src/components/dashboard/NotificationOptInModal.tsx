@@ -1,11 +1,13 @@
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, Text, View } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { habitsApi } from '@/src/api/services';
 import { normalizeListResponse } from '../../../../shared/list-helpers';
 import { registerExpoPushToken } from '@/src/lib/notifications';
 import { syncHabitReminders } from '@/src/lib/habit-reminders';
-import { theme } from '@/constants/theme';
+import type { AppTheme } from '@/constants/theme';
+import { useAppTheme } from '@/src/context/AppThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 
 const OPTIN_KEY = 'ascendx_notif_optin_asked';
 
@@ -31,7 +33,62 @@ interface NotificationOptInModalProps {
   onDone?: (result: 'enabled' | 'skipped' | 'denied') => void;
 }
 
+function createStyles(theme: AppTheme) {
+  return {
+    overlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.75)',
+      justifyContent: 'center' as const,
+      padding: 20,
+    },
+    card: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: 'rgba(0, 229, 255, 0.35)',
+      padding: 24,
+    },
+    iconWrap: {
+      alignSelf: 'center' as const,
+      width: 56,
+      height: 56,
+      borderRadius: 16,
+      backgroundColor: 'rgba(0, 229, 255, 0.12)',
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      marginBottom: 16,
+    },
+    title: {
+      color: theme.colors.text,
+      fontSize: 20,
+      fontWeight: '800' as const,
+      textAlign: 'center' as const,
+      marginBottom: 10,
+    },
+    body: {
+      color: theme.colors.textMuted,
+      fontSize: 14,
+      lineHeight: 21,
+      textAlign: 'center' as const,
+      marginBottom: 20,
+    },
+    primaryBtn: {
+      backgroundColor: theme.colors.primary,
+      borderRadius: 14,
+      paddingVertical: 14,
+      alignItems: 'center' as const,
+      marginBottom: 8,
+    },
+    primaryText: { color: '#fff', fontSize: 15, fontWeight: '700' as const },
+    secondaryBtn: { paddingVertical: 10, alignItems: 'center' as const },
+    secondaryText: { color: theme.colors.textMuted, fontSize: 13 },
+  };
+}
+
 export function NotificationOptInModal({ visible, onDismiss, onDone }: NotificationOptInModalProps) {
+  const { theme } = useAppTheme();
+  const styles = useThemedStyles(createStyles);
+
   const finish = async (result: 'enabled' | 'skipped' | 'denied') => {
     await markNotificationOptInAsked();
     onDismiss();
@@ -94,53 +151,3 @@ export function NotificationOptInModal({ visible, onDismiss, onDone }: Notificat
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.75)',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  card: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 229, 255, 0.35)',
-    padding: 24,
-  },
-  iconWrap: {
-    alignSelf: 'center',
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: 'rgba(0, 229, 255, 0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  title: {
-    color: theme.colors.text,
-    fontSize: 20,
-    fontWeight: '800',
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  body: {
-    color: theme.colors.textMuted,
-    fontSize: 14,
-    lineHeight: 21,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  primaryBtn: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  primaryText: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  secondaryBtn: { paddingVertical: 10, alignItems: 'center' },
-  secondaryText: { color: theme.colors.textMuted, fontSize: 13 },
-});
