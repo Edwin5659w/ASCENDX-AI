@@ -227,102 +227,110 @@ export const userService = {
       FITNESS: 'Fitness',
     };
 
-    return prisma.$transaction(async (tx) => {
-      const goal = await tx.goal.create({
-        data: {
-          title: input.goalTitle,
-          category: categoryMap[input.focus],
-          priority: 'MEDIUM',
-          userId,
-        },
-      });
+    // Neon (remoto) suele superar el timeout default 5s; no usar Promise.all dentro de tx interactiva.
+    return prisma.$transaction(
+      async (tx) => {
+        const goal = await tx.goal.create({
+          data: {
+            title: input.goalTitle,
+            category: categoryMap[input.focus],
+            priority: 'MEDIUM',
+            userId,
+          },
+        });
 
-      const tasks = await Promise.all(
-        input.taskTitles.map((title) =>
-          tx.task.create({
-            data: { title, userId, goalId: goal.id },
-          }),
-        ),
-      );
+        await tx.task.createMany({
+          data: input.taskTitles.map((title) => ({
+            title,
+            userId,
+            goalId: goal.id,
+          })),
+        });
+        const tasks = await tx.task.findMany({
+          where: { userId, goalId: goal.id },
+          orderBy: { createdAt: 'asc' },
+        });
 
-      const habit = await tx.habit.create({
-        data: { name: input.habitName, frequency: 'DAILY', userId },
-      });
+        const habit = await tx.habit.create({
+          data: { name: input.habitName, frequency: 'DAILY', userId },
+        });
 
-      if (input.focus === 'FINANZAS') {
-        if (input.initialFinance) {
-          await tx.financeRecord.create({
-            data: {
-              userId,
-              type: 'EXPENSE',
-              amount: roundMoney(input.initialFinance.amount),
-              category: input.initialFinance.category,
-              note: 'Primer gasto registrado en onboarding',
-            },
-          });
-        } else {
-          await tx.financeRecord.create({
-            data: {
-              userId,
-              type: 'EXPENSE',
-              amount: 0.01,
-              category: 'Onboarding',
-              note: 'Primer registro — edita o añade tus gastos reales',
-            },
-          });
-        }
-      }
-
-      const user = await tx.user.update({
-        where: { id: userId },
-        data: { onboardingDone: true, xp: { increment: XP.ONBOARDING_COMPLETE } },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          xp: true,
-          level: true,
-          onboardingDone: true,
-          pushToken: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
-
-      const leveled = Math.floor(user.xp / 100) + 1;
-      const finalUser =
-        leveled > user.level
-          ? await tx.user.update({
-              where: { id: userId },
-              data: { level: leveled },
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                xp: true,
-                level: true,
-                onboardingDone: true,
-                pushToken: true,
-                createdAt: true,
-                updatedAt: true,
+        if (input.focus === 'FINANZAS') {
+          if (input.initialFinance) {
+            await tx.financeRecord.create({
+              data: {
+                userId,
+                type: 'EXPENSE',
+                amount: roundMoney(input.initialFinance.amount),
+                category: input.initialFinance.category,
+                note: 'Primer gasto registrado en onboarding',
               },
-            })
-          : user;
+            });
+          } else {
+            await tx.financeRecord.create({
+              data: {
+                userId,
+                type: 'EXPENSE',
+                amount: 0.01,
+                category: 'Onboarding',
+                note: 'Primer registro — edita o añade tus gastos reales',
+              },
+            });
+          }
+        }
 
-      return {
-        user: finalUser,
-        goal,
-        tasks,
-        habit,
-        gamification: {
-          xpGained: XP.ONBOARDING_COMPLETE,
-          leveledUp: leveled > user.level,
-          level: leveled > user.level ? leveled : user.level,
-          xp: finalUser.xp,
-          message: RETENTION_MESSAGES.onboardingDone(XP.ONBOARDING_COMPLETE),
-        },
-      };
-    });
+        const user = await tx.user.update({
+          where: { id: userId },
+          data: { onboardingDone: true, xp: { increment: XP.ONBOARDING_COMPLETE } },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            xp: true,
+            level: true,
+            onboardingDone: true,
+            pushToken: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        });
+
+        const leveled = Math.floor(user.xp / 100) + 1;
+        const finalUser =
+          leveled > user.level
+            ? await tx.user.update({
+                where: { id: userId },
+                data: { level: leveled },
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  xp: true,
+                  level: true,
+                  onboardingDone: true,
+                  pushToken: true,
+                  createdAt: true,
+                  updatedAt: true,
+                },
+              })
+            : user;
+
+        return {
+          user: finalUser,
+          goal,
+          tasks,
+          habit,
+          gamification: {
+            xpGained: XP.ONBOARDING_COMPLETE,
+            leveledUp: leveled > user.level,
+            level: leveled > user.level ? leveled : user.level,
+            xp: finalUser.xp,
+            message: RETENTION_MESSAGES.onboardingDone(XP.ONBOARDING_COMPLETE),
+          },
+        };
+      },
+      { maxWait: 10_000, timeout: 30_000 },
+    );
   },
 
   async updateProfile(

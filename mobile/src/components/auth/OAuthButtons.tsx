@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect } from 'react';
+import { Pressable, StyleSheet, Text, View, Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { Platform } from 'react-native';
 import { theme } from '@/constants/theme';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -15,16 +14,27 @@ interface OAuthButtonsProps {
   onError: (message: string) => void;
 }
 
-export function OAuthButtons({ referralCode, onGoogleSuccess, onAppleSuccess, onError }: OAuthButtonsProps) {
+function googleConfiguredForPlatform(): boolean {
   const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
   const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
   const androidClientId = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
-  const hasGoogle = !!(webClientId || iosClientId || androidClientId);
+  if (Platform.OS === 'ios') return !!iosClientId;
+  if (Platform.OS === 'android') return !!androidClientId;
+  return !!webClientId;
+}
 
+/** Solo montar cuando hay client ID de la plataforma; useAuthRequest exige iosClientId en iOS. */
+function GoogleSignInButton({
+  onGoogleSuccess,
+  onError,
+}: {
+  onGoogleSuccess: (idToken: string) => Promise<void>;
+  onError: (message: string) => void;
+}) {
   const [request, response, promptAsync] = Google.useAuthRequest({
-    webClientId,
-    iosClientId,
-    androidClientId,
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
   });
 
   useEffect(() => {
@@ -38,6 +48,20 @@ export function OAuthButtons({ referralCode, onGoogleSuccess, onAppleSuccess, on
       onError(e instanceof Error ? e.message : 'Error con Google'),
     );
   }, [response, onGoogleSuccess, onError]);
+
+  return (
+    <Pressable
+      style={[styles.btn, !request && styles.btnDisabled]}
+      disabled={!request}
+      onPress={() => void promptAsync()}>
+      <Text style={styles.btnText}>Continuar con Google</Text>
+    </Pressable>
+  );
+}
+
+export function OAuthButtons({ referralCode, onGoogleSuccess, onAppleSuccess, onError }: OAuthButtonsProps) {
+  const showGoogle = googleConfiguredForPlatform();
+  const showApple = Platform.OS === 'ios';
 
   const signInApple = async () => {
     try {
@@ -61,7 +85,7 @@ export function OAuthButtons({ referralCode, onGoogleSuccess, onAppleSuccess, on
     }
   };
 
-  if (!hasGoogle && Platform.OS !== 'ios') return null;
+  if (!showGoogle && !showApple) return null;
 
   return (
     <View style={styles.wrap}>
@@ -70,15 +94,10 @@ export function OAuthButtons({ referralCode, onGoogleSuccess, onAppleSuccess, on
         <Text style={styles.dividerText}>o continúa con</Text>
         <View style={styles.line} />
       </View>
-      {hasGoogle ? (
-        <Pressable
-          style={[styles.btn, !request && styles.btnDisabled]}
-          disabled={!request}
-          onPress={() => void promptAsync()}>
-          <Text style={styles.btnText}>Continuar con Google</Text>
-        </Pressable>
+      {showGoogle ? (
+        <GoogleSignInButton onGoogleSuccess={onGoogleSuccess} onError={onError} />
       ) : null}
-      {Platform.OS === 'ios' ? (
+      {showApple ? (
         <AppleAuthentication.AppleAuthenticationButton
           buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
           buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
