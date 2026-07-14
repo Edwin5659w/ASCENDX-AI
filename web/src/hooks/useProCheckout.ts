@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { billingApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { track, AnalyticsEvents } from '../lib/analytics';
 
 export function useProCheckout() {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ export function useProCheckout() {
   const [loading, setLoading] = useState(false);
 
   const startCheckout = async (interval: 'month' | 'year' = 'month') => {
+    track(AnalyticsEvents.UPGRADE_CTA, { interval, authenticated: isAuthenticated });
     if (!isAuthenticated) {
       navigate('/register?plan=pro');
       return;
@@ -26,6 +28,7 @@ export function useProCheckout() {
         showToast('Pagos no disponibles aún. Configura Stripe en el servidor o contacta soporte.', 'error');
         return;
       }
+      track(AnalyticsEvents.CHECKOUT_START, { interval, provider: 'stripe' });
       const { url } = await billingApi.checkout(interval);
       window.location.href = url;
     } catch (e) {

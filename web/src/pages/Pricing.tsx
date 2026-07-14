@@ -8,6 +8,7 @@ import { PLAN_PRICING } from '@shared/plans';
 import { useProCheckout } from '../hooks/useProCheckout';
 import { publicApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
+import { track, AnalyticsEvents } from '../lib/analytics';
 
 type BillingHint = 'loading' | 'ready' | 'unavailable';
 
@@ -18,6 +19,7 @@ export function Pricing() {
 
   useEffect(() => {
     let cancelled = false;
+    track(AnalyticsEvents.PRICING_VIEW);
     publicApi
       .billing()
       .then((s) => {

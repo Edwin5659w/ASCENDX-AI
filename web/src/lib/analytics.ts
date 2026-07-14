@@ -73,10 +73,14 @@ export const AnalyticsEvents = {
   TOUR_COMPLETE: 'product_tour_complete',
   TOUR_SKIP: 'product_tour_skip',
   CHECKOUT_START: 'checkout_start',
+  PRICING_VIEW: 'pricing_view',
+  AI_LIMIT_HIT: 'ai_limit_hit',
+  UPGRADE_CTA: 'upgrade_cta_click',
   TASK_COMPLETE: 'task_complete',
   HABIT_COMPLETE: 'habit_complete',
   GOOGLE_AUTH: 'google_auth_complete',
   MORNING_RITUAL: 'morning_ritual_complete',
+  FIRST_WIN: 'first_task_complete',
 } as const;
 
 declare global {

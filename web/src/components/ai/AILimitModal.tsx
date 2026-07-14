@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { Crown, Sparkles } from 'lucide-react';
 import { PRO_VALUE_PROPS } from '@shared/retention-playbook';
 import { PLAN_LIMITS, PLAN_PRICING } from '@shared/plans';
 import { PlanComparison } from '../marketing/PlanComparison';
+import { track, AnalyticsEvents } from '../../lib/analytics';
 
 interface AILimitModalProps {
   open: boolean;
@@ -11,6 +13,10 @@ interface AILimitModalProps {
 }
 
 export function AILimitModal({ open, onClose, onUpgrade, upgrading }: AILimitModalProps) {
+  useEffect(() => {
+    if (open) track(AnalyticsEvents.AI_LIMIT_HIT, { source: 'web_chat' });
+  }, [open]);
+
   if (!open) return null;
 
   return (
