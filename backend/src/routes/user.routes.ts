@@ -208,7 +208,10 @@ router.get('/export', async (req, res, next) => {
 
 router.delete('/account', validate(deleteAccountSchema), async (req, res, next) => {
   try {
-    const result = await userService.deleteAccount(req.user!.userId, req.body.password);
+    const result = await userService.deleteAccount(req.user!.userId, {
+      password: req.body.password,
+      confirmText: req.body.confirmText,
+    });
     sendSuccess(res, result);
   } catch (e) {
     next(e);

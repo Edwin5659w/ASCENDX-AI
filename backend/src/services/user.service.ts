@@ -494,15 +494,24 @@ export const userService = {
     return user;
   },
 
-  async deleteAccount(userId: string, password: string) {
+  async deleteAccount(userId: string, input: { password?: string; confirmText?: string }) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { password: true },
+      select: { password: true, googleId: true, appleId: true },
     });
     if (!user) throw new AppError(404, 'Usuario no encontrado');
 
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) throw new AppError(401, 'Contraseña incorrecta');
+    const oauthLinked = !!(user.googleId || user.appleId);
+    if (input.password) {
+      const valid = await bcrypt.compare(input.password, user.password);
+      if (!valid) throw new AppError(401, 'Contraseña incorrecta');
+    } else if (input.confirmText === 'ELIMINAR' && oauthLinked) {
+      // Cuentas creadas con Google/Apple no conocen la contraseña aleatoria
+    } else if (input.confirmText === 'ELIMINAR' && !oauthLinked) {
+      throw new AppError(400, 'Usa tu contraseña para eliminar la cuenta');
+    } else {
+      throw new AppError(401, 'Confirmación inválida');
+    }
 
     await prisma.user.delete({ where: { id: userId } });
     return { ok: true as const };

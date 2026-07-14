@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { Link } from 'expo-router';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { authApi } from '@/src/api/services';
+import { formatApiError } from '@/src/api/client';
 import { Button } from '@/src/components/ui/Button';
 import { ValidatedInput } from '@/src/components/auth/ValidatedInput';
 import { AuthScreenShell } from '@/src/components/brand/AuthScreenShell';
@@ -9,6 +10,7 @@ import { validateLoginEmail } from '@/src/lib/auth.rules';
 import { theme } from '@/constants/theme';
 
 export default function ForgotPasswordScreen() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [touched, setTouched] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -26,7 +28,7 @@ export default function ForgotPasswordScreen() {
       await authApi.forgotPassword(email.trim().toLowerCase());
       setDone(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error');
+      setError(formatApiError(e));
     } finally {
       setLoading(false);
     }
@@ -37,12 +39,17 @@ export default function ForgotPasswordScreen() {
       {done ? (
         <View style={styles.box}>
           <Text style={styles.info}>
-            Si existe una cuenta con ese correo, revisa la consola del servidor en desarrollo para el enlace con el
-            token, o configura el envío de emails en producción.
+            Si existe una cuenta con ese correo, te enviamos un enlace para restablecer la contraseña.
+            Revisa tu bandeja y la carpeta de spam.
           </Text>
-          <Link href="/(auth)/login" asChild>
+          {__DEV__ ? (
+            <Text style={styles.devHint}>
+              Dev: si el email no está configurado, el token aparece en la consola del backend.
+            </Text>
+          ) : null}
+          <Pressable onPress={() => router.replace('/(auth)/login')}>
             <Text style={styles.linkBold}>Volver al inicio de sesión</Text>
-          </Link>
+          </Pressable>
         </View>
       ) : (
         <View style={styles.form}>
@@ -62,9 +69,9 @@ export default function ForgotPasswordScreen() {
         </View>
       )}
 
-      <Link href="/(auth)/login" asChild>
+      <Pressable onPress={() => router.back()}>
         <Text style={styles.link}>Volver al inicio de sesión</Text>
-      </Link>
+      </Pressable>
     </AuthScreenShell>
   );
 }
@@ -72,7 +79,14 @@ export default function ForgotPasswordScreen() {
 const styles = StyleSheet.create({
   form: { marginBottom: theme.spacing.lg },
   box: { padding: theme.spacing.md, marginBottom: theme.spacing.lg },
-  info: { color: theme.colors.textMuted, fontSize: 14, lineHeight: 22, marginBottom: 20, textAlign: 'center' },
+  info: { color: theme.colors.textMuted, fontSize: 14, lineHeight: 22, marginBottom: 12, textAlign: 'center' },
+  devHint: {
+    color: theme.colors.warning,
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
   error: { color: theme.colors.danger, marginBottom: theme.spacing.sm, textAlign: 'center' },
   link: { color: theme.colors.accent, textAlign: 'center', fontSize: 15 },
   linkBold: { color: theme.colors.accent, fontWeight: '600', textAlign: 'center' },

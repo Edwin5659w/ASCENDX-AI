@@ -142,7 +142,19 @@ export default function OnboardingScreen() {
       await markWelcomePending();
       router.replace('/(tabs)');
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo continuar');
+      const msg = e instanceof Error ? e.message : 'No se pudo continuar';
+      if (/ya tienes objetivos/i.test(msg)) {
+        try {
+          await userApi.completeOnboarding();
+          await refreshUser();
+          await markWelcomePending();
+          router.replace('/(tabs)');
+          return;
+        } catch {
+          /* fall through */
+        }
+      }
+      Alert.alert('Error', msg);
     } finally {
       setLoading(false);
     }
@@ -150,9 +162,7 @@ export default function OnboardingScreen() {
 
 
 
-  const finish = async () => {
-
-    if (!focus || goalTitle.trim().length < 3) {
+  const finish = async () => {    if (!focus || goalTitle.trim().length < 3) {
 
       Alert.alert('Objetivo incompleto', 'Escribe un objetivo de al menos 3 caracteres');
 
@@ -214,7 +224,31 @@ export default function OnboardingScreen() {
 
     } catch (e) {
 
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo guardar');
+      const msg = e instanceof Error ? e.message : 'No se pudo guardar';
+
+      if (/ya tienes objetivos/i.test(msg)) {
+
+        try {
+
+          await userApi.completeOnboarding();
+
+          await refreshUser();
+
+          await markWelcomePending();
+
+          router.replace('/(tabs)');
+
+          return;
+
+        } catch {
+
+          /* fall through */
+
+        }
+
+      }
+
+      Alert.alert('Error', msg);
 
     } finally {
 

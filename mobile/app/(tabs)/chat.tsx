@@ -165,8 +165,9 @@ export default function ChatScreen() {
     const text = typeof prefill === 'string' ? prefill : prefill?.[0];
     if (!text || bootLoading || prefillHandled.current) return;
     prefillHandled.current = true;
-    void sendText(text);
-  }, [bootLoading, prefill, sendText]);
+    // Prefill only — never auto-send (burns Free AI quota).
+    setInput(text);
+  }, [bootLoading, prefill]);
 
   const send = () => void sendText(input);
 

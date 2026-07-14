@@ -28,9 +28,15 @@ export const dailyFocusSchema = z.object({
   focus: z.string().trim().min(3, 'Mínimo 3 caracteres').max(120, 'Máximo 120 caracteres'),
 });
 
-export const deleteAccountSchema = z.object({
-  password: z.string().min(1, 'Contraseña obligatoria'),
-});
+export const deleteAccountSchema = z
+  .object({
+    password: z.string().min(1).optional(),
+    /** Para cuentas Google/Apple: escribe ELIMINAR */
+    confirmText: z.string().optional(),
+  })
+  .refine((d) => !!(d.password && d.password.length > 0) || d.confirmText === 'ELIMINAR', {
+    message: 'Confirma con tu contraseña o escribe ELIMINAR si entraste con Google/Apple',
+  });
 
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Contraseña actual obligatoria'),

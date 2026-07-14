@@ -149,10 +149,10 @@ export const userApi = {
     }),
   upgradePro: () => apiRequest<User>('/user/upgrade-pro', { method: 'POST' }),
   exportData: () => apiRequest<Record<string, unknown>>('/user/export'),
-  deleteAccount: (password: string) =>
+  deleteAccount: (input: { password?: string; confirmText?: string }) =>
     apiRequest<{ ok: boolean }>('/user/account', {
       method: 'DELETE',
-      body: JSON.stringify({ password }),
+      body: JSON.stringify(input),
     }),
 };
 

@@ -135,10 +135,10 @@ export const userApi = {
       body: JSON.stringify({ focus }),
     }),
   upgradePro: () => apiRequest<User>('/user/upgrade-pro', { method: 'POST' }),
-  deleteAccount: (password: string) =>
+  deleteAccount: (input: { password?: string; confirmText?: string } | string) =>
     apiRequest<{ ok: boolean }>('/user/account', {
       method: 'DELETE',
-      body: JSON.stringify({ password }),
+      body: JSON.stringify(typeof input === 'string' ? { password: input } : input),
     }),
   exportData: async () => {
     const token = getAccessToken();

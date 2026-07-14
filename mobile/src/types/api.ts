@@ -19,6 +19,8 @@ export interface User {
   tradingJournalEnabled?: boolean;
   proTrialEndsAt?: string | null;
   themePreference?: 'dark' | 'light';
+  googleId?: string | null;
+  appleId?: string | null;
   createdAt: string;
   updatedAt?: string;
 }
