@@ -14,28 +14,28 @@ const LINKS: {
   {
     href: '/(tabs)/goals',
     title: 'Objetivos',
-    subtitle: 'Metas SMART y progreso vinculado a tareas',
+    subtitle: 'Metas claras y progreso con tus tareas',
     icon: 'flag',
     color: theme.colors.primary,
   },
   {
     href: '/(tabs)/finance',
     title: 'Finanzas',
-    subtitle: 'Ingresos, gastos y balance personal',
+    subtitle: 'Ingresos, gastos y balance',
     icon: 'money',
     color: theme.colors.success,
   },
   {
     href: '/(tabs)/achievements',
     title: 'Logros',
-    subtitle: 'Insignias, XP y rachas desbloqueadas',
+    subtitle: 'Insignias y rachas desbloqueadas',
     icon: 'trophy',
     color: theme.colors.warning,
   },
   {
     href: '/(tabs)/profile',
     title: 'Perfil',
-    subtitle: 'Plan, referidos, notificaciones y cuenta',
+    subtitle: 'Tu nombre, plan y preferencias',
     icon: 'user',
     color: theme.colors.accent,
   },
@@ -44,7 +44,7 @@ const LINKS: {
 export default function MoreScreen() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.lead}>Tu Life OS completo — todo lo que no cabe abajo.</Text>
+      <Text style={styles.lead}>Más herramientas de tu espacio: objetivos, dinero, logros y cuenta.</Text>
       {LINKS.map((item) => (
         <Pressable
           key={item.href}

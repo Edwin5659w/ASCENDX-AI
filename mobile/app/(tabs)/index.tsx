@@ -8,11 +8,12 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useAuth } from '@/src/context/AuthContext';
 import { userApi, aiApi, billingApi, type AIContextLevel } from '@/src/api/services';
+import { formatApiError } from '@/src/api/client';
 import { StatCard } from '@/src/components/StatCard';
 import { FirstStepsCard } from '@/src/components/FirstStepsCard';
 import { GamificationPanel } from '@/src/components/GamificationPanel';
@@ -35,6 +36,7 @@ import { QuickSearchModal } from '@/src/components/QuickSearchModal';
 import { consumePendingDailyBonus } from '@/src/lib/pending-daily-bonus';
 import { consumePendingProCheckout } from '@/src/lib/pending-pro-checkout';
 import { clearWelcomePending, peekWelcomePending } from '@/src/lib/welcome-pending';
+import { consumeOpenProductTour } from '@/src/lib/open-product-tour';
 import { useToast } from '@/src/context/ToastContext';
 import { BarChartCard } from '@/src/components/charts/BarChartCard';
 import { Card } from '@/src/components/ui/Card';
@@ -44,6 +46,7 @@ import { computeSetupScore, getTimeGreeting } from '../../../shared/dashboard-he
 import { isEarlyDashboard } from '../../../shared/dashboard-progressive';
 import { RETENTION_MESSAGES } from '../../../shared/retention';
 import { useMoneyFormat } from '@/src/hooks/useMoneyFormat';
+import { useThrottledFocusEffect } from '@/src/hooks/useThrottledFocusEffect';
 import { CONTEXT_LEVEL_LABELS } from '../../../shared/chat-helpers';
 
 export default function DashboardScreen() {
@@ -94,13 +97,16 @@ export default function DashboardScreen() {
       }
       prevBadgesRef.current = unlocked;
     } catch (e) {
-      setLoadError(e instanceof Error ? e.message : 'No se pudo cargar el dashboard');
+      setLoadError(formatApiError(e));
     }
   }, [showToast]);
 
-  useFocusEffect(
+  useThrottledFocusEffect(
     useCallback(() => {
       setLoading(true);
+      void consumeOpenProductTour().then((open) => {
+        if (open) setTourOpen(true);
+      });
       // Tour no se abre solo: Welcome + FirstWin bastan. Guía disponible bajo demanda.
       if (!proCheckoutRanRef.current) {
         proCheckoutRanRef.current = true;
@@ -241,7 +247,7 @@ export default function DashboardScreen() {
       <LinearGradient colors={['#1a1033', '#0a0a0f']} style={styles.header}>
         <View style={styles.headerTop}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.greeting}>{getTimeGreeting(user?.name)} 👋</Text>
+            <Text style={styles.greeting}>{getTimeGreeting(user?.name)}</Text>
             <Text style={styles.tagline}>
               {early
                 ? 'Paso 1: completa una tarea y gana XP'
@@ -282,8 +288,8 @@ export default function DashboardScreen() {
 
       {!early ? <UpgradeBanner planUsage={stats?.planUsage} /> : null}
       <FirstWinHero stats={stats} />
-      <FirstStepsCard stats={stats} />
-      <DailyFocus />
+      {!early ? <FirstStepsCard stats={stats} /> : null}
+      {!early ? <DailyFocus /> : null}
       {user?.proTrialEndsAt && new Date(user.proTrialEndsAt) > new Date() ? (
         <Card style={styles.trialBanner}>
           <Text style={styles.trialText}>
@@ -318,11 +324,11 @@ export default function DashboardScreen() {
       />
       {!early && ((stats?.completedTasks ?? 0) > 0 || user?.plan === 'PRO') ? <WeeklyRecap /> : null}
       {!early ? <GamificationPanel user={user} stats={stats} compact /> : null}
-      <DashboardQuickActions />
+      {!early ? <DashboardQuickActions /> : null}
 
-      {warning ? (
+      {warning && !early ? (
         <Card style={styles.warningCard}>
-          <Text style={styles.warningTitle}>⚠️ Alerta de procrastinación</Text>
+          <Text style={styles.warningTitle}>Alerta de procrastinación</Text>
           <Text style={styles.warningText}>{warning}</Text>
           <Pressable onPress={() => router.push('/(tabs)/tasks' as never)}>
             <Text style={styles.warningLink}>Ir a tareas →</Text>
@@ -364,29 +370,33 @@ export default function DashboardScreen() {
         <Text style={styles.hintLine}>{pendingTasks} tarea(s) pendiente(s) — prioriza hoy</Text>
       ) : null}
 
-      <BarChartCard title="Progreso general" data={chartData} />
+      {!early ? <BarChartCard title="Progreso general" data={chartData} /> : null}
 
-      <Text style={styles.sectionTitle}>Plan del día — IA</Text>
-      <Card style={styles.planCard}>
-        <Text style={styles.planText}>{dailyPlan || 'Cargando tu plan personalizado...'}</Text>
-        {aiPrompts.length > 0 ? (
-          <View style={styles.promptRow}>
-            {aiPrompts.slice(0, 3).map((p) => (
-              <Pressable
-                key={p}
-                style={styles.promptChip}
-                onPress={() => router.push({ pathname: '/(tabs)/chat', params: { prefill: p } })}>
-                <Text style={styles.promptChipText} numberOfLines={2}>
-                  {p}
-                </Text>
-              </Pressable>
-            ))}
-            <Pressable style={styles.chatLink} onPress={() => router.push('/(tabs)/chat' as never)}>
-              <Text style={styles.chatLinkText}>Abrir mentor IA →</Text>
-            </Pressable>
-          </View>
-        ) : null}
-      </Card>
+      {!early ? (
+        <>
+          <Text style={styles.sectionTitle}>Plan del día — IA</Text>
+          <Card style={styles.planCard}>
+            <Text style={styles.planText}>{dailyPlan || 'Cargando tu plan personalizado...'}</Text>
+            {aiPrompts.length > 0 ? (
+              <View style={styles.promptRow}>
+                {aiPrompts.slice(0, 3).map((p) => (
+                  <Pressable
+                    key={p}
+                    style={styles.promptChip}
+                    onPress={() => router.push({ pathname: '/(tabs)/chat', params: { prefill: p } })}>
+                    <Text style={styles.promptChipText} numberOfLines={2}>
+                      {p}
+                    </Text>
+                  </Pressable>
+                ))}
+                <Pressable style={styles.chatLink} onPress={() => router.push('/(tabs)/chat' as never)}>
+                  <Text style={styles.chatLinkText}>Abrir mentor IA →</Text>
+                </Pressable>
+              </View>
+            ) : null}
+          </Card>
+        </>
+      ) : null}
     </ScrollView>
   );
 }

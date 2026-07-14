@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   Modal,
@@ -13,6 +14,7 @@ import {
 } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { goalsApi, tasksApi } from '@/src/api/services';
+import { formatApiError } from '@/src/api/client';
 import { Button } from '@/src/components/ui/Button';
 import { EmptyState } from '@/src/components/EmptyState';
 import { LoadMoreFooter } from '@/src/components/LoadMoreFooter';
@@ -31,7 +33,7 @@ export default function TasksScreen() {
   const { refreshUser } = useAuth();
   const { showToast } = useToast();
   const fetchTasks = useCallback((page: number, limit: number) => tasksApi.list(page, limit), []);
-  const { items: tasks, setItems: setTasks, loadingMore, hasMore, refresh, loadMore } =
+  const { items: tasks, setItems: setTasks, loading: listLoading, loadingMore, hasMore, error, refresh, loadMore } =
     usePaginatedList<Task>(fetchTasks);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [title, setTitle] = useState('');
@@ -78,7 +80,7 @@ export default function TasksScreen() {
       setDueDate('');
       await reload();
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo crear');
+      Alert.alert('Error', formatApiError(e));
     } finally {
       setLoading(false);
     }
@@ -108,7 +110,7 @@ export default function TasksScreen() {
     } catch (e) {
       setTasks((prev) => prev.map((t) => (t.id === task.id ? snapshot : t)));
       setBurstTaskId((id) => (id === task.id ? null : id));
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo actualizar la tarea');
+      Alert.alert('Error', formatApiError(e));
     }
   };
 
@@ -201,11 +203,17 @@ export default function TasksScreen() {
         onEndReachedThreshold={0.3}
         ListFooterComponent={<LoadMoreFooter loading={loadingMore} />}
         ListEmptyComponent={
-          <EmptyState
-            icon="check-square-o"
-            title="Sin tareas"
-            description="Vincula tareas a objetivos y añade fecha para priorizar con la IA."
-          />
+          listLoading ? (
+            <ActivityIndicator style={{ marginTop: 40 }} color={theme.colors.primary} />
+          ) : error ? (
+            <EmptyState icon="exclamation-circle" title="No se pudo cargar" description={error} />
+          ) : (
+            <EmptyState
+              icon="check-square-o"
+              title="Sin tareas"
+              description="Crea una tarea y vincúlala a un objetivo."
+            />
+          )
         }
         renderItem={({ item }) => (
           <View style={styles.taskRow}>

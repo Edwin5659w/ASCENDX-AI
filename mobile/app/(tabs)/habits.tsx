@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   Modal,
@@ -12,6 +13,7 @@ import {
 } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { habitsApi, userApi } from '@/src/api/services';
+import { formatApiError } from '@/src/api/client';
 import { Button } from '@/src/components/ui/Button';
 import { EmptyState } from '@/src/components/EmptyState';
 import { HabitWeekStrip } from '@/src/components/HabitWeekStrip';
@@ -30,7 +32,6 @@ import { XpBurst } from '@/src/components/XpBurst';
 import { XP } from '../../../shared/retention';
 import type { Habit, PlanUsage } from '@/src/types/api';
 import { theme } from '@/constants/theme';
-
 function streakBadge(milestone: number | null | undefined, streak: number) {
   if (milestone === 30) return '🏆 Leyenda';
   if (milestone === 21) return '⭐ 3 semanas';
@@ -43,7 +44,7 @@ export default function HabitsScreen() {
   const { refreshUser } = useAuth();
   const { showToast } = useToast();
   const fetchHabits = useCallback((page: number, limit: number) => habitsApi.list(page, limit), []);
-  const { items: habits, setItems: setHabits, loadingMore, hasMore, refresh, loadMore } =
+  const { items: habits, setItems: setHabits, loading: listLoading, loadingMore, hasMore, error, refresh, loadMore } =
     usePaginatedList<Habit>(fetchHabits);
   const [planUsage, setPlanUsage] = useState<PlanUsage | null>(null);
   const [name, setName] = useState('');
@@ -118,9 +119,7 @@ export default function HabitsScreen() {
     }
     const snapshot = habit;
     setHabits((prev) =>
-      prev.map((h) =>
-        h.id === habit.id ? { ...h, completedToday: true, streak: h.streak + 1 } : h,
-      ),
+      prev.map((h) => (h.id === habit.id ? { ...h, completedToday: true } : h)),
     );
     celebrateHaptic();
     setBurstHabitId(habit.id);
@@ -185,12 +184,15 @@ export default function HabitsScreen() {
         reminderMinute: enabled ? m : null,
       });
       setReminderFor(null);
-      await reload();
-      const nextHabits = habits.map((h) => (h.id === updated.id ? updated : h));
+      const nextHabits = habits.map((item) => (item.id === updated.id ? { ...item, ...updated } : item));
+      setHabits(nextHabits);
       const sync = await syncHabitReminders(nextHabits, { requestPermission: enabled });
       if (enabled) {
         if (sync.granted && sync.scheduled > 0) {
-          Alert.alert('Recordatorio activo', `Te avisaremos a las ${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} cada día.`);
+          Alert.alert(
+            'Recordatorio activo',
+            `Te avisaremos a las ${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} cada día.`,
+          );
         } else if (!sync.granted) {
           Alert.alert('Sin permiso', 'Se guardó la preferencia, pero no hay permiso de notificaciones.');
         } else {
@@ -198,7 +200,7 @@ export default function HabitsScreen() {
         }
       }
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo guardar');
+      Alert.alert('Error', formatApiError(e));
     }
   };
 
@@ -274,11 +276,21 @@ export default function HabitsScreen() {
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
         ListEmptyComponent={
-          <EmptyState
-            icon="fire"
-            title="Sin hábitos"
-            description="Crea un hábito diario, marca la semana en el heatmap y activa recordatorios."
-          />
+          listLoading ? (
+            <ActivityIndicator style={{ marginTop: 40 }} color={theme.colors.primary} />
+          ) : error ? (
+            <EmptyState
+              icon="exclamation-circle"
+              title="No se pudo cargar"
+              description={error}
+            />
+          ) : (
+            <EmptyState
+              icon="fire"
+              title="Sin hábitos"
+              description="Crea un hábito diario y marca tu racha."
+            />
+          )
         }
         onEndReached={() => loadMore()}
         onEndReachedThreshold={0.3}

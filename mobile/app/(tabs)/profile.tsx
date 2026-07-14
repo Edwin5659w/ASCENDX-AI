@@ -319,11 +319,13 @@ export default function ProfileScreen() {
 
   const replayTour = async () => {
     try {
+      const { markOpenProductTour } = await import('@/src/lib/open-product-tour');
       await userApi.updateProfile({ productTourDone: false });
+      await markOpenProductTour();
       await refreshUser();
       router.push('/(tabs)' as never);
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo reiniciar el tour');
+      Alert.alert('Error', formatApiError(e));
     }
   };
 
@@ -336,8 +338,15 @@ export default function ProfileScreen() {
     }
   };
 
+  const isOAuthUser = !!(user?.googleId || user?.appleId);
+
   const deleteAccount = () => {
-    if (!deletePassword) {
+    if (isOAuthUser) {
+      if (deletePassword.trim().toUpperCase() !== 'ELIMINAR') {
+        Alert.alert('Confirmación', 'Escribe ELIMINAR para borrar tu cuenta (entraste con Google/Apple).');
+        return;
+      }
+    } else if (!deletePassword) {
       Alert.alert('Confirmación', 'Ingresa tu contraseña para eliminar la cuenta');
       return;
     }
@@ -353,10 +362,14 @@ export default function ProfileScreen() {
             void (async () => {
               setDeleting(true);
               try {
-                await userApi.deleteAccount(deletePassword);
+                if (isOAuthUser) {
+                  await userApi.deleteAccount({ confirmText: 'ELIMINAR' });
+                } else {
+                  await userApi.deleteAccount({ password: deletePassword });
+                }
                 await logout();
               } catch (e) {
-                Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo eliminar');
+                Alert.alert('Error', formatApiError(e));
               } finally {
                 setDeleting(false);
               }
@@ -609,23 +622,32 @@ export default function ProfileScreen() {
       </Card>
 
       <ProfileSection title="Cuenta y seguridad" />
-      <Card style={styles.passwordCard}>
-        <Text style={styles.sectionTitle}>Cambiar contraseña</Text>
-        <Input
-          label="Contraseña actual"
-          value={currentPassword}
-          onChangeText={setCurrentPassword}
-          secureTextEntry
-        />
-        <Input label="Nueva contraseña" value={newPassword} onChangeText={setNewPassword} secureTextEntry />
-        <Input
-          label="Confirmar nueva"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry
-        />
-        <Button title="Cambiar contraseña" onPress={changePassword} loading={changingPassword} />
-      </Card>
+      {!isOAuthUser ? (
+        <Card style={styles.passwordCard}>
+          <Text style={styles.sectionTitle}>Cambiar contraseña</Text>
+          <Input
+            label="Contraseña actual"
+            value={currentPassword}
+            onChangeText={setCurrentPassword}
+            secureTextEntry
+          />
+          <Input label="Nueva contraseña" value={newPassword} onChangeText={setNewPassword} secureTextEntry />
+          <Input
+            label="Confirmar nueva"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+          />
+          <Button title="Cambiar contraseña" onPress={changePassword} loading={changingPassword} />
+        </Card>
+      ) : (
+        <Card style={styles.passwordCard}>
+          <Text style={styles.sectionTitle}>Inicio de sesión</Text>
+          <Text style={styles.prefsHint}>
+            Entraste con {user?.googleId ? 'Google' : 'Apple'}. No hay contraseña local que cambiar.
+          </Text>
+        </Card>
+      )}
 
       {__DEV__ ? (
         <>
@@ -644,10 +666,11 @@ export default function ProfileScreen() {
         <Text style={styles.dangerTitle}>Zona de peligro</Text>
         <Text style={styles.prefsHint}>Eliminar cuenta borra todos tus datos (GDPR).</Text>
         <Input
-          label="Contraseña para confirmar"
+          label={isOAuthUser ? 'Escribe ELIMINAR para confirmar' : 'Contraseña para confirmar'}
           value={deletePassword}
           onChangeText={setDeletePassword}
-          secureTextEntry
+          secureTextEntry={!isOAuthUser}
+          autoCapitalize={isOAuthUser ? 'characters' : 'none'}
         />
         <Button
           title={deleting ? 'Eliminando...' : 'Eliminar mi cuenta'}
