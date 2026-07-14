@@ -23,6 +23,8 @@ export const USER_PROFILE_SELECT = {
   morningRitualDoneDate: true,
   proTrialEndsAt: true,
   termsAcceptedAt: true,
+  googleId: true,
+  appleId: true,
   createdAt: true,
   updatedAt: true,
 } as const;

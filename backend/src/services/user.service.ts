@@ -223,6 +223,8 @@ export const userService = {
       FINANZAS: 'Finanzas',
       TRABAJO: 'Trabajo',
       PERSONAL: 'Personal',
+      EMPRENDEDOR: 'Emprendimiento',
+      FITNESS: 'Fitness',
     };
 
     return prisma.$transaction(async (tx) => {
