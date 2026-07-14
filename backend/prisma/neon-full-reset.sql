@@ -255,14 +255,14 @@ ALTER TABLE "AIInsight" ADD CONSTRAINT "AIInsight_userId_fkey" FOREIGN KEY ("use
 INSERT INTO "Badge" ("id", "title", "subtitle", "sortOrder") VALUES
   ('FIRST_TASK', 'En marcha', 'Primera tarea completada', 1),
   ('STREAK_7', 'Constancia', 'Racha de 7 días o más', 2),
-  ('STREAK_30', 'Leyenda', 'Racha de 30 días', 3),
+  ('STREAK_30', 'Imparable', 'Racha de 30 días', 3),
   ('GOALS_3', 'Visionario', '3 o más objetivos creados', 4),
-  ('TASKS_10', 'Ejecutor', '10 tareas completadas', 5),
+  ('TASKS_10', 'Productivo', '10 tareas completadas', 5),
   ('LEVEL_5', 'Ascenso', 'Alcanza el nivel 5', 6),
-  ('LEVEL_10', 'Élite', 'Alcanza el nivel 10', 7),
+  ('LEVEL_10', 'Maestro', 'Alcanza el nivel 10', 7),
   ('STEEL', 'Acero', '3 hábitos y racha 3+', 8),
   ('XP_500', 'Veterano', '500 XP totales', 9),
-  ('XP_1000', 'Maestro', '1000 XP totales', 10),
-  ('FINANCE_START', 'Cajero', '5 movimientos financieros', 11),
-  ('REFERRER', 'Embajador', 'Invita al menos a 1 persona', 12)
+  ('XP_1000', 'Leyenda', '1000 XP totales', 10),
+  ('FINANCE_START', 'Finanzas en orden', '5 movimientos registrados', 11),
+  ('REFERRER', 'Embajador', 'Invitaste a alguien', 12)
 ON CONFLICT ("id") DO NOTHING;
