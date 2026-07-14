@@ -235,11 +235,29 @@ export default function ProfileScreen() {
         showToast('Ya tienes Pro activo', 'info');
         return;
       }
+
+      // iOS: solo IAP (Guideline 3.1.1) — no Stripe en navegador
+      if (Platform.OS === 'ios') {
+        if (!isRevenueCatConfigured() || !user?.id) {
+          Alert.alert(
+            'Suscripción',
+            'Las compras in-app aún no están configuradas. Restaura compras si ya pagaste, o vuelve más tarde.',
+          );
+          return;
+        }
+        const ok = await purchasePro(user.id);
+        if (ok) {
+          await refreshUser();
+          showToast('¡Pro activado con App Store!', 'success');
+        }
+        return;
+      }
+
       if (isRevenueCatConfigured() && user?.id) {
         const ok = await purchasePro(user.id);
         if (ok) {
           await refreshUser();
-          showToast('¡Pro activado con App Store / Play Store!', 'success');
+          showToast('¡Pro activado con Play Store!', 'success');
           return;
         }
       }

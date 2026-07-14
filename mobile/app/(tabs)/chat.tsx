@@ -27,6 +27,8 @@ import type { AIUsage } from '../../../shared/ai-prompts';
 import { theme } from '@/constants/theme';
 import { CONTEXT_LEVEL_LABELS, insightTypeLabel } from '../../../shared/chat-helpers';
 import { useRouter } from 'expo-router';
+import { useAuth } from '@/src/context/AuthContext';
+import { useToast } from '@/src/context/ToastContext';
 
 const INTRO: Record<AIContextLevel, string> = {
   empty:
@@ -55,6 +57,8 @@ function TypingIndicator() {
 export default function ChatScreen() {
   const { prefill } = useLocalSearchParams<{ prefill?: string }>();
   const router = useRouter();
+  const { user, refreshUser } = useAuth();
+  const { showToast } = useToast();
   const prefillHandled = useRef(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [suggestedPrompts, setSuggestedPrompts] = useState<string[]>([]);
@@ -190,6 +194,28 @@ export default function ChatScreen() {
   const startProCheckout = async () => {
     setUpgrading(true);
     try {
+      if (Platform.OS === 'ios') {
+        const { isRevenueCatConfigured, purchasePro } = await import('@/src/lib/revenuecat');
+        if (!isRevenueCatConfigured() || !user?.id) {
+          Alert.alert('Suscripción', 'Configura compras in-app (RevenueCat) para activar Pro en iOS.');
+          return;
+        }
+        const ok = await purchasePro(user.id);
+        if (ok) {
+          await refreshUser();
+          showToast('¡Pro activado con App Store!', 'success');
+        }
+        return;
+      }
+      const { isRevenueCatConfigured, purchasePro } = await import('@/src/lib/revenuecat');
+      if (isRevenueCatConfigured() && user?.id) {
+        const ok = await purchasePro(user.id);
+        if (ok) {
+          await refreshUser();
+          showToast('¡Pro activado!', 'success');
+          return;
+        }
+      }
       const { url } = await billingApi.checkout();
       const { default: WebBrowser } = await import('expo-web-browser');
       await WebBrowser.openBrowserAsync(url);
