@@ -1,14 +1,25 @@
 import type { GamificationPayload } from '../../../shared/retention';
 import { RETENTION_MESSAGES } from '../../../shared/retention';
 
+export type GamificationFeedbackOptions = {
+  /** Si true, no muestra el toast de XP (ya hay burst inline). */
+  skipXpToast?: boolean;
+};
+
 export function applyGamificationFeedback(
   g: GamificationPayload | undefined | null,
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void,
   refreshUser?: () => Promise<unknown>,
+  options?: GamificationFeedbackOptions,
 ) {
-  if (!g || !g.xpGained) return;
+  if (!g || !g.xpGained) {
+    if (refreshUser) void refreshUser();
+    return;
+  }
 
-  showToast(g.message ?? `+${g.xpGained} XP`, 'success');
+  if (!options?.skipXpToast) {
+    showToast(g.message ?? `+${g.xpGained} XP`, 'success');
+  }
 
   if (g.streakShieldUsed) {
     setTimeout(() => showToast(RETENTION_MESSAGES.streakShield, 'info'), 350);

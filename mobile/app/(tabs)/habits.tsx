@@ -25,6 +25,9 @@ import { useAuth } from '@/src/context/AuthContext';
 import { useToast } from '@/src/context/ToastContext';
 import { usePaginatedList } from '@/src/hooks/usePaginatedList';
 import { applyGamificationFeedback } from '@/src/lib/gamification-feedback';
+import { celebrateHaptic } from '@/src/lib/haptics';
+import { XpBurst } from '@/src/components/XpBurst';
+import { XP } from '../../../shared/retention';
 import type { Habit, PlanUsage } from '@/src/types/api';
 import { theme } from '@/constants/theme';
 
@@ -40,7 +43,8 @@ export default function HabitsScreen() {
   const { refreshUser } = useAuth();
   const { showToast } = useToast();
   const fetchHabits = useCallback((page: number, limit: number) => habitsApi.list(page, limit), []);
-  const { items: habits, loadingMore, hasMore, refresh, loadMore } = usePaginatedList<Habit>(fetchHabits);
+  const { items: habits, setItems: setHabits, loadingMore, hasMore, refresh, loadMore } =
+    usePaginatedList<Habit>(fetchHabits);
   const [planUsage, setPlanUsage] = useState<PlanUsage | null>(null);
   const [name, setName] = useState('');
   const [frequency, setFrequency] = useState<'DAILY' | 'WEEKLY'>('DAILY');
@@ -51,6 +55,7 @@ export default function HabitsScreen() {
   const [reminderFor, setReminderFor] = useState<Habit | null>(null);
   const [reminderHour, setReminderHour] = useState('8');
   const [reminderMinute, setReminderMinute] = useState('0');
+  const [burstHabitId, setBurstHabitId] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     await refresh();
@@ -111,11 +116,24 @@ export default function HabitsScreen() {
       Alert.alert('Listo', habit.frequency === 'WEEKLY' ? 'Ya completaste este hábito esta semana' : 'Ya completaste este hábito hoy');
       return;
     }
+    const snapshot = habit;
+    setHabits((prev) =>
+      prev.map((h) =>
+        h.id === habit.id ? { ...h, completedToday: true, streak: h.streak + 1 } : h,
+      ),
+    );
+    celebrateHaptic();
+    setBurstHabitId(habit.id);
+
     try {
       const updated = await habitsApi.complete(habit.id);
-      applyGamificationFeedback(updated.gamification, showToast, refreshUser);
-      await reload();
+      setHabits((prev) => prev.map((h) => (h.id === habit.id ? { ...h, ...updated } : h)));
+      applyGamificationFeedback(updated.gamification, showToast, refreshUser, {
+        skipXpToast: true,
+      });
     } catch (e) {
+      setHabits((prev) => prev.map((h) => (h.id === habit.id ? snapshot : h)));
+      setBurstHabitId((id) => (id === habit.id ? null : id));
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo completar');
     }
   };
@@ -267,8 +285,13 @@ export default function HabitsScreen() {
         ListFooterComponent={<LoadMoreFooter loading={loadingMore} />}
         renderItem={({ item }) => (
           <View style={styles.card}>
+            <XpBurst
+              amount={XP.HABIT_COMPLETE}
+              visible={burstHabitId === item.id}
+              onDone={() => setBurstHabitId((id) => (id === item.id ? null : id))}
+            />
             <View style={styles.row}>
-              <Pressable style={styles.rowMain} onPress={() => complete(item)}>
+              <Pressable style={styles.rowMain} onPress={() => void complete(item)}>
                 <FontAwesome
                   name={item.completedToday ? 'check-circle' : 'circle-o'}
                   size={24}
@@ -391,9 +414,11 @@ const styles = StyleSheet.create({
   addBtn: { width: 52, paddingHorizontal: 0 },
   list: { padding: theme.spacing.md, paddingTop: 8 },
   card: {
+    position: 'relative',
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
+    overflow: 'visible',
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },

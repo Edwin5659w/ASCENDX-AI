@@ -17,10 +17,13 @@ import { goalsApi, tasksApi } from '@/src/api/services';
 import { Button } from '@/src/components/ui/Button';
 import { EmptyState } from '@/src/components/EmptyState';
 import { LoadMoreFooter } from '@/src/components/LoadMoreFooter';
+import { XpBurst } from '@/src/components/XpBurst';
 import { useAuth } from '@/src/context/AuthContext';
 import { useToast } from '@/src/context/ToastContext';
 import { usePaginatedList } from '@/src/hooks/usePaginatedList';
 import { applyGamificationFeedback } from '@/src/lib/gamification-feedback';
+import { celebrateHaptic } from '@/src/lib/haptics';
+import { XP } from '../../../shared/retention';
 import type { Goal, Task } from '@/src/types/api';
 import { theme } from '@/constants/theme';
 
@@ -28,7 +31,8 @@ export default function TasksScreen() {
   const { refreshUser } = useAuth();
   const { showToast } = useToast();
   const fetchTasks = useCallback((page: number, limit: number) => tasksApi.list(page, limit), []);
-  const { items: tasks, loadingMore, hasMore, refresh, loadMore } = usePaginatedList<Task>(fetchTasks);
+  const { items: tasks, setItems: setTasks, loadingMore, hasMore, refresh, loadMore } =
+    usePaginatedList<Task>(fetchTasks);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [title, setTitle] = useState('');
   const [goalId, setGoalId] = useState('');
@@ -39,6 +43,7 @@ export default function TasksScreen() {
   const [editTitle, setEditTitle] = useState('');
   const [editGoalId, setEditGoalId] = useState('');
   const [editDueDate, setEditDueDate] = useState('');
+  const [burstTaskId, setBurstTaskId] = useState<string | null>(null);
 
   const loadGoals = useCallback(async () => {
     const goalList = await goalsApi.list();
@@ -78,11 +83,29 @@ export default function TasksScreen() {
   };
 
   const toggleTask = async (task: Task) => {
+    const nextCompleted = !task.completed;
+    const snapshot = task;
+
+    setTasks((prev) =>
+      prev.map((t) => (t.id === task.id ? { ...t, completed: nextCompleted } : t)),
+    );
+
+    if (nextCompleted) {
+      celebrateHaptic();
+      setBurstTaskId(task.id);
+    }
+
     try {
-      const updated = await tasksApi.update(task.id, { completed: !task.completed });
-      applyGamificationFeedback(updated.gamification, showToast, refreshUser);
-      await reload();
+      const updated = await tasksApi.update(task.id, { completed: nextCompleted });
+      setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, ...updated } : t)));
+      if (nextCompleted) {
+        applyGamificationFeedback(updated.gamification, showToast, refreshUser, {
+          skipXpToast: true,
+        });
+      }
     } catch (e) {
+      setTasks((prev) => prev.map((t) => (t.id === task.id ? snapshot : t)));
+      setBurstTaskId((id) => (id === task.id ? null : id));
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo actualizar la tarea');
     }
   };
@@ -118,7 +141,7 @@ export default function TasksScreen() {
         onPress: async () => {
           try {
             await tasksApi.remove(task.id);
-            await reload();
+            setTasks((prev) => prev.filter((t) => t.id !== task.id));
           } catch (e) {
             Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo eliminar');
           }
@@ -184,7 +207,12 @@ export default function TasksScreen() {
         }
         renderItem={({ item }) => (
           <View style={styles.taskRow}>
-            <Pressable style={styles.taskMain} onPress={() => toggleTask(item)}>
+            <XpBurst
+              amount={XP.TASK_COMPLETE}
+              visible={burstTaskId === item.id}
+              onDone={() => setBurstTaskId((id) => (id === item.id ? null : id))}
+            />
+            <Pressable style={styles.taskMain} onPress={() => void toggleTask(item)}>
               <FontAwesome
                 name={item.completed ? 'check-circle' : 'circle-o'}
                 size={24}
@@ -309,12 +337,14 @@ const styles = StyleSheet.create({
   chipText: { color: theme.colors.text, fontSize: 12, maxWidth: 140 },
   list: { padding: theme.spacing.md, paddingTop: 0 },
   taskRow: {
+    position: 'relative',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
+    overflow: 'visible',
   },
   taskMain: {
     flex: 1,
@@ -347,4 +377,3 @@ const styles = StyleSheet.create({
   modalTitle: { color: theme.colors.text, fontSize: 18, fontWeight: '700', marginBottom: 12 },
   modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 12 },
 });
-

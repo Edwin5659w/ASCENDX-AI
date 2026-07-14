@@ -7,7 +7,7 @@ const PAGE_SIZE = 40;
 export function usePaginatedList<T>(
   fetchPage: (page: number, limit: number) => Promise<T[] | PaginatedResult<T>>,
 ) {
-  const [items, setItems] = useState<T[]>([]);
+  const [items, setItemsState] = useState<T[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -20,7 +20,7 @@ export function usePaginatedList<T>(
       try {
         const raw = await fetchPage(pageNum, PAGE_SIZE);
         const { items: batch, hasMore: more } = normalizeListResponse(raw);
-        setItems((prev) => (append ? [...prev, ...batch] : batch));
+        setItemsState((prev) => (append ? [...prev, ...batch] : batch));
         setHasMore(more);
         setPage(pageNum);
       } finally {
@@ -41,7 +41,11 @@ export function usePaginatedList<T>(
     void loadPage(1, false);
   }, [loadPage]);
 
-  return { items, loading, loadingMore, hasMore, refresh, loadMore };
+  const setItems = useCallback((updater: T[] | ((prev: T[]) => T[])) => {
+    setItemsState((prev) => (typeof updater === 'function' ? updater(prev) : updater));
+  }, []);
+
+  return { items, setItems, loading, loadingMore, hasMore, refresh, loadMore };
 }
 
 export { PAGE_SIZE };
