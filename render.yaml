@@ -6,7 +6,7 @@ services:
     name: ascendx-api
     runtime: node
     plan: free
-    region: virginia
+    region: ohio
     branch: main
     autoDeploy: true
     healthCheckPath: /api/health

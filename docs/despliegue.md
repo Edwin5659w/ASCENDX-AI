@@ -4,12 +4,12 @@ La API se publica en **Render** (plan gratis) y la base de datos PostgreSQL en *
 
 | Pieza | Servicio | Notas del plan gratis |
 |---|---|---|
-| API (Node + Express) | Render, región Virginia | Se duerme tras 15 min sin uso; la primera petición tarda ~1 min. 750 h/mes. |
-| PostgreSQL | Neon, región AWS US East (N. Virginia) | 1 GB por proyecto, se suspende tras 5 min sin uso y despierta solo. |
+| API (Node + Express) | Render, región Ohio | Se duerme tras 15 min sin uso; la primera petición tarda ~1 min. 750 h/mes. |
+| PostgreSQL | Neon, región AWS US East 2 (Ohio) | 1 GB por proyecto, se suspende tras 5 min sin uso y despierta solo. |
 
 ## Pasos (una sola vez)
 
-1. **Neon:** crear cuenta en neon.com → *New project* → nombre `ascendx`, PostgreSQL más reciente, región **AWS US East 1 (N. Virginia)**. En *Connect* copiar la *connection string* (`postgresql://…`).
+1. **Neon:** crear cuenta en neon.com → *New project* → nombre `ascendx`, PostgreSQL más reciente, región **AWS US East 2 (Ohio)** (la misma región que Render). En *Connect* copiar la *connection string* (`postgresql://…`).
 2. **Render:** crear cuenta en render.com con GitHub → *New* → *Blueprint* → elegir el repositorio `ASCENDX-AI`. Render lee `render.yaml` y pide `DATABASE_URL`: pegar la dirección de Neon. *Deploy*.
 3. Cuando termine, copiar la dirección del servicio (`https://ascendx-api….onrender.com`) y comprobar `…/api/health`.
 4. En el computador: ejecutar `INICIAR-NUBE.bat` y pegar esa dirección (queda guardada en `scripts/servidor-nube.txt`).
