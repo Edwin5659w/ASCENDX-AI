@@ -1,5 +1,5 @@
 import { useColorScheme } from 'react-native';
-import { darkPalette, lightPalette, radius, spacing, typography } from './tokens';
+import { darkPalette, fonts, lightPalette, radius, spacing, typography } from './tokens';
 
 /** Tema actual según el modo claro/oscuro del sistema. */
 export function useTheme() {
@@ -11,6 +11,7 @@ export function useTheme() {
     spacing,
     radius,
     typography,
+    fonts,
   };
 }
 

@@ -22,6 +22,14 @@ const ICONS = {
   shield: { android: 'shield', ios: 'lock.shield', web: 'shield' },
   trending: { android: 'trending_up', ios: 'chart.line.uptrend.xyaxis', web: 'trending_up' },
   logout: { android: 'logout', ios: 'rectangle.portrait.and.arrow.right', web: 'logout' },
+  mail: { android: 'mail', ios: 'envelope', web: 'mail' },
+  lock: { android: 'lock', ios: 'lock', web: 'lock' },
+  person: { android: 'person', ios: 'person', web: 'person' },
+  eye: { android: 'visibility', ios: 'eye', web: 'visibility' },
+  eyeOff: { android: 'visibility_off', ios: 'eye.slash', web: 'visibility_off' },
+  back: { android: 'arrow_back', ios: 'chevron.left', web: 'arrow_back' },
+  checkSmall: { android: 'check', ios: 'checkmark', web: 'check' },
+  error: { android: 'error', ios: 'exclamationmark.circle', web: 'error' },
 } as const;
 
 export type IconName = keyof typeof ICONS;

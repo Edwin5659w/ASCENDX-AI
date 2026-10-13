@@ -1,16 +1,19 @@
-import { Link } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, View } from 'react-native';
-import { AppText, Button, Icon, Screen, TextField } from '@/components/ui';
+import { useRef, useState } from 'react';
+import { TextInput } from 'react-native';
+import { AppText, Button, Checkbox, TextField } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { AuthShell, FormError } from '@/features/auth/AuthShell';
+import { isPasswordValid, PasswordStrength } from '@/features/auth/PasswordStrength';
 import { ApiError } from '@/lib/api';
-import { useTheme } from '@/theme/useTheme';
 
 type Field = 'fullName' | 'email' | 'password' | 'acceptPrivacyPolicy';
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function RegisterScreen() {
   const { signUp } = useAuth();
-  const { colors, radius, spacing } = useTheme();
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,14 +22,16 @@ export default function RegisterScreen() {
   const [formError, setFormError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const clearError = (field: Field) => {
+    if (errors[field]) setErrors((e) => ({ ...e, [field]: undefined }));
+  };
+
   async function handleSubmit() {
     const localErrors: Partial<Record<Field, string>> = {};
     if (fullName.trim().length < 2) localErrors.fullName = 'Escribe tu nombre';
-    if (!email.includes('@')) localErrors.email = 'Escribe un correo válido';
-    if (password.length < 8 || !/\d/.test(password) || !/[a-zA-Z]/.test(password)) {
-      localErrors.password = 'Mínimo 8 caracteres, con letras y números';
-    }
-    if (!accepted) localErrors.acceptPrivacyPolicy = 'Debes aceptar para crear la cuenta';
+    if (!EMAIL_PATTERN.test(email.trim())) localErrors.email = 'Escribe un correo válido, por ejemplo nombre@correo.com';
+    if (!isPasswordValid(password)) localErrors.password = 'La contraseña aún no cumple los requisitos';
+    if (!accepted) localErrors.acceptPrivacyPolicy = 'Necesitamos tu autorización para crear la cuenta';
     setErrors(localErrors);
     setFormError(null);
     if (Object.keys(localErrors).length > 0) return;
@@ -35,95 +40,94 @@ export default function RegisterScreen() {
     try {
       await signUp({ fullName: fullName.trim(), email: email.trim(), password, acceptPrivacyPolicy: true });
     } catch (err) {
-      if (err instanceof ApiError) {
-        const fieldErrors = err.fieldErrors();
-        setErrors(fieldErrors);
-        if (Object.keys(fieldErrors).length === 0) setFormError(err.message);
+      if (err instanceof ApiError && err.code === 'EMAIL_IN_USE') {
+        setErrors({ email: 'Ya existe una cuenta con este correo. Inicia sesión en su lugar.' });
+      } else if (err instanceof ApiError && Object.keys(err.fieldErrors()).length > 0) {
+        setErrors(err.fieldErrors());
       } else {
-        setFormError('No se pudo crear la cuenta.');
+        setFormError(err instanceof ApiError ? err.message : 'No se pudo crear la cuenta.');
       }
       setLoading(false);
     }
   }
 
   return (
-    <Screen scroll edges={['top', 'bottom']}>
-      <View style={{ gap: spacing.sm, marginTop: spacing.xxl }}>
-        <AppText variant="title">Crea tu cuenta</AppText>
-        <AppText color="textMuted">Empieza a ordenar tus finanzas y a planear tus metas.</AppText>
-      </View>
-
+    <AuthShell mode="register" title="Crea tu cuenta" subtitle="Toma menos de un minuto. Luego armamos tu plan.">
       <TextField
         label="Nombre"
+        icon="person"
         value={fullName}
-        onChangeText={setFullName}
+        onChangeText={(text) => {
+          setFullName(text);
+          clearError('fullName');
+        }}
+        placeholder="Cómo quieres que te llamemos"
         autoComplete="name"
         textContentType="name"
+        autoCapitalize="words"
+        returnKeyType="next"
+        onSubmitEditing={() => emailRef.current?.focus()}
         error={errors.fullName}
       />
       <TextField
+        ref={emailRef}
         label="Correo electrónico"
+        icon="mail"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(text) => {
+          setEmail(text);
+          clearError('email');
+        }}
+        placeholder="nombre@correo.com"
         autoCapitalize="none"
         autoComplete="email"
         keyboardType="email-address"
+        textContentType="emailAddress"
+        returnKeyType="next"
+        onSubmitEditing={() => passwordRef.current?.focus()}
         error={errors.email}
       />
       <TextField
+        ref={passwordRef}
         label="Contraseña"
+        icon="lock"
+        revealable
         value={password}
-        onChangeText={setPassword}
-        secureTextEntry
+        onChangeText={(text) => {
+          setPassword(text);
+          clearError('password');
+        }}
+        placeholder="Crea una contraseña"
+        autoCapitalize="none"
         autoComplete="new-password"
         textContentType="newPassword"
-        hint="Mínimo 8 caracteres, con letras y números"
         error={errors.password}
       />
+      <PasswordStrength value={password} />
 
-      <Pressable
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: accepted }}
-        onPress={() => setAccepted((value) => !value)}
-        style={{
-          flexDirection: 'row',
-          gap: spacing.md,
-          padding: spacing.lg,
-          borderRadius: radius.md,
-          backgroundColor: colors.surface,
-          borderWidth: 1,
-          borderColor: errors.acceptPrivacyPolicy ? colors.danger : colors.border,
+      <Checkbox
+        checked={accepted}
+        onChange={(value) => {
+          setAccepted(value);
+          clearError('acceptPrivacyPolicy');
         }}
+        invalid={Boolean(errors.acceptPrivacyPolicy)}
+        accessibilityLabel="Autorizo el tratamiento de mis datos personales"
       >
-        <Icon name={accepted ? 'check' : 'pending'} color={accepted ? 'primary' : 'textSubtle'} />
-        <View style={{ flex: 1, gap: spacing.xs }}>
-          <AppText variant="caption">
-            Autorizo el tratamiento de mis datos personales y financieros para usar ASCENDX AI, conforme a la Ley 1581
-            de 2012.
+        <AppText variant="caption" color="textMuted">
+          Autorizo el tratamiento de mis datos personales y financieros para usar ASCENDX AI, conforme a la Ley 1581 de
+          2012. El análisis con IA y la lectura de recibos piden un permiso aparte.
+        </AppText>
+        {errors.acceptPrivacyPolicy ? (
+          <AppText variant="caption" color="danger" style={{ marginTop: 4 }}>
+            {errors.acceptPrivacyPolicy}
           </AppText>
-          <AppText variant="caption" color="textSubtle">
-            La IA y la lectura de recibos piden un permiso aparte.
-          </AppText>
-          {errors.acceptPrivacyPolicy ? (
-            <AppText variant="caption" color="danger">
-              {errors.acceptPrivacyPolicy}
-            </AppText>
-          ) : null}
-        </View>
-      </Pressable>
+        ) : null}
+      </Checkbox>
 
-      {formError ? <AppText color="danger">{formError}</AppText> : null}
+      {formError ? <FormError message={formError} /> : null}
 
       <Button title="Crear cuenta" onPress={handleSubmit} loading={loading} />
-
-      <AppText align="center" color="textMuted">
-        ¿Ya tienes cuenta?{' '}
-        <Link href="/login" replace>
-          <AppText color="primary" variant="bodyStrong">
-            Inicia sesión
-          </AppText>
-        </Link>
-      </AppText>
-    </Screen>
+    </AuthShell>
   );
 }

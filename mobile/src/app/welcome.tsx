@@ -1,58 +1,51 @@
 import { router } from 'expo-router';
-import { View } from 'react-native';
-import { AppText, Button, Icon, Screen, type IconName } from '@/components/ui';
+import { StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { AscentHero } from '@/components/brand/AscentHero';
+import { BrandMark } from '@/components/brand/BrandMark';
+import { AppText, Button } from '@/components/ui';
 import { useTheme } from '@/theme/useTheme';
 
-const VALUE_POINTS: { icon: IconName; title: string; text: string }[] = [
-  { icon: 'trending', title: 'Entiende tu dinero', text: 'Ingresos, gastos y deudas en un solo lugar.' },
-  { icon: 'goals', title: 'Avanza hacia tus metas', text: 'Varias metas a la vez, con progreso real.' },
-  { icon: 'simulator', title: '¿Ahorrar o financiar?', text: 'Compara escenarios con cifras verificables.' },
-];
-
 export default function WelcomeScreen() {
-  const { colors, radius, spacing } = useTheme();
+  const { colors, spacing, fonts } = useTheme();
 
   return (
-    <Screen edges={['top', 'bottom']}>
-      <View style={{ flex: 1, justifyContent: 'center', gap: spacing.xxl }}>
-        <View style={{ gap: spacing.md }}>
-          <View
-            style={{
-              width: 64,
-              height: 64,
-              borderRadius: radius.lg,
-              backgroundColor: colors.primarySoft,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Icon name="sparkle" size={32} color="primary" />
+    <SafeAreaView edges={['top', 'bottom']} style={[styles.flex, { backgroundColor: colors.background }]}>
+      <View style={[styles.flex, { paddingHorizontal: spacing.xl, paddingBottom: spacing.lg }]}>
+        <View style={[styles.brandRow, { marginTop: spacing.lg, gap: spacing.md }]}>
+          <BrandMark size={36} />
+          <AppText style={{ fontFamily: fonts.displaySemi, fontSize: 18, letterSpacing: 0.4 }}>ASCENDX AI</AppText>
+        </View>
+
+        <View style={[styles.flex, { justifyContent: 'center', gap: spacing.xxl }]}>
+          <View style={{ marginHorizontal: -spacing.sm }}>
+            <AscentHero />
           </View>
-          <AppText variant="overline" color="primary">
-            ASCENDX AI
+
+          <View style={{ gap: spacing.md }}>
+            <AppText variant="display" accessibilityRole="header">
+              Tu plata, con rumbo.
+            </AppText>
+            <AppText color="textMuted" style={{ maxWidth: 360 }}>
+              Organiza ingresos y gastos, avanza en varias metas a la vez y descubre si te conviene ahorrar o
+              financiar antes de decidir.
+            </AppText>
+          </View>
+        </View>
+
+        <View style={{ gap: spacing.md }}>
+          <Button title="Crear cuenta" onPress={() => router.push('/register')} />
+          <Button title="Ya tengo cuenta" variant="secondary" onPress={() => router.push('/login')} />
+          <AppText variant="caption" color="textSubtle" align="center" style={{ marginTop: spacing.xs }}>
+            Herramienta educativa. No reemplaza la asesoría financiera profesional.
           </AppText>
-          <AppText variant="display">Convierte tu situación financiera en un plan claro.</AppText>
-        </View>
-
-        <View style={{ gap: spacing.lg }}>
-          {VALUE_POINTS.map((point) => (
-            <View key={point.title} style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' }}>
-              <Icon name={point.icon} color="primary" />
-              <View style={{ flex: 1 }}>
-                <AppText variant="bodyStrong">{point.title}</AppText>
-                <AppText variant="caption" color="textMuted">
-                  {point.text}
-                </AppText>
-              </View>
-            </View>
-          ))}
         </View>
       </View>
-
-      <View style={{ gap: spacing.md }}>
-        <Button title="Crear cuenta" onPress={() => router.push('/register')} />
-        <Button title="Ya tengo cuenta" variant="ghost" onPress={() => router.push('/login')} />
-      </View>
-    </Screen>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  brandRow: { flexDirection: 'row', alignItems: 'center' },
+});
