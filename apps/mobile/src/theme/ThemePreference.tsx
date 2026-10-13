@@ -6,6 +6,8 @@ import { readPreference, savePreference } from '@/lib/preferences';
 export type ThemePreference = 'system' | 'light' | 'dark';
 
 const STORAGE_KEY = 'ascendx.theme';
+/** La app entra en modo oscuro hasta que el usuario elija otra apariencia (decisión del autor). */
+export const DEFAULT_THEME: ThemePreference = 'dark';
 
 interface ThemePreferenceContextValue {
   preference: ThemePreference;
@@ -13,7 +15,7 @@ interface ThemePreferenceContextValue {
 }
 
 const ThemePreferenceContext = createContext<ThemePreferenceContextValue>({
-  preference: 'system',
+  preference: DEFAULT_THEME,
   setPreference: () => undefined,
 });
 
@@ -28,14 +30,13 @@ function applyToSystem(value: ThemePreference) {
 }
 
 export function ThemePreferenceProvider({ children }: { children: ReactNode }) {
-  const [preference, setPreferenceState] = useState<ThemePreference>('system');
+  const [preference, setPreferenceState] = useState<ThemePreference>(DEFAULT_THEME);
 
   useEffect(() => {
     readPreference(STORAGE_KEY).then((stored) => {
-      if (stored === 'light' || stored === 'dark' || stored === 'system') {
-        setPreferenceState(stored);
-        applyToSystem(stored);
-      }
+      const value = stored === 'light' || stored === 'dark' || stored === 'system' ? stored : DEFAULT_THEME;
+      setPreferenceState(value);
+      applyToSystem(value);
     });
   }, []);
 

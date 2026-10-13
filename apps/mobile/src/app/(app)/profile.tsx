@@ -13,9 +13,9 @@ import { useThemePreference, type ThemePreference } from '@/theme/ThemePreferenc
 import { useTheme } from '@/theme/useTheme';
 
 const THEME_OPTIONS: { value: ThemePreference; label: string; icon: 'phone' | 'sun' | 'moon' }[] = [
-  { value: 'system', label: 'Sistema', icon: 'phone' },
-  { value: 'light', label: 'Claro', icon: 'sun' },
   { value: 'dark', label: 'Oscuro', icon: 'moon' },
+  { value: 'light', label: 'Claro', icon: 'sun' },
+  { value: 'system', label: 'Sistema', icon: 'phone' },
 ];
 
 const dateFormatter = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });

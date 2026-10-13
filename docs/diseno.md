@@ -265,7 +265,7 @@ Capturas a 390 × 844 en la vista previa web, temas oscuro y claro: bienvenida, 
 
 ## Apariencia y movimiento (2026-10-13)
 
-- **Modo claro / oscuro / sistema:** Perfil → Apariencia. Se guarda en el teléfono (`ThemePreferenceProvider`, `lib/preferences.ts`) y también se aplica al teclado y diálogos nativos.
+- **Modo oscuro por defecto**, con opción Claro o Sistema en Perfil → Apariencia. Se guarda en el teléfono (`ThemePreferenceProvider`, `lib/preferences.ts`) y también se aplica al teclado y diálogos nativos.
 - **Respuesta al tocar:** `PressableScale` (se hunde, rebota al soltar y vibra suave). Lo usan `Button`, `NavRow` y las tarjetas tocables del panel.
 - **Resultados animados:** `AnimatedAmount` y `useCountUp` hacen que los montos cuenten hasta su valor; `ProgressBar` y `ProgressRing` se llenan al aparecer. El lector de pantalla recibe siempre el valor final.
 - **Entrada de pantallas:** las secciones de las pantallas con desplazamiento entran escalonadas (`FadeIn`, 60 ms entre secciones); los resultados del simulador también.
