@@ -56,6 +56,12 @@ docs/      Documentación del proyecto de grado y decisiones técnicas
 
 ## Inicio rápido
 
+### Opción fácil (Windows)
+
+Doble clic en **`INICIAR.bat`**. El script instala Node.js si falta, crea los `.env`, instala dependencias, levanta una base de datos PostgreSQL local con `prisma dev` (no hace falta instalar PostgreSQL), crea las tablas y abre la API y la app. Para apagar la base de datos: **`DETENER.bat`**.
+
+### Opción manual
+
 ### Requisitos
 
 - Node.js 20 o superior
