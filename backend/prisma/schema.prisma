@@ -1,0 +1,343 @@
+// ASCENDX AI — modelo de datos inicial
+//
+// Convenciones:
+// - Tablas y columnas en snake_case en PostgreSQL (@@map / @map), modelos en PascalCase.
+// - Montos en DECIMAL(15,2) (pesos colombianos por defecto). Tasas como fracción: 0.245 = 24,5 %.
+// - Todo registro financiero pertenece a un usuario (user_id) y se borra en cascada con su cuenta.
+// - client_id: identificador generado en el teléfono para que la sincronización sea idempotente
+//   (reenviar la misma operación no duplica movimientos).
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────── Enumeraciones ─────────────────────────
+
+enum MovementType {
+  INCOME
+  EXPENSE
+}
+
+enum TransactionSource {
+  MANUAL
+  OCR
+}
+
+enum DebtStatus {
+  ACTIVE
+  PAID_OFF
+  CANCELLED
+}
+
+enum GoalStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+/// Forma en que el usuario expresa la tasa de interés.
+enum RateType {
+  EFFECTIVE_ANNUAL // Efectiva anual (E.A.)
+  MONTHLY // Mensual vencida (M.V.)
+}
+
+enum ReceiptStatus {
+  PENDING // Imagen recibida, sin procesar
+  EXTRACTED // OCR terminado, esperando revisión del usuario
+  CONFIRMED // El usuario revisó y guardó el movimiento
+  DISCARDED // El usuario descartó el recibo
+  FAILED // No se pudo leer
+}
+
+enum AiMessageRole {
+  USER
+  ASSISTANT
+}
+
+// ───────────────────────── Cuenta y sesión ─────────────────────────
+
+model User {
+  id                String    @id @default(uuid()) @db.Uuid
+  email             String    @unique
+  passwordHash      String    @map("password_hash")
+  fullName          String    @map("full_name")
+  /// Consentimientos explícitos (Ley 1581 de 2012). null = no otorgado.
+  privacyAcceptedAt DateTime? @map("privacy_accepted_at")
+  aiConsentAt       DateTime? @map("ai_consent_at")
+  ocrConsentAt      DateTime? @map("ocr_consent_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  financialProfile  FinancialProfile?
+  refreshTokens     RefreshToken[]
+  categories        Category[]
+  transactions      Transaction[]
+  debts             Debt[]
+  goals             FinancialGoal[]
+  goalContributions GoalContribution[]
+  creditScenarios   CreditScenario[]
+  aiConversations   AiConversation[]
+  receipts          Receipt[]
+
+  @@map("users")
+}
+
+/// Tokens de renovación. Solo se guarda el hash SHA-256 del token, nunca el valor.
+/// Rotación: al usar un token se revoca y se emite uno nuevo (replaced_by_id).
+model RefreshToken {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  tokenHash    String    @unique @map("token_hash")
+  expiresAt    DateTime  @map("expires_at")
+  revokedAt    DateTime? @map("revoked_at")
+  replacedById String?   @map("replaced_by_id") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model FinancialProfile {
+  id                     String   @id @default(uuid()) @db.Uuid
+  userId                 String   @unique @map("user_id") @db.Uuid
+  currency               String   @default("COP") @db.VarChar(3)
+  /// Ingreso mensual aproximado declarado por el usuario (opcional).
+  estimatedMonthlyIncome Decimal? @map("estimated_monthly_income") @db.Decimal(15, 2)
+  /// Porcentaje del ingreso que el usuario quiere ahorrar (0–100).
+  savingsTargetPercent   Decimal? @map("savings_target_percent") @db.Decimal(5, 2)
+  /// Meses de gastos que quiere cubrir con su fondo de emergencia.
+  emergencyFundMonths    Int?     @map("emergency_fund_months")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("financial_profiles")
+}
+
+// ───────────────────────── Movimientos ─────────────────────────
+
+/// Categorías de ingresos y gastos. user_id null = categoría predeterminada del sistema.
+model Category {
+  id         String       @id @default(uuid()) @db.Uuid
+  userId     String?      @map("user_id") @db.Uuid
+  name       String       @db.VarChar(60)
+  type       MovementType
+  icon       String?      @db.VarChar(40)
+  color      String?      @db.VarChar(9)
+  archivedAt DateTime?    @map("archived_at")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@unique([userId, name, type])
+  @@index([type])
+  @@map("categories")
+}
+
+model Transaction {
+  id          String            @id @default(uuid()) @db.Uuid
+  userId      String            @map("user_id") @db.Uuid
+  /// Identificador generado en el dispositivo para sincronización idempotente.
+  clientId    String?           @map("client_id") @db.Uuid
+  type        MovementType
+  amount      Decimal           @db.Decimal(15, 2)
+  occurredAt  DateTime          @map("occurred_at") @db.Date
+  description String?           @db.VarChar(200)
+  source      TransactionSource @default(MANUAL)
+  categoryId  String?           @map("category_id") @db.Uuid
+  /// Si el gasto es un pago a una deuda registrada.
+  debtId      String?           @map("debt_id") @db.Uuid
+  receiptId   String?           @unique @map("receipt_id") @db.Uuid
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  /// Borrado lógico para que la eliminación también se sincronice.
+  deletedAt   DateTime?         @map("deleted_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  debt     Debt?     @relation(fields: [debtId], references: [id], onDelete: SetNull)
+  receipt  Receipt?  @relation(fields: [receiptId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, clientId])
+  @@index([userId, occurredAt])
+  @@index([userId, type, occurredAt])
+  @@map("transactions")
+}
+
+// ───────────────────────── Deudas ─────────────────────────
+
+model Debt {
+  id             String     @id @default(uuid()) @db.Uuid
+  userId         String     @map("user_id") @db.Uuid
+  name           String     @db.VarChar(80)
+  lender         String?    @db.VarChar(80)
+  originalAmount Decimal    @map("original_amount") @db.Decimal(15, 2)
+  currentBalance Decimal    @map("current_balance") @db.Decimal(15, 2)
+  interestRate   Decimal?   @map("interest_rate") @db.Decimal(9, 6)
+  rateType       RateType?  @map("rate_type")
+  monthlyPayment Decimal?   @map("monthly_payment") @db.Decimal(15, 2)
+  termMonths     Int?       @map("term_months")
+  startDate      DateTime?  @map("start_date") @db.Date
+  /// Día del mes en que vence la cuota (1–31).
+  dueDay         Int?       @map("due_day")
+  status         DebtStatus @default(ACTIVE)
+  notes          String?    @db.VarChar(300)
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments Transaction[]
+
+  @@index([userId, status])
+  @@map("debts")
+}
+
+// ───────────────────────── Metas ─────────────────────────
+
+model FinancialGoal {
+  id            String     @id @default(uuid()) @db.Uuid
+  userId        String     @map("user_id") @db.Uuid
+  name          String     @db.VarChar(80)
+  icon          String?    @db.VarChar(40)
+  targetAmount  Decimal    @map("target_amount") @db.Decimal(15, 2)
+  initialAmount Decimal    @default(0) @map("initial_amount") @db.Decimal(15, 2)
+  targetDate    DateTime?  @map("target_date") @db.Date
+  /// 1 = prioridad más alta.
+  priority      Int        @default(3)
+  status        GoalStatus @default(ACTIVE)
+  completedAt   DateTime?  @map("completed_at")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contributions   GoalContribution[]
+  creditScenarios CreditScenario[]
+
+  @@index([userId, status])
+  @@map("financial_goals")
+}
+
+model GoalContribution {
+  id            String    @id @default(uuid()) @db.Uuid
+  goalId        String    @map("goal_id") @db.Uuid
+  /// Redundante con la meta, pero permite autorizar y consultar por usuario directamente.
+  userId        String    @map("user_id") @db.Uuid
+  clientId      String?   @map("client_id") @db.Uuid
+  amount        Decimal   @db.Decimal(15, 2)
+  contributedAt DateTime  @map("contributed_at") @db.Date
+  note          String?   @db.VarChar(200)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  goal FinancialGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clientId])
+  @@index([goalId, contributedAt])
+  @@map("goal_contributions")
+}
+
+// ───────────────────────── Simulador ─────────────────────────
+
+/// Escenario guardado de ahorro vs financiación. Se guardan los supuestos
+/// y una copia de los resultados calculados por el motor financiero.
+model CreditScenario {
+  id                  String   @id @default(uuid()) @db.Uuid
+  userId              String   @map("user_id") @db.Uuid
+  goalId              String?  @map("goal_id") @db.Uuid
+  name                String   @db.VarChar(80)
+  assetPrice          Decimal  @map("asset_price") @db.Decimal(15, 2)
+  downPayment         Decimal  @default(0) @map("down_payment") @db.Decimal(15, 2)
+  interestRate        Decimal  @map("interest_rate") @db.Decimal(9, 6)
+  rateType            RateType @map("rate_type")
+  termMonths          Int      @map("term_months")
+  /// Cargos mensuales conocidos (seguros, cuota de manejo).
+  monthlyFees         Decimal  @default(0) @map("monthly_fees") @db.Decimal(15, 2)
+  /// Capacidad de ahorro mensual usada para comparar con la alternativa de ahorrar.
+  monthlySavingAmount Decimal? @map("monthly_saving_amount") @db.Decimal(15, 2)
+  // Resultados principales (copia del cálculo en el momento de guardar)
+  monthlyPayment      Decimal  @map("monthly_payment") @db.Decimal(15, 2)
+  totalInterest       Decimal  @map("total_interest") @db.Decimal(15, 2)
+  totalPaid           Decimal  @map("total_paid") @db.Decimal(15, 2)
+  monthsToSave        Int?     @map("months_to_save")
+  /// Detalle completo del resultado (comparación, advertencias) en JSON.
+  resultSnapshot      Json     @map("result_snapshot")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  user User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal FinancialGoal? @relation(fields: [goalId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@map("credit_scenarios")
+}
+
+// ───────────────────────── IA ─────────────────────────
+
+/// Solo se guardan las conversaciones que el usuario decide conservar.
+model AiConversation {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  title     String   @db.VarChar(120)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages AiMessage[]
+
+  @@index([userId, updatedAt])
+  @@map("ai_conversations")
+}
+
+model AiMessage {
+  id             String        @id @default(uuid()) @db.Uuid
+  conversationId String        @map("conversation_id") @db.Uuid
+  role           AiMessageRole
+  content        String
+  /// Tokens consumidos, para controlar costos.
+  tokensUsed     Int?          @map("tokens_used")
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@map("ai_messages")
+}
+
+// ───────────────────────── OCR ─────────────────────────
+
+/// Recibo procesado por OCR. La imagen no se conserva indefinidamente:
+/// image_deleted_at registra cuándo se eliminó.
+model Receipt {
+  id             String        @id @default(uuid()) @db.Uuid
+  userId         String        @map("user_id") @db.Uuid
+  status         ReceiptStatus @default(PENDING)
+  merchantName   String?       @map("merchant_name") @db.VarChar(120)
+  receiptDate    DateTime?     @map("receipt_date") @db.Date
+  totalAmount    Decimal?      @map("total_amount") @db.Decimal(15, 2)
+  /// Confianza estimada de la extracción (0–1).
+  confidence     Decimal?      @db.Decimal(4, 3)
+  failureReason  String?       @map("failure_reason") @db.VarChar(200)
+  imageDeletedAt DateTime?     @map("image_deleted_at")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transaction Transaction?
+
+  @@index([userId, status])
+  @@map("receipts")
+}
