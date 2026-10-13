@@ -68,6 +68,8 @@ export default function TabsLayout() {
             name={tab.name}
             options={{
               title: tab.title,
+              // El mentor conserva su color de identidad (violeta) al estar activo.
+              ...(tab.name === 'assistant' ? { tabBarActiveTintColor: colors.violetText } : {}),
               tabBarIcon: ({ color }) => <Icon name={tab.icon} tint={color} size={24} />,
             }}
           />

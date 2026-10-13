@@ -1,23 +1,76 @@
-import { AppText, ComingSoon, Screen } from '@/components/ui';
+import { router } from 'expo-router';
+import { View } from 'react-native';
+import { AppText, Button, Card, Icon, ProgressRing, Screen } from '@/components/ui';
+import { useTheme } from '@/theme/useTheme';
 
-/** Fase 3 (sprints 5–8): RF-16 a RF-19. El cálculo ya está en finance-core (allocateGoals). */
+const HOW_IT_WILL_WORK = [
+  'Cada meta con nombre, ícono, valor objetivo, fecha y prioridad (RF-16)',
+  'Aportes y retiros, sin dejar una meta en negativo (RF-17)',
+  'Fecha estimada y aporte mensual previsto según tu capacidad prudente (RF-18)',
+  'Aviso de meta en riesgo con dos ajustes posibles: nueva fecha o nuevo aporte (RF-19)',
+];
+
+/**
+ * Metas (sección 15.5). Estado vacío mientras se construye el módulo de
+ * metas (fase 3): explica cómo se verán y cómo se medirán, sin datos ficticios.
+ */
 export default function GoalsScreen() {
+  const { spacing } = useTheme();
   return (
     <Screen scroll>
       <AppText variant="title" accessibilityRole="header">
         Metas
       </AppText>
-      <ComingSoon
-        icon="goals"
-        title="Varias metas, un solo plan"
-        description="Tu ahorro prudente se reparte por prioridad y fecha. Se construye en la fase 3 del cronograma."
-        features={[
-          'Metas con valor, fecha, prioridad (alta, media, baja) e ícono (RF-16)',
-          'Aportes y retiros sin dejar una meta en negativo (RF-17)',
-          'Progreso, hitos de 25, 50, 75 y 100 % y fecha proyectada (RF-18)',
-          'Alerta de meta en riesgo con dos sugerencias calculadas (RF-19)',
-        ]}
-      />
+
+      <Card elevated>
+        <View style={{ alignItems: 'center', gap: spacing.lg, paddingVertical: spacing.md }}>
+          <ProgressRing
+            value={0}
+            size={148}
+            strokeWidth={12}
+            milestones={[0.25, 0.5, 0.75]}
+            accessibilityLabel="Ilustración de progreso de una meta con hitos de 25, 50 y 75 por ciento"
+          >
+            <AppText variant="caption" color="textMuted" align="center">
+              Hitos
+            </AppText>
+            <AppText variant="label" align="center">
+              25 · 50 · 75 · 100 %
+            </AppText>
+          </ProgressRing>
+          <View style={{ gap: spacing.sm }}>
+            <AppText variant="heading" align="center">
+              Construye tus metas paso a paso
+            </AppText>
+            <AppText color="textMuted" align="center">
+              Moto, computador, viaje o fondo de emergencia: tu ahorro prudente se reparte primero en lo más importante y
+              en lo más cercano.
+            </AppText>
+          </View>
+        </View>
+      </Card>
+
+      <Card>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+          <Icon name="info" color="primary" size={20} />
+          <AppText variant="heading">En desarrollo · fase 3</AppText>
+        </View>
+        <View style={{ gap: spacing.md }}>
+          {HOW_IT_WILL_WORK.map((item) => (
+            <View key={item} style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' }}>
+              <Icon name="pending" size={18} color="textSubtle" />
+              <AppText variant="caption" color="textMuted" style={{ flex: 1 }}>
+                {item}
+              </AppText>
+            </View>
+          ))}
+        </View>
+        <AppText variant="caption" color="textMuted">
+          Las reglas de cálculo ya están implementadas y probadas; falta la pantalla y el registro de metas.
+        </AppText>
+      </Card>
+
+      <Button title="Mientras tanto, simula una compra" variant="secondary" onPress={() => router.push('/simulator')} />
     </Screen>
   );
 }

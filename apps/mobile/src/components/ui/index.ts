@@ -7,6 +7,7 @@ export { Header } from './Header';
 export { Icon, type IconName } from './Icon';
 export { NavRow } from './NavRow';
 export { ProgressBar } from './ProgressBar';
+export { ProgressRing } from './ProgressRing';
 export { Screen } from './Screen';
 export { TextField } from './TextField';
 export { ToggleRow } from './ToggleRow';
