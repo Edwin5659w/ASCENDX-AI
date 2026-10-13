@@ -2,16 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
 
 jobs:
-  backend:
-    name: Backend (tipos, pruebas y build)
+  checks:
+    name: Tipos, pruebas, lint y build
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     services:
       postgres:
         image: postgres:16
@@ -35,28 +32,24 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: backend/package-lock.json
+      # npm ci también compila packages/finance-core (script prepare)
       - run: npm ci
       - run: npx prisma generate
-      - run: npm run typecheck
-      - run: npm test
-      - run: npx prisma migrate deploy
-      - run: npm run test:int
-      - run: npm run build
-
-  mobile:
-    name: App móvil (tipos y lint)
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: mobile
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: mobile/package-lock.json
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run lint
+        working-directory: apps/api
+      - name: Tipos (todos los paquetes)
+        run: npm run typecheck
+      - name: finance-core con cobertura ≥ 90 % (RNF-09)
+        run: npm run test:coverage
+      - name: Pruebas unitarias de la API
+        run: npm test -w @ascendx/api
+      - name: Migraciones y pruebas de integración
+        working-directory: apps/api
+        run: |
+          npx prisma migrate deploy
+          npm run test:int
+      - name: Lint de la app
+        run: npm run lint
+      - name: Build de la API
+        run: npm run build -w @ascendx/api
+      - name: Auditoría de dependencias (informativa)
+        run: npm audit --omit=dev --audit-level=critical || true

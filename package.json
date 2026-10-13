@@ -1,13 +1,24 @@
 {
   "name": "ascendx-ai",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "ASCENDX AI: comandos de la raíz. El código está en backend/ y mobile/.",
+  "description": "ASCENDX AI — monorepo: apps/api, apps/mobile y packages/finance-core.",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
     "start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/iniciar.ps1",
     "stop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/detener.ps1",
-    "api": "npm --prefix backend run dev",
-    "app": "npm --prefix mobile start",
-    "test": "npm --prefix backend test"
+    "build:core": "npm run build -w @ascendx/finance-core",
+    "api": "npm run dev -w @ascendx/api",
+    "app": "npm run start -w @ascendx/mobile",
+    "test": "npm run test -w @ascendx/finance-core && npm run test -w @ascendx/api",
+    "test:coverage": "npm run test:coverage -w @ascendx/finance-core",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint -w @ascendx/mobile"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

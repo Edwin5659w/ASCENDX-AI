@@ -13,10 +13,10 @@ coverage/
 !.env.example
 
 # Expo / React Native
-mobile/.expo/
-mobile/android/
-mobile/ios/
-mobile/web-build/
+apps/mobile/.expo/
+apps/mobile/android/
+apps/mobile/ios/
+apps/mobile/web-build/
 *.jks
 *.keystore
 *.p8
@@ -24,7 +24,7 @@ mobile/web-build/
 *.mobileprovision
 
 # Prisma
-backend/src/generated/
+apps/api/src/generated/
 
 # Logs y sistema
 *.log

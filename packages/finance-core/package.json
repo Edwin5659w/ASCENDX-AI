@@ -1,0 +1,30 @@
+{
+  "name": "@ascendx/finance-core",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Reglas financieras de ASCENDX AI (sección 6 del Documento Maestro v2): funciones puras compartidas por la API y la app.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepare": "npm run build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^5.0.4",
+    "typescript": "~5.9.3",
+    "vitest": "^5.0.4"
+  }
+}

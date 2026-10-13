@@ -13,8 +13,8 @@
 
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $PSScriptRoot
-$Backend = Join-Path $Root 'backend'
-$Mobile = Join-Path $Root 'mobile'
+$Backend = Join-Path $Root 'apps\api'
+$Mobile = Join-Path $Root 'apps\mobile'
 $DatabaseUrl = 'postgres://postgres:postgres@localhost:51214/template1?sslmode=disable'
 
 function Paso($texto) { Write-Host "`n==> $texto" -ForegroundColor Cyan }
@@ -82,6 +82,12 @@ Ok "Node.js $nodeVersion"
 # 2. Archivos .env -----------------------------------------------------------
 Paso 'Configurando variables de entorno'
 $backendEnv = Join-Path $Backend '.env'
+# Migración desde la estructura anterior (backend/ y mobile/ en la raíz).
+$oldEnv = Join-Path $Root 'backend\.env'
+if ((Test-Path $oldEnv) -and -not (Test-Path $backendEnv)) {
+  Move-Item $oldEnv $backendEnv
+  Ok 'Se movió backend\.env a apps\api\.env (nueva estructura del proyecto)'
+}
 if (-not (Test-Path $backendEnv)) {
   $secreto = Secreto-Aleatorio
   @(
@@ -94,9 +100,9 @@ if (-not (Test-Path $backendEnv)) {
     'CORS_ORIGINS=http://localhost:8081',
     'LOG_LEVEL=info'
   ) | Set-Content -Path $backendEnv -Encoding ascii
-  Ok 'backend\.env creado'
+  Ok 'apps\api\.env creado'
 } else {
-  Ok 'backend\.env ya existe (no se modifica)'
+  Ok 'apps\api\.env ya existe (no se modifica)'
 }
 
 $ip = IP-Local
@@ -104,14 +110,15 @@ $ip = IP-Local
   '# Generado por scripts/iniciar.ps1 con la IP actual de este computador.',
   "EXPO_PUBLIC_API_URL=http://${ip}:4000/api"
 ) | Set-Content -Path (Join-Path $Mobile '.env') -Encoding ascii
-Ok "mobile\.env apunta a http://${ip}:4000/api"
+Ok "apps\mobile\.env apunta a http://${ip}:4000/api"
 
 # 3. Dependencias --------------------------------------------------------------
 Paso 'Revisando dependencias (la primera vez tarda unos minutos)'
-# Se ejecuta siempre: si no hay cambios tarda segundos, y si el proyecto agregó
-# librerías nuevas (por ejemplo después de un git pull) las instala.
-Ejecutar 'npm install --no-audit --no-fund' $Backend
-Ejecutar 'npm install --no-audit --no-fund' $Mobile
+# Monorepo: una sola instalación en la raíz para apps/api, apps/mobile y
+# packages/finance-core. Se ejecuta siempre: si no hay cambios tarda segundos,
+# y si se agregaron librerías (por ejemplo tras un git pull) las instala.
+# Al instalar también se compila packages/finance-core.
+Ejecutar 'npm install --no-audit --no-fund' $Root
 
 # 4. Base de datos -------------------------------------------------------------
 Paso 'Iniciando la base de datos local (prisma dev)'
