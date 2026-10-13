@@ -100,3 +100,15 @@ Cada decisión importante se registra aquí con su fecha, contexto y motivo, par
 **Motivo.** Identidad reconocible desde el primer segundo y coherente entre el ícono del teléfono, el arranque y la app.
 
 **Nota.** El ícono y la pantalla nativa solo se ven en una compilación instalada (APK); en Expo Go aparecen los de Expo. La animación sí se ve en Expo Go.
+
+---
+
+## D-009 · Se mantiene PostgreSQL propio; no se usa Firebase (2026-10-13)
+
+**Contexto.** Al probar en el teléfono el registro mostró «No pudimos conectar con el servidor» y se planteó pasar la base de datos a Firebase.
+
+**Diagnóstico.** La base de datos no era el problema: la API (puerto 4000) no estaba corriendo en el computador; solo estaba abierto Expo (puerto 8081).
+
+**Decisión.** Mantener la arquitectura del anteproyecto y del Documento Maestro: API propia (Node + Express) con PostgreSQL y Prisma. Firebase (Firestore) obligaría a reescribir la autenticación, los cálculos en el servidor, las reglas de acceso y el modelo relacional, y contradice la arquitectura aprobada. Para usar la app sin el computador encendido, se publicará la misma API en un servicio en la nube con PostgreSQL administrado (p. ej. Neon), sin cambiar el código.
+
+**Cambios.** La app usa la IP desde la que Expo la cargó si falta `EXPO_PUBLIC_API_URL`, y en desarrollo el error de conexión indica revisar la ventana «ASCENDX - API» y el wifi.

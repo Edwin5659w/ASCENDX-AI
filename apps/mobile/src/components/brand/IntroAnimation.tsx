@@ -3,6 +3,7 @@ import { AccessibilityInfo, Animated, Easing, StyleSheet, View, useWindowDimensi
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { darkPalette } from '@/theme/tokens';
 import { Wordmark } from './BrandMark';
+import { markIntroDone } from './introState';
 import { LOGO_ASPECT, LogoSymbol, type LogoPart } from './LogoSymbol';
 
 interface IntroAnimationProps {
@@ -72,6 +73,8 @@ export function IntroAnimation({ ready, onFinish }: IntroAnimationProps) {
   // 2. Salida cuando la animación terminó y la app está lista
   useEffect(() => {
     if (!played || !ready) return;
+    // La pantalla de abajo empieza sus animaciones mientras el logo se desvanece.
+    markIntroDone();
     Animated.timing(values.overlay, { toValue: 0, duration: 320, easing: easeOut, useNativeDriver: true }).start(() =>
       onFinish(),
     );

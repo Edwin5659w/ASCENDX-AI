@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { clearRefreshToken, readRefreshToken, saveRefreshToken } from './secure-storage';
 
 /**
@@ -6,7 +7,20 @@ import { clearRefreshToken, readRefreshToken, saveRefreshToken } from './secure-
  * - Si el token expiró (401), renueva la sesión una sola vez y reintenta.
  */
 
-export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:4000/api';
+/**
+ * Dirección de la API. Orden:
+ * 1. EXPO_PUBLIC_API_URL (scripts/iniciar.ps1 la escribe con la IP del computador).
+ * 2. En desarrollo, la misma IP desde la que Expo Go cargó la app, puerto 4000.
+ * 3. Emulador de Android (10.0.2.2 es el computador visto desde el emulador).
+ */
+function resolveApiUrl(): string {
+  if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
+  const host = Constants.expoConfig?.hostUri?.split(':')[0];
+  if (__DEV__ && host) return `http://${host}:4000/api`;
+  return 'http://10.0.2.2:4000/api';
+}
+
+export const API_URL = resolveApiUrl();
 
 export type ConsentType = 'terminos' | 'datos' | 'ia' | 'ocr';
 
@@ -63,7 +77,9 @@ export class ApiError extends Error {
   }
 }
 
-export const NETWORK_ERROR_MESSAGE = 'No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.';
+export const NETWORK_ERROR_MESSAGE = __DEV__
+  ? 'No pudimos conectar con el servidor. Revisa que la ventana «ASCENDX - API» esté abierta en tu computador y que el teléfono esté en el mismo wifi.'
+  : 'No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.';
 
 let accessToken: string | null = null;
 let refreshInFlight: Promise<AuthSession> | null = null;
