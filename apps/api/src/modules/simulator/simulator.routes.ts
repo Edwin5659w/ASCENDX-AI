@@ -2,12 +2,13 @@ import { MAX_TERM_MONTHS, simulatePurchase } from '@ascendx/finance-core';
 import { Router } from 'express';
 import { z } from 'zod';
 import { HttpError } from '../../lib/http-error.js';
-import { currentUserId, requireAuth } from '../../middleware/require-auth.js';
+import { currentUserId, protectedRoute } from '../../middleware/require-auth.js';
 import { parseBody } from '../../middleware/validate.js';
+import { getUsuryReference } from '../settings/settings.service.js';
 
 export const simulatorRouter = Router();
 
-simulatorRouter.use(requireAuth);
+simulatorRouter.use(protectedRoute);
 
 /** Pesos enteros (BIGINT); tope para detectar errores de digitación. */
 const pesos = z.number().int('Los montos van en pesos enteros').nonnegative().max(100_000_000_000);
@@ -32,10 +33,10 @@ export const simulationSchema = z
 const compareSchema = simulationSchema.and(z.object({ includeSchedule: z.boolean().default(false) }));
 
 /** RF-20: compara crédito, ahorro y mixto. Solo calcula; no guarda nada. */
-simulatorRouter.post('/compare', (req, res) => {
+simulatorRouter.post('/compare', async (req, res) => {
   currentUserId(req);
   const { includeSchedule, ...input } = parseBody(compareSchema, req);
-  const usury = null; // La tasa de usura de referencia llega con app_settings (modelo de datos v2)
+  const usury = await getUsuryReference();
   try {
     const result = simulatePurchase({ ...input, usury });
     if (includeSchedule) {

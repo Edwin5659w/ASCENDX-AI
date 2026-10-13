@@ -1,18 +1,29 @@
-import type { User } from '../../generated/prisma/client.js';
+import type { Consent, FinancialProfile, User } from '../../generated/prisma/client.js';
+import { summarizeConsents } from './consents.js';
 
-/** Datos del usuario que se pueden enviar a la app (nunca el hash de la contraseña). */
-export function presentUser(user: User) {
+type UserWithRelations = User & { consents: Consent[]; financialProfile: FinancialProfile | null };
+
+/** Datos del usuario que se envían a la app (nunca el hash de la contraseña ni los contadores de bloqueo). */
+export function presentUser(user: UserWithRelations) {
+  const profile = user.financialProfile;
   return {
     id: user.id,
     email: user.email,
-    fullName: user.fullName,
+    name: user.name,
+    isAdult: user.isAdult,
     createdAt: user.createdAt.toISOString(),
-    consents: {
-      privacyAcceptedAt: user.privacyAcceptedAt?.toISOString() ?? null,
-      aiConsentAt: user.aiConsentAt?.toISOString() ?? null,
-      ocrConsentAt: user.ocrConsentAt?.toISOString() ?? null,
-    },
+    consents: summarizeConsents(user.consents),
+    financialProfile: profile
+      ? {
+          estimatedIncome: profile.estimatedIncome === null ? null : Number(profile.estimatedIncome),
+          estimatedFixedExpenses: profile.estimatedFixedExpenses === null ? null : Number(profile.estimatedFixedExpenses),
+          payDay: profile.payDay,
+          safetyMargin: Number(profile.safetyMargin),
+        }
+      : null,
   };
 }
 
 export type PublicUser = ReturnType<typeof presentUser>;
+
+export const userInclude = { consents: true, financialProfile: true } as const;

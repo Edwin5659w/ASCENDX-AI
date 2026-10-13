@@ -19,6 +19,8 @@ export function createApp() {
   const app = express();
 
   app.disable('x-powered-by');
+  // Los montos se guardan como BIGINT (pesos enteros); en JSON se envían como número.
+  app.set('json replacer', (_key: string, value: unknown) => (typeof value === 'bigint' ? Number(value) : value));
   app.set('trust proxy', 1);
 
   app.use(helmet());
@@ -34,12 +36,12 @@ export function createApp() {
     app.use(pinoHttp({ logger }));
   }
 
-  // Límite general de solicitudes por IP
+  // Límite general por IP (las rutas protegidas tienen además 100/min por usuario, RNF-03)
   app.use(
     '/api',
     rateLimit({
       windowMs: 60_000,
-      limit: 120,
+      limit: 300,
       standardHeaders: 'draft-8',
       legacyHeaders: false,
       skip: () => env.NODE_ENV === 'test',

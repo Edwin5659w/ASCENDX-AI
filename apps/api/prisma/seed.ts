@@ -1,11 +1,14 @@
 /**
- * Datos iniciales: categorías predeterminadas del sistema (user_id = null).
- * Es idempotente: se puede ejecutar varias veces sin duplicar registros.
- * No crea usuarios ni datos financieros de prueba.
+ * Datos iniciales (idempotente, se puede ejecutar varias veces):
+ * - Categorías por defecto del sistema (user_id = null).
+ * - Fila única de configuración global (app_settings) con los límites de IA.
+ *
+ * No crea usuarios ni datos financieros. La tasa de usura de referencia NO se
+ * inventa: se registra a mano con su fecha cuando se consulte la vigente.
  */
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient, type MovementType } from '../src/generated/prisma/client.js';
+import { PrismaClient, type CategoryKind } from '../src/generated/prisma/client.js';
 
 if (process.env.NODE_ENV === 'production') {
   console.error('El seed está bloqueado en producción.');
@@ -16,39 +19,42 @@ const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
 });
 
-const defaultCategories: { name: string; type: MovementType; icon: string; color: string }[] = [
+const defaultCategories: { name: string; kind: CategoryKind; icon: string; color: string }[] = [
   // Ingresos
-  { name: 'Salario', type: 'INCOME', icon: 'briefcase', color: '#14B8A6' },
-  { name: 'Trabajo independiente', type: 'INCOME', icon: 'laptop', color: '#22C55E' },
-  { name: 'Negocio propio', type: 'INCOME', icon: 'store', color: '#10B981' },
-  { name: 'Otros ingresos', type: 'INCOME', icon: 'plus-circle', color: '#5EEAD4' },
+  { name: 'Salario', kind: 'ingreso', icon: 'payments', color: '#2DD4BF' },
+  { name: 'Trabajo independiente', kind: 'ingreso', icon: 'work', color: '#22C55E' },
+  { name: 'Negocio propio', kind: 'ingreso', icon: 'storefront', color: '#10B981' },
+  { name: 'Otros ingresos', kind: 'ingreso', icon: 'add_circle', color: '#5EEAD4' },
   // Gastos
-  { name: 'Vivienda', type: 'EXPENSE', icon: 'home', color: '#6366F1' },
-  { name: 'Servicios públicos', type: 'EXPENSE', icon: 'zap', color: '#F59E0B' },
-  { name: 'Alimentación', type: 'EXPENSE', icon: 'shopping-cart', color: '#F97316' },
-  { name: 'Transporte', type: 'EXPENSE', icon: 'bus', color: '#0EA5E9' },
-  { name: 'Salud', type: 'EXPENSE', icon: 'heart', color: '#EF4444' },
-  { name: 'Educación', type: 'EXPENSE', icon: 'book', color: '#8B5CF6' },
-  { name: 'Entretenimiento', type: 'EXPENSE', icon: 'film', color: '#EC4899' },
-  { name: 'Ropa', type: 'EXPENSE', icon: 'shirt', color: '#A855F7' },
-  { name: 'Pago de deudas', type: 'EXPENSE', icon: 'credit-card', color: '#64748B' },
-  { name: 'Otros gastos', type: 'EXPENSE', icon: 'more-horizontal', color: '#94A3B8' },
+  { name: 'Vivienda', kind: 'gasto', icon: 'home', color: '#818CF8' },
+  { name: 'Servicios públicos', kind: 'gasto', icon: 'bolt', color: '#F59E0B' },
+  { name: 'Mercado', kind: 'gasto', icon: 'shopping_cart', color: '#FB923C' },
+  { name: 'Restaurantes y domicilios', kind: 'gasto', icon: 'restaurant', color: '#F97316' },
+  { name: 'Transporte', kind: 'gasto', icon: 'directions_bus', color: '#38BDF8' },
+  { name: 'Salud', kind: 'gasto', icon: 'favorite', color: '#FB7185' },
+  { name: 'Educación', kind: 'gasto', icon: 'school', color: '#A78BFA' },
+  { name: 'Entretenimiento', kind: 'gasto', icon: 'movie', color: '#F472B6' },
+  { name: 'Ropa y cuidado personal', kind: 'gasto', icon: 'checkroom', color: '#C084FC' },
+  { name: 'Celular e internet', kind: 'gasto', icon: 'wifi', color: '#60A5FA' },
+  { name: 'Otros gastos', kind: 'gasto', icon: 'more_horiz', color: '#94A3B8' },
 ];
 
 async function main() {
   let created = 0;
   for (const category of defaultCategories) {
-    // Prisma no permite upsert con userId null en la clave compuesta, por eso se busca primero.
+    // Prisma no permite upsert con user_id null en la clave compuesta, por eso se busca primero.
     const exists = await prisma.category.findFirst({
-      where: { userId: null, name: category.name, type: category.type },
+      where: { userId: null, name: category.name, kind: category.kind },
       select: { id: true },
     });
     if (!exists) {
-      await prisma.category.create({ data: category });
+      await prisma.category.create({ data: { ...category, isDefault: true } });
       created++;
     }
   }
-  console.log(`Categorías predeterminadas: ${created} creadas, ${defaultCategories.length - created} ya existían.`);
+  await prisma.appSettings.upsert({ where: { id: 1 }, create: { id: 1 }, update: {} });
+  console.log(`Categorías por defecto: ${created} creadas, ${defaultCategories.length - created} ya existían.`);
+  console.log('Configuración global lista (app_settings).');
 }
 
 main()
