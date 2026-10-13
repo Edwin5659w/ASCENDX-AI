@@ -1,34 +1,41 @@
 import { router } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AscentHero } from '@/components/brand/AscentHero';
-import { BrandMark } from '@/components/brand/BrandMark';
+import { BrandLockup } from '@/components/brand/BrandMark';
 import { AppText, Button } from '@/components/ui';
 import { useTheme } from '@/theme/useTheme';
 
+/**
+ * Bienvenida. El protagonista es la marca: logotipo, lema oficial
+ * («Convierte potencial en progreso medible») y una ruta que asciende por
+ * varias metas, dibujada una sola vez al abrir.
+ */
 export default function WelcomeScreen() {
-  const { colors, spacing, fonts } = useTheme();
+  const { colors, spacing } = useTheme();
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={[styles.flex, { backgroundColor: colors.background }]}>
-      <View style={[styles.flex, { paddingHorizontal: spacing.xl, paddingBottom: spacing.lg }]}>
-        <View style={[styles.brandRow, { marginTop: spacing.lg, gap: spacing.md }]}>
-          <BrandMark size={36} />
-          <AppText style={{ fontFamily: fonts.extrabold, fontSize: 18, letterSpacing: 0.6 }}>ASCENDX AI</AppText>
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, paddingHorizontal: spacing.xl, paddingBottom: spacing.lg }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={{ marginTop: spacing.lg }}>
+          <BrandLockup size={36} />
         </View>
 
-        <View style={[styles.flex, { justifyContent: 'center', gap: spacing.xxl }]}>
+        <View style={[styles.flex, { justifyContent: 'center', gap: spacing.xl, paddingVertical: spacing.xl }]}>
           <View style={{ marginHorizontal: -spacing.sm }}>
             <AscentHero />
           </View>
 
           <View style={{ gap: spacing.md }}>
             <AppText variant="display" accessibilityRole="header">
-              Tu plata, con rumbo.
+              Convierte potencial en progreso medible.
             </AppText>
-            <AppText color="textMuted" style={{ maxWidth: 360 }}>
-              Organiza ingresos y gastos, avanza en varias metas a la vez y descubre si te conviene ahorrar o
-              financiar antes de decidir.
+            <AppText color="textMuted" style={{ maxWidth: 380 }}>
+              Ordena tus ingresos, gastos y deudas, avanza en varias metas a la vez y descubre con cifras claras si te
+              conviene ahorrar o financiar.
             </AppText>
           </View>
         </View>
@@ -36,16 +43,15 @@ export default function WelcomeScreen() {
         <View style={{ gap: spacing.md }}>
           <Button title="Crear cuenta" onPress={() => router.push('/register')} />
           <Button title="Ya tengo cuenta" variant="secondary" onPress={() => router.push('/login')} />
-          <AppText variant="caption" color="textSubtle" align="center" style={{ marginTop: spacing.xs }}>
+          <AppText variant="caption" color="textMuted" align="center" style={{ marginTop: spacing.xs }}>
             Herramienta educativa. No reemplaza la asesoría financiera profesional.
           </AppText>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  brandRow: { flexDirection: 'row', alignItems: 'center' },
 });

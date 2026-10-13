@@ -4,7 +4,7 @@ import { ActivityIndicator, Animated, Platform, Pressable, StyleSheet, type Pres
 import { useTheme } from '@/theme/useTheme';
 import { AppText } from './AppText';
 
-type Variant = 'primary' | 'secondary' | 'ghost';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> {
   title: string;
@@ -17,9 +17,9 @@ export function Button({ title, variant = 'primary', loading = false, disabled, 
   const [scale] = useState(() => new Animated.Value(1));
   const isDisabled = disabled || loading;
 
-  const background = { primary: colors.primary, secondary: colors.surfaceAlt, ghost: 'transparent' }[variant];
-  const pressedBackground = { primary: colors.primaryPressed, secondary: colors.border, ghost: colors.primarySoft }[variant];
-  const textColor = variant === 'primary' ? 'onPrimary' : variant === 'ghost' ? 'primary' : 'text';
+  const background = { primary: colors.primary, secondary: colors.surfaceAlt, ghost: 'transparent', danger: colors.dangerSoft }[variant];
+  const pressedBackground = { primary: colors.primaryPressed, secondary: colors.border, ghost: colors.primarySoft, danger: colors.dangerSoft }[variant];
+  const textColor = variant === 'primary' ? 'onPrimary' : variant === 'ghost' ? 'primary' : variant === 'danger' ? 'danger' : 'text';
 
   const animateTo = (value: number) =>
     Animated.spring(scale, { toValue: value, useNativeDriver: true, speed: 40, bounciness: 0 }).start();

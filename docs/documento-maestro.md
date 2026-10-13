@@ -249,17 +249,11 @@ Controles: autenticación (sección 4), autorización por `user_id`, Zod, Helmet
 
 ## 15. Diseño visual y gamificación
 
-Fintech prémium con modo oscuro como base y modo claro disponible.
+**Actualizada el 2026-10-13:** la dirección visual oficial está en [`docs/diseno.md`](diseno.md) (identidad de marca, paleta, panel, metas, mentor, accesibilidad y proceso obligatorio antes de rediseñar). Resumen:
 
-| Token | Uso | Propuesta |
-| --- | --- | --- |
-| Fondo | Base oscura | Grafito casi negro; tarjetas un tono más claro |
-| Primario | Acciones, progreso | Turquesa |
-| Éxito | Metas cumplidas, flujo positivo | Verde |
-| Alerta | Meta en riesgo, deuda media | Ámbar |
-| Crítico | Flujo negativo, deuda alta | Rojo coral |
-| Tipografía | Interfaz y cifras | Sans moderna con números tabulares (Inter o Manrope) |
-| Forma | Tarjetas | Esquinas de 16 dp, espaciado en múltiplos de 8 |
+- Concepto: fintech prémium + IA avanzada + progreso personal; «ascender mediante decisiones inteligentes». Lema: «Convierte potencial en progreso medible».
+- Paleta: fondo `#0B1020`, superficies `#121A2B` y `#19243A`, esmeralda `#10B981`, menta `#6EE7B7`, violeta `#8B5CF6` (mentor), texto `#F8FAFC` / `#94A3B8`, bordes `#263449`, error `#F87171`, advertencia `#FBBF24`. Tema oscuro base y tema claro complementario.
+- Tipografía Manrope con números tabulares; tarjetas de 16 dp; espaciado en múltiplos de 8.
 
 **Pantallas del MVP (14):** bienvenida, registro, inicio de sesión, recuperar contraseña, consentimientos, perfil financiero inicial, panel, historial, nuevo movimiento, deudas, metas (lista y detalle), simulador, asistente IA, perfil y ajustes.
 

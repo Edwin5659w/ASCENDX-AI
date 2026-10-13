@@ -69,3 +69,15 @@ Cada decisión importante se registra aquí con su fecha, contexto y motivo, par
 - **Diseño:** fondo grafito, primario turquesa, tipografía Manrope con números tabulares, tarjetas de 16 dp y navegación Inicio · Movimientos · (+) · Metas · Asistente.
 
 **Pendiente de verificar (sprint 1 del v2):** proveedor de correo transaccional, PaaS y base de datos administrada, proveedor de IA. Mientras no haya proveedor de correo, en desarrollo el código de recuperación se muestra en la consola de la API (nunca en producción).
+
+---
+
+## D-007 · Dirección visual oficial (2026-10-13)
+
+**Contexto.** El autor entregó la sección 15 definitiva de dirección visual e identidad de marca, que reemplaza la propuesta inicial (grafito + turquesa).
+
+**Decisión.** Adoptar la paleta de referencia (fondo `#0B1020`, esmeralda `#10B981`, menta `#6EE7B7`, violeta `#8B5CF6` para el mentor), el lema «Convierte potencial en progreso medible», un isotipo propio («X ascendente») usado también como ícono de la app, y la jerarquía del panel de la sección 15.4. Detalle en `docs/diseno.md`.
+
+**Motivo.** Identidad reconocible y coherente en todas las pantallas; los acentos se reservan para acciones principales, progreso y el mentor.
+
+**Notas.** Se conserva Manrope (la sección 15 no fija tipografía y la v2 la proponía). La pestaña sigue llamándose «Asistente», como en el Anexo I del anteproyecto; dentro, la función se presenta como «Tu mentor ASCENDX AI».

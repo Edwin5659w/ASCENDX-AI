@@ -72,8 +72,12 @@ export function AscentHero() {
       <Svg width="100%" height="100%" viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} preserveAspectRatio="xMidYMid meet">
         <Defs>
           <LinearGradient id="area" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={colors.primary} stopOpacity={0.22} />
+            <Stop offset="0" stopColor={colors.primary} stopOpacity={0.18} />
             <Stop offset="1" stopColor={colors.primary} stopOpacity={0} />
+          </LinearGradient>
+          <LinearGradient id="line" x1="0" y1="1" x2="1" y2="0">
+            <Stop offset="0" stopColor={colors.primary} />
+            <Stop offset="1" stopColor={colors.mint} />
           </LinearGradient>
         </Defs>
         {CONTOURS.map((d) => (
@@ -82,11 +86,11 @@ export function AscentHero() {
         <Path d={AREA} fill="url(#area)" />
         {Platform.OS === 'web' ? (
           // En la vista previa web se dibuja estática (react-native-svg web no anima trazos).
-          <Path d={PATH} stroke={colors.primary} strokeWidth={3.5} strokeLinecap="round" fill="none" />
+          <Path d={PATH} stroke="url(#line)" strokeWidth={3.5} strokeLinecap="round" fill="none" />
         ) : (
         <AnimatedPath
           d={PATH}
-          stroke={colors.primary}
+          stroke="url(#line)"
           strokeWidth={3.5}
           strokeLinecap="round"
           fill="none"
@@ -100,8 +104,8 @@ export function AscentHero() {
             cx={m.x}
             cy={m.y}
             r={index === MILESTONES.length - 1 ? 7 : 5.5}
-            fill={index === MILESTONES.length - 1 ? colors.achievement : colors.background}
-            stroke={index === MILESTONES.length - 1 ? colors.achievement : colors.primary}
+            fill={index === MILESTONES.length - 1 ? colors.mint : colors.background}
+            stroke={index === MILESTONES.length - 1 ? colors.mint : colors.primary}
             strokeWidth={2.5}
           />
         ))}
@@ -119,7 +123,7 @@ export function AscentHero() {
                 ? { right: `${((VIEW_W - m.x + 12) / VIEW_W) * 100}%` }
                 : { left: `${((m.align === 'below' ? m.x - 14 : m.x + 10) / VIEW_W) * 100}%` }),
               backgroundColor: colors.surface,
-              borderColor: index === MILESTONES.length - 1 ? colors.achievement : colors.border,
+              borderColor: index === MILESTONES.length - 1 ? colors.mint : colors.border,
               borderRadius: radius.pill,
               paddingHorizontal: spacing.md,
               opacity: chips[index],
@@ -127,7 +131,7 @@ export function AscentHero() {
             },
           ]}
         >
-          <AppText variant="label" color={index === MILESTONES.length - 1 ? 'achievement' : 'text'}>
+          <AppText variant="label" color={index === MILESTONES.length - 1 ? 'mint' : 'text'}>
             {m.label}
           </AppText>
         </Animated.View>

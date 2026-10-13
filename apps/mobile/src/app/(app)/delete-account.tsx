@@ -61,7 +61,7 @@ export default function DeleteAccountScreen() {
         placeholder="Confirma con tu contraseña"
       />
       {error ? <FormError message={error} /> : null}
-      <Button title="Eliminar mi cuenta y mis datos" onPress={handleDelete} loading={loading} />
+      <Button title="Eliminar mi cuenta y mis datos" variant="danger" onPress={handleDelete} loading={loading} />
     </Screen>
   );
 }
