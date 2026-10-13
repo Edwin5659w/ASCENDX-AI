@@ -39,7 +39,9 @@ Cada decisión importante se registra aquí con su fecha, contexto y motivo, par
 **Motivo.** Evita que la IA invente cifras y permite resultados reproducibles para la evaluación.
 
 **Detalles.**
-- Los montos se manejan en **pesos colombianos (COP) como enteros** (sin centavos) y se redondean al peso.
+- Los montos se guardan como `DECIMAL(15,2)` y los resultados que ve el usuario se redondean al **peso colombiano** (COP).
+- En la tabla de amortización la última cuota absorbe la diferencia de redondeo para que el saldo termine exactamente en 0.
+- El simulador **no recomienda** un camino: devuelve hechos comparables, supuestos y advertencias. La decisión es del usuario.
 - Tasas: el usuario puede ingresar **tasa efectiva anual (E.A.)** o **mensual vencida (M.V.)**; internamente todo se convierte a tasa mensual: `i_m = (1 + EA)^(1/12) - 1`.
 - Cuota fija (sistema francés): `C = P · i / (1 - (1 + i)^-n)`.
 
