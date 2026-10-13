@@ -14,6 +14,7 @@ import { LogBox, Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntroAnimation } from '@/components/brand/IntroAnimation';
 import { AuthProvider, useAuth } from '@/features/auth/AuthProvider';
+import { ThemePreferenceProvider } from '@/theme/ThemePreference';
 import { useTheme } from '@/theme/useTheme';
 
 // Aviso conocido de react-native-svg solo en la vista previa web (atributo "collapsable"); no afecta Android.
@@ -78,9 +79,11 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <RootNavigator />
-      </AuthProvider>
+      <ThemePreferenceProvider>
+        <AuthProvider>
+          <RootNavigator />
+        </AuthProvider>
+      </ThemePreferenceProvider>
     </SafeAreaProvider>
   );
 }

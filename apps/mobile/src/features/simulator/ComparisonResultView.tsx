@@ -1,20 +1,36 @@
 import { formatCop, formatPercent } from '@ascendx/finance-core';
 import { View } from 'react-native';
-import { AppText, Card, Icon } from '@/components/ui';
+import { FadeIn } from '@/components/motion';
+import { AnimatedAmount, AppText, Card, Icon } from '@/components/ui';
 import { formatMonths } from '@/lib/format';
 import type { Palette } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 import type { CompareResult } from './api';
 
-function Row({ label, value, color = 'text' }: { label: string; value: string; color?: keyof Palette }) {
+function Row({
+  label,
+  value,
+  amount,
+  color = 'text',
+}: {
+  label: string;
+  value?: string;
+  /** Monto en pesos: se muestra contando hasta su valor. */
+  amount?: number;
+  color?: keyof Palette;
+}) {
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
       <AppText variant="caption" color="textMuted" style={{ flex: 1 }}>
         {label}
       </AppText>
-      <AppText variant="bodyStrong" color={color} style={{ fontVariant: ['tabular-nums'] }}>
-        {value}
-      </AppText>
+      {amount !== undefined ? (
+        <AnimatedAmount variant="bodyStrong" color={color} value={amount} format={formatCop} delay={200} />
+      ) : (
+        <AppText variant="bodyStrong" color={color} style={{ fontVariant: ['tabular-nums'] }}>
+          {value}
+        </AppText>
+      )}
     </View>
   );
 }
@@ -29,13 +45,13 @@ function CreditCard({ title, path, highlighted }: { title: string; path: Compare
         <AppText variant="caption" color="textMuted">
           Pago mensual
         </AppText>
-        <AppText variant="amount">{formatCop(path.monthlyOutflow)}</AppText>
+        <AnimatedAmount variant="amount" value={path.monthlyOutflow} format={formatCop} />
       </View>
-      <Row label="Cuota inicial" value={formatCop(path.downPayment)} />
-      <Row label="Monto financiado" value={formatCop(path.financedAmount)} />
-      <Row label="Intereses" value={formatCop(path.totalInterest)} color="danger" />
-      <Row label="Pagas en total" value={formatCop(path.totalPaid)} />
-      <Row label="Costo extra frente a contado" value={formatCop(path.extraCost)} color="danger" />
+      <Row label="Cuota inicial" amount={path.downPayment} />
+      <Row label="Monto financiado" amount={path.financedAmount} />
+      <Row label="Intereses" amount={path.totalInterest} color="danger" />
+      <Row label="Pagas en total" amount={path.totalPaid} />
+      <Row label="Costo extra frente a contado" amount={path.extraCost} color="danger" />
       <Row
         label="Tendrías el bien"
         value={path.monthsToOwnership === null ? 'Sin fecha estimada' : formatMonths(path.monthsToOwnership)}
@@ -51,9 +67,16 @@ export function ComparisonResultView({ result }: { result: CompareResult }) {
 
   return (
     <View style={{ gap: spacing.lg }}>
-      <CreditCard title="Crédito hoy" path={credit} highlighted />
-      {mixed ? <CreditCard title="Mixto: ahorras la cuota inicial y financias el resto" path={mixed} /> : null}
+      <FadeIn>
+        <CreditCard title="Crédito hoy" path={credit} highlighted />
+      </FadeIn>
+      {mixed ? (
+        <FadeIn delay={90}>
+          <CreditCard title="Mixto: ahorras la cuota inicial y financias el resto" path={mixed} />
+        </FadeIn>
+      ) : null}
 
+      <FadeIn delay={180}>
       <Card>
         <AppText variant="overline" color="success">
           Ahorrando
@@ -64,10 +87,12 @@ export function ComparisonResultView({ result }: { result: CompareResult }) {
           </AppText>
           <AppText variant="amount">{saving.months === null ? 'Sin calcular' : formatMonths(saving.months)}</AppText>
         </View>
-        <Row label="Pagas en total" value={formatCop(saving.totalPaid)} />
-        <Row label="Intereses" value={formatCop(0)} color="success" />
+        <Row label="Pagas en total" amount={saving.totalPaid} />
+        <Row label="Intereses" amount={0} color="success" />
       </Card>
+      </FadeIn>
 
+      <FadeIn delay={270}>
       <Card>
         <AppText variant="heading">La diferencia</AppText>
         <AppText color="textMuted">
@@ -78,6 +103,7 @@ export function ComparisonResultView({ result }: { result: CompareResult }) {
           Tasa equivalente: {formatPercent(result.effectiveAnnualRate)} E.A.
         </AppText>
       </Card>
+      </FadeIn>
 
       {result.warnings.map((warning) => (
         <View

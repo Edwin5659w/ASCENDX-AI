@@ -1,4 +1,5 @@
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
+import { PressableScale } from '@/components/motion';
 import { useTheme } from '@/theme/useTheme';
 import { AppText } from './AppText';
 import { Icon, type IconName } from './Icon';
@@ -18,7 +19,8 @@ export function NavRow({ icon, title, subtitle, onPress, tone = 'default', badge
   const { colors, radius, spacing } = useTheme();
   const danger = tone === 'danger';
   return (
-    <Pressable
+    <PressableScale
+      scaleTo={0.98}
       accessibilityRole="button"
       accessibilityLabel={subtitle ? `${title}. ${subtitle}` : title}
       onPress={onPress}
@@ -64,6 +66,6 @@ export function NavRow({ icon, title, subtitle, onPress, tone = 'default', badge
         </View>
       ) : null}
       <Icon name="chevronRight" size={20} color="textSubtle" />
-    </Pressable>
+    </PressableScale>
   );
 }

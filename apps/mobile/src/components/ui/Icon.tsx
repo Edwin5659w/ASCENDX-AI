@@ -44,6 +44,9 @@ const ICONS = {
   camera: { android: 'document_scanner', ios: 'doc.viewfinder', web: 'document_scanner' },
   edit: { android: 'edit', ios: 'pencil', web: 'edit' },
   document: { android: 'description', ios: 'doc.text', web: 'description' },
+  sun: { android: 'light_mode', ios: 'sun.max.fill', web: 'light_mode' },
+  moon: { android: 'dark_mode', ios: 'moon.fill', web: 'dark_mode' },
+  phone: { android: 'smartphone', ios: 'iphone', web: 'smartphone' },
 } as const;
 
 export type IconName = keyof typeof ICONS;

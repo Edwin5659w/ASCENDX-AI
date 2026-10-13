@@ -3,13 +3,20 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { Wordmark } from '@/components/brand/BrandMark';
-import { AppText, Button, Card, Header, NavRow, Screen, ToggleRow } from '@/components/ui';
+import { AppText, Button, Card, Header, NavRow, Screen, SegmentedControl, ToggleRow } from '@/components/ui';
 import { updateConsents } from '@/features/account/api';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { FormError } from '@/features/auth/AuthShell';
 import { ApiError } from '@/lib/api';
 import { formatCop } from '@/lib/format';
+import { useThemePreference, type ThemePreference } from '@/theme/ThemePreference';
 import { useTheme } from '@/theme/useTheme';
+
+const THEME_OPTIONS: { value: ThemePreference; label: string; icon: 'phone' | 'sun' | 'moon' }[] = [
+  { value: 'system', label: 'Sistema', icon: 'phone' },
+  { value: 'light', label: 'Claro', icon: 'sun' },
+  { value: 'dark', label: 'Oscuro', icon: 'moon' },
+];
 
 const dateFormatter = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -17,6 +24,7 @@ const dateFormatter = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 
 export default function ProfileScreen() {
   const { user, setUser, signOut } = useAuth();
   const { spacing } = useTheme();
+  const { preference, setPreference } = useThemePreference();
   const [savingConsent, setSavingConsent] = useState<'ia' | 'ocr' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
@@ -65,6 +73,19 @@ export default function ProfileScreen() {
           }
           onPress={() => router.push('/financial-profile')}
         />
+      </Card>
+
+      <Card>
+        <AppText variant="heading">Apariencia</AppText>
+        <SegmentedControl
+          accessibilityLabel="Apariencia de la app"
+          options={THEME_OPTIONS}
+          value={preference}
+          onChange={setPreference}
+        />
+        <AppText variant="caption" color="textMuted">
+          {preference === 'system' ? 'Sigue el modo claro u oscuro de tu teléfono.' : 'Se mantiene aunque cambie el modo de tu teléfono.'}
+        </AppText>
       </Card>
 
       <Card>

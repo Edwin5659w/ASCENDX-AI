@@ -1,6 +1,7 @@
 import { useId, type ReactNode } from 'react';
 import { View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
+import { useCountUp } from '@/components/motion';
 import { useTheme } from '@/theme/useTheme';
 
 interface ProgressRingProps {
@@ -31,6 +32,8 @@ export function ProgressRing({
   const { colors } = useTheme();
   const gradientId = `ring-${useId().replace(/:/g, '')}`;
   const clamped = Math.max(0, Math.min(1, value));
+  // El anillo se llena con una animación; la lectura accesible usa el valor final.
+  const shown = useCountUp(clamped, { duration: 1100 });
   const r = (size - strokeWidth) / 2;
   const c = 2 * Math.PI * r;
   const center = size / 2;
@@ -52,7 +55,7 @@ export function ProgressRing({
           </LinearGradient>
         </Defs>
         <Circle cx={center} cy={center} r={r} stroke={colors.border} strokeWidth={strokeWidth} fill="none" />
-          {clamped > 0 ? (
+          {shown > 0.001 ? (
             <Circle
               cx={center}
               cy={center}
@@ -60,7 +63,7 @@ export function ProgressRing({
               stroke={`url(#${gradientId})`}
               strokeWidth={strokeWidth}
               strokeLinecap="round"
-              strokeDasharray={`${c * clamped} ${c}`}
+              strokeDasharray={`${c * shown} ${c}`}
               fill="none"
             />
           ) : null}
@@ -74,7 +77,7 @@ export function ProgressRing({
                 cx={center + ((inner + outer) / 2) * Math.cos(angle)}
                 cy={center + ((inner + outer) / 2) * Math.sin(angle)}
                 r={1.8}
-                fill={clamped >= m ? colors.onPrimary : colors.textSubtle}
+                fill={shown >= m ? colors.onPrimary : colors.textSubtle}
               />
             );
           })}

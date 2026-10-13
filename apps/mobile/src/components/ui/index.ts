@@ -1,3 +1,4 @@
+export { AnimatedAmount } from './AnimatedAmount';
 export { AppText } from './AppText';
 export { Button } from './Button';
 export { Card } from './Card';
@@ -11,3 +12,4 @@ export { ProgressRing } from './ProgressRing';
 export { Screen } from './Screen';
 export { TextField } from './TextField';
 export { ToggleRow } from './ToggleRow';
+export { SegmentedControl } from './SegmentedControl';

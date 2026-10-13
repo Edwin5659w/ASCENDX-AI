@@ -1,10 +1,12 @@
 import { useColorScheme } from 'react-native';
 import { darkPalette, elevation, fonts, lightPalette, radius, spacing, typography, type ElevationLevel } from './tokens';
+import { useThemePreference } from './ThemePreference';
 
-/** Tema actual según el modo claro/oscuro del sistema. */
+/** Tema actual: la preferencia del usuario (Perfil → Apariencia) o, por defecto, la del sistema. */
 export function useTheme() {
   const scheme = useColorScheme();
-  const isDark = scheme !== 'light';
+  const { preference } = useThemePreference();
+  const isDark = preference === 'system' ? scheme !== 'light' : preference === 'dark';
   const colors = isDark ? darkPalette : lightPalette;
   return {
     isDark,

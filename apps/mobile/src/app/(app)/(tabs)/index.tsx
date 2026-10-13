@@ -1,8 +1,9 @@
 import { estimateSavingCapacity } from '@ascendx/finance-core';
 import { Redirect, router, type Href } from 'expo-router';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
+import { PressableScale } from '@/components/motion';
 import { MentorMark } from '@/components/brand/MentorMark';
-import { AppText, Card, Icon, ProgressRing, Screen, type IconName } from '@/components/ui';
+import { AnimatedAmount, AppText, Card, Icon, ProgressRing, Screen, type IconName } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { firstName, formatCop } from '@/lib/format';
 import { useTheme } from '@/theme/useTheme';
@@ -74,7 +75,8 @@ export default function HomeScreen() {
           </AppText>
           <AppText color="textMuted">{summary}</AppText>
         </View>
-        <Pressable
+        <PressableScale
+          scaleTo={0.9}
           accessibilityRole="button"
           accessibilityLabel="Perfil y ajustes"
           onPress={() => router.push('/profile')}
@@ -92,7 +94,7 @@ export default function HomeScreen() {
           <AppText variant="heading" color="mint">
             {firstName(user.name).charAt(0).toUpperCase()}
           </AppText>
-        </Pressable>
+        </PressableScale>
       </View>
 
       {/* 2. Meta prioritaria (estado vacío honesto hasta tener el módulo de metas) */}
@@ -132,9 +134,7 @@ export default function HomeScreen() {
           <>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
               {capacity.alert ? <Icon name="warning" color="danger" size={22} /> : null}
-              <AppText variant="amount" color={capacity.alert ? 'danger' : 'text'}>
-                {formatCop(capacity.prudentCapacity)}
-              </AppText>
+              <AnimatedAmount variant="amount" color={capacity.alert ? 'danger' : 'text'} value={capacity.prudentCapacity} />
             </View>
             <View
               style={{
@@ -148,7 +148,7 @@ export default function HomeScreen() {
               <AppText variant="caption" color="textMuted">
                 Capacidad estimada
               </AppText>
-              <AppText variant="label">{formatCop(capacity.capacity)}</AppText>
+              <AnimatedAmount variant="label" value={capacity.capacity} delay={150} />
             </View>
             <AppText variant="caption" color="textMuted">
               {capacity.alert
@@ -160,7 +160,8 @@ export default function HomeScreen() {
       </Card>
 
       {/* 4. Próxima acción recomendada */}
-      <Pressable
+      <PressableScale
+        hapticKind="light"
         accessibilityRole="button"
         accessibilityLabel={`Próxima acción: ${nextAction.title}`}
         accessibilityHint={nextAction.detail}
@@ -195,10 +196,10 @@ export default function HomeScreen() {
           </AppText>
         </View>
         <Icon name="chevronRight" color="onPrimary" />
-      </Pressable>
+      </PressableScale>
 
       {/* 7. Acceso al mentor */}
-      <Pressable
+      <PressableScale
         accessibilityRole="button"
         accessibilityLabel="Tu mentor ASCENDX AI"
         onPress={() => router.push('/assistant')}
@@ -221,7 +222,7 @@ export default function HomeScreen() {
           </AppText>
         </View>
         <Icon name="chevronRight" color="textSubtle" />
-      </Pressable>
+      </PressableScale>
 
       <View style={{ flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.xs }}>
         <Icon name="shield" color="textSubtle" size={16} />

@@ -262,3 +262,11 @@ Capturas a 390 × 844 en la vista previa web, temas oscuro y claro: bienvenida, 
 - **Combinación:** `BrandLockup` (símbolo + nombre) en la bienvenida.
 - **Animación de inicio:** `IntroAnimation`, verificada en la vista previa a 100, 450, 750, 1050, 1500 y 2300 ms y en la transición a la bienvenida y al inicio de sesión.
 - **Zona de respeto:** no deformar, no recolorear el degradado, no poner el símbolo sobre fondos con mucho detalle. Tamaño mínimo del símbolo: 24 pt de alto.
+
+## Apariencia y movimiento (2026-10-13)
+
+- **Modo claro / oscuro / sistema:** Perfil → Apariencia. Se guarda en el teléfono (`ThemePreferenceProvider`, `lib/preferences.ts`) y también se aplica al teclado y diálogos nativos.
+- **Respuesta al tocar:** `PressableScale` (se hunde, rebota al soltar y vibra suave). Lo usan `Button`, `NavRow` y las tarjetas tocables del panel.
+- **Resultados animados:** `AnimatedAmount` y `useCountUp` hacen que los montos cuenten hasta su valor; `ProgressBar` y `ProgressRing` se llenan al aparecer. El lector de pantalla recibe siempre el valor final.
+- **Entrada de pantallas:** las secciones de las pantallas con desplazamiento entran escalonadas (`FadeIn`, 60 ms entre secciones); los resultados del simulador también.
+- **Reducir movimiento:** todas las animaciones lo respetan (`useReducedMotion`): se muestran los valores finales sin desplazamientos.
