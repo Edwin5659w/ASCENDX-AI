@@ -39,3 +39,11 @@ export function formatCop(value: number): string {
     maximumFractionDigits: 0,
   }).format(value);
 }
+
+/** Formato de porcentaje en español: 0.185 → "18,50 %" */
+export function formatPercent(fraction: number, decimals = 2): string {
+  return `${new Intl.NumberFormat('es-CO', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(fraction * 100)} %`;
+}

@@ -5,7 +5,7 @@
  * comparables (cuánto cuesta cada uno y cuándo se tendría el bien). No emite
  * una recomendación: la decisión es del usuario, y la IA solo explica.
  */
-import { formatCop, assertNonNegative, assertPositive, assertPositiveInteger, roundCop } from './money.js';
+import { formatCop, formatPercent, assertNonNegative, assertPositive, assertPositiveInteger, roundCop } from './money.js';
 import { summarizeLoan, type LoanSummary } from './loan.js';
 import { effectiveAnnualToMonthly, monthlyToEffectiveAnnual, toMonthlyRate, type RateType } from './rates.js';
 import { projectSavings } from './savings.js';
@@ -165,12 +165,12 @@ export function compareSavingVsFinancing(rawInput: ComparisonInput): ComparisonR
 
   const assumptions = [
     `Crédito con cuota fija (sistema francés) a ${input.termMonths} meses.`,
-    `Tasa equivalente: ${(effectiveAnnualRate * 100).toFixed(2)} % E.A. (${(monthlyRate * 100).toFixed(4)} % mensual).`,
+    `Tasa equivalente: ${formatPercent(effectiveAnnualRate)} E.A. (${formatPercent(monthlyRate, 4)} mensual).`,
     input.monthlyFees > 0
       ? `Cargos mensuales del crédito: ${formatCop(input.monthlyFees)}.`
       : 'No se incluyeron seguros ni cargos adicionales del crédito.',
     input.annualPriceIncrease > 0
-      ? `El precio del bien sube ${(input.annualPriceIncrease * 100).toFixed(1)} % al año mientras ahorras.`
+      ? `El precio del bien sube ${formatPercent(input.annualPriceIncrease, 1)} al año mientras ahorras.`
       : 'El precio del bien se mantiene igual mientras ahorras.',
     'El ahorro no genera rendimientos (supuesto conservador).',
     'Los aportes de ahorro se hacen al final de cada mes.',
