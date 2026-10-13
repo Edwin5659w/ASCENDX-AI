@@ -10,8 +10,10 @@ import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient, type CategoryKind } from '../src/generated/prisma/client.js';
 
-if (process.env.NODE_ENV === 'production') {
-  console.error('El seed está bloqueado en producción.');
+// En producción solo se permite de forma explícita (render.yaml lo hace al arrancar):
+// únicamente crea categorías del sistema y la configuración global, nunca datos de usuarios.
+if (process.env.NODE_ENV === 'production' && process.env.ALLOW_PROD_SEED !== 'true') {
+  console.error('El seed está bloqueado en producción (usa ALLOW_PROD_SEED=true).');
   process.exit(1);
 }
 

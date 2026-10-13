@@ -1,0 +1,33 @@
+# Despliegue de la API de ASCENDX AI en Render (plan gratis).
+# La base de datos PostgreSQL está en Neon; su dirección se pega en Render
+# como DATABASE_URL al crear el servicio (nunca se guarda en el repositorio).
+services:
+  - type: web
+    name: ascendx-api
+    runtime: node
+    plan: free
+    region: virginia
+    branch: main
+    autoDeploy: true
+    healthCheckPath: /api/health
+    buildCommand: >-
+      npm ci --include=dev &&
+      npm run build -w @ascendx/finance-core &&
+      npm run db:generate -w @ascendx/api &&
+      npm run build -w @ascendx/api
+    # Al arrancar: aplica migraciones, carga categorías por defecto (idempotente) e inicia.
+    startCommand: >-
+      npm run db:deploy -w @ascendx/api &&
+      ALLOW_PROD_SEED=true npm run db:seed -w @ascendx/api &&
+      npm run start -w @ascendx/api
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: LOG_LEVEL
+        value: info
