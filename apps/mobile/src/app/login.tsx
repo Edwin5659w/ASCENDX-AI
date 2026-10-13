@@ -1,5 +1,6 @@
+import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { TextInput, View } from 'react-native';
+import { Pressable, TextInput, View } from 'react-native';
 import { AppText, Button, Icon, TextField } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { AuthShell, FormError } from '@/features/auth/AuthShell';
@@ -35,6 +36,9 @@ export default function LoginScreen() {
     } catch (err) {
       if (err instanceof ApiError && err.code === 'INVALID_CREDENTIALS') {
         setFormError('El correo o la contraseña no coinciden. Revísalos e inténtalo de nuevo.');
+      } else if (err instanceof ApiError && err.code === 'ACCOUNT_LOCKED') {
+        // RF-02: tras 5 intentos fallidos la cuenta se bloquea 15 minutos.
+        setFormError(err.message);
       } else if (err instanceof ApiError && err.code === 'TOO_MANY_ATTEMPTS') {
         setFormError('Hiciste demasiados intentos. Espera 15 minutos antes de volver a intentar.');
       } else {
@@ -93,6 +97,17 @@ export default function LoginScreen() {
         onSubmitEditing={handleSubmit}
         error={errors.password}
       />
+
+      <Pressable
+        accessibilityRole="link"
+        onPress={() => router.push({ pathname: '/forgot-password', params: { email: email.trim() } })}
+        hitSlop={8}
+        style={{ alignSelf: 'flex-end', minHeight: 32, justifyContent: 'center', marginTop: -spacing.sm }}
+      >
+        <AppText variant="label" color="primary">
+          ¿Olvidaste tu contraseña?
+        </AppText>
+      </Pressable>
 
       {formError ? <FormError message={formError} /> : null}
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { AppText, Button, Screen, TextField } from '@/components/ui';
+import { AppText, Button, Header, Screen, TextField } from '@/components/ui';
 import { compareScenarios, type CompareResult, type RateType } from '@/features/simulator/api';
 import { ComparisonResultView } from '@/features/simulator/ComparisonResultView';
 import { ApiError } from '@/lib/api';
@@ -103,10 +103,15 @@ export default function SimulatorScreen() {
   }
 
   return (
-    <Screen scroll>
+    <Screen scroll edges={['top', 'bottom']}>
+      <Header title="Simulador" />
       <View style={{ gap: spacing.xs }}>
-        <AppText variant="title">¿Ahorrar o financiar?</AppText>
-        <AppText color="textMuted">Compara los dos caminos para comprar un bien con los mismos supuestos.</AppText>
+        <AppText variant="title" accessibilityRole="header">
+          ¿Ahorrar o financiar?
+        </AppText>
+        <AppText color="textMuted">
+          Compara ahorrar, financiar hoy o combinar ambos, con los mismos supuestos y el costo total de cada camino.
+        </AppText>
       </View>
 
       <TextField

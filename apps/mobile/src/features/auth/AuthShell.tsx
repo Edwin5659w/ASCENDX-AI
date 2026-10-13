@@ -9,7 +9,8 @@ import { useTheme } from '@/theme/useTheme';
 type Mode = 'login' | 'register';
 
 interface AuthShellProps {
-  mode: Mode;
+  /** Sin modo (p. ej. recuperar contraseña) no se muestra el selector. */
+  mode?: Mode;
   title: string;
   subtitle: string;
   children: ReactNode;
@@ -59,6 +60,7 @@ export function AuthShell({ mode, title, subtitle, children, footer }: AuthShell
             <AppText color="textMuted">{subtitle}</AppText>
           </View>
 
+          {mode ? (
           <View
             accessibilityRole="tablist"
             style={[styles.segmented, { backgroundColor: colors.surface, borderRadius: radius.md, borderColor: colors.border }]}
@@ -88,6 +90,7 @@ export function AuthShell({ mode, title, subtitle, children, footer }: AuthShell
               );
             })}
           </View>
+          ) : null}
 
           <View style={{ gap: spacing.xl }}>{children}</View>
 
@@ -95,6 +98,22 @@ export function AuthShell({ mode, title, subtitle, children, footer }: AuthShell
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+/** Mensaje informativo (p. ej. «te enviamos un código»). */
+export function FormNotice({ message }: { message: string }) {
+  const { colors, spacing, radius } = useTheme();
+  return (
+    <View
+      accessibilityLiveRegion="polite"
+      style={{ flexDirection: 'row', gap: spacing.md, padding: spacing.lg, borderRadius: radius.md, backgroundColor: colors.primarySoft, alignItems: 'center' }}
+    >
+      <Icon name="mail" size={20} color="primary" />
+      <AppText variant="caption" style={{ flex: 1 }}>
+        {message}
+      </AppText>
+    </View>
   );
 }
 

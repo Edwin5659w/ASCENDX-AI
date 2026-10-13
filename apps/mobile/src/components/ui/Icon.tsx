@@ -30,6 +30,20 @@ const ICONS = {
   back: { android: 'arrow_back', ios: 'chevron.left', web: 'arrow_back' },
   checkSmall: { android: 'check', ios: 'checkmark', web: 'check' },
   error: { android: 'error', ios: 'exclamationmark.circle', web: 'error' },
+  add: { android: 'add', ios: 'plus', web: 'add' },
+  assistant: { android: 'auto_awesome', ios: 'sparkles', web: 'auto_awesome' },
+  chevronRight: { android: 'chevron_right', ios: 'chevron.right', web: 'chevron_right' },
+  settings: { android: 'settings', ios: 'gearshape', web: 'settings' },
+  savings: { android: 'savings', ios: 'banknote', web: 'savings' },
+  debt: { android: 'credit_card', ios: 'creditcard', web: 'credit_card' },
+  calendar: { android: 'event', ios: 'calendar', web: 'event' },
+  trash: { android: 'delete', ios: 'trash', web: 'delete' },
+  close: { android: 'close', ios: 'xmark', web: 'close' },
+  key: { android: 'key', ios: 'key', web: 'key' },
+  wallet: { android: 'account_balance_wallet', ios: 'wallet.pass', web: 'account_balance_wallet' },
+  camera: { android: 'document_scanner', ios: 'doc.viewfinder', web: 'document_scanner' },
+  edit: { android: 'edit', ios: 'pencil', web: 'edit' },
+  document: { android: 'description', ios: 'doc.text', web: 'description' },
 } as const;
 
 export type IconName = keyof typeof ICONS;

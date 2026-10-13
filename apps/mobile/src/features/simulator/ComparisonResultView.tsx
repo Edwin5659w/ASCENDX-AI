@@ -33,9 +33,9 @@ function CreditCard({ title, path, highlighted }: { title: string; path: Compare
       </View>
       <Row label="Cuota inicial" value={formatCop(path.downPayment)} />
       <Row label="Monto financiado" value={formatCop(path.financedAmount)} />
-      <Row label="Intereses" value={formatCop(path.totalInterest)} color="expense" />
+      <Row label="Intereses" value={formatCop(path.totalInterest)} color="danger" />
       <Row label="Pagas en total" value={formatCop(path.totalPaid)} />
-      <Row label="Costo extra frente a contado" value={formatCop(path.extraCost)} color="expense" />
+      <Row label="Costo extra frente a contado" value={formatCop(path.extraCost)} color="danger" />
       <Row
         label="Tendrías el bien"
         value={path.monthsToOwnership === null ? 'Sin fecha estimada' : formatMonths(path.monthsToOwnership)}
@@ -55,7 +55,7 @@ export function ComparisonResultView({ result }: { result: CompareResult }) {
       {mixed ? <CreditCard title="Mixto: ahorras la cuota inicial y financias el resto" path={mixed} /> : null}
 
       <Card>
-        <AppText variant="overline" color="income">
+        <AppText variant="overline" color="success">
           Ahorrando
         </AppText>
         <View>
@@ -65,7 +65,7 @@ export function ComparisonResultView({ result }: { result: CompareResult }) {
           <AppText variant="amount">{saving.months === null ? 'Sin calcular' : formatMonths(saving.months)}</AppText>
         </View>
         <Row label="Pagas en total" value={formatCop(saving.totalPaid)} />
-        <Row label="Intereses" value={formatCop(0)} color="income" />
+        <Row label="Intereses" value={formatCop(0)} color="success" />
       </Card>
 
       <Card>

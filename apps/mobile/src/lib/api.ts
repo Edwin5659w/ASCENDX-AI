@@ -8,16 +8,30 @@ import { clearRefreshToken, readRefreshToken, saveRefreshToken } from './secure-
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:4000/api';
 
+export type ConsentType = 'terminos' | 'datos' | 'ia' | 'ocr';
+
+export interface ConsentState {
+  granted: boolean;
+  version: string | null;
+  grantedAt: string | null;
+}
+
+export interface FinancialProfile {
+  estimatedIncome: number | null;
+  estimatedFixedExpenses: number | null;
+  payDay: number | null;
+  safetyMargin: number;
+}
+
+/** Usuario tal como lo devuelve GET /me (ver docs/api.md). */
 export interface User {
   id: string;
   email: string;
-  fullName: string;
+  name: string;
+  isAdult: boolean;
   createdAt: string;
-  consents: {
-    privacyAcceptedAt: string | null;
-    aiConsentAt: string | null;
-    ocrConsentAt: string | null;
-  };
+  consents: Record<ConsentType, ConsentState>;
+  financialProfile: FinancialProfile | null;
 }
 
 export interface AuthSession {
@@ -31,7 +45,8 @@ export class ApiError extends Error {
     public readonly status: number,
     public readonly code: string,
     message: string,
-    public readonly details?: { path: string; message: string }[],
+    /** Lista de errores por campo (validación) u objeto con datos extra (p. ej. minutos de bloqueo). */
+    public readonly details?: unknown,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -40,7 +55,8 @@ export class ApiError extends Error {
   /** Errores de validación agrupados por campo: { email: 'Correo inválido' } */
   fieldErrors(): Record<string, string> {
     const errors: Record<string, string> = {};
-    for (const detail of this.details ?? []) {
+    const list = Array.isArray(this.details) ? (this.details as { path: string; message: string }[]) : [];
+    for (const detail of list) {
       if (detail.path && !errors[detail.path]) errors[detail.path] = detail.message;
     }
     return errors;

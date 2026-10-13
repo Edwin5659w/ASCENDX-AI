@@ -14,7 +14,7 @@ export default function WelcomeScreen() {
       <View style={[styles.flex, { paddingHorizontal: spacing.xl, paddingBottom: spacing.lg }]}>
         <View style={[styles.brandRow, { marginTop: spacing.lg, gap: spacing.md }]}>
           <BrandMark size={36} />
-          <AppText style={{ fontFamily: fonts.displaySemi, fontSize: 18, letterSpacing: 0.4 }}>ASCENDX AI</AppText>
+          <AppText style={{ fontFamily: fonts.extrabold, fontSize: 18, letterSpacing: 0.6 }}>ASCENDX AI</AppText>
         </View>
 
         <View style={[styles.flex, { justifyContent: 'center', gap: spacing.xxl }]}>

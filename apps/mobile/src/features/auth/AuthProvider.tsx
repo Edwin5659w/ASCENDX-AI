@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   ApiError,
@@ -13,40 +14,45 @@ import { readRefreshToken } from '@/lib/secure-storage';
 
 type AuthStatus = 'loading' | 'signedOut' | 'signedIn';
 
-interface RegisterInput {
-  fullName: string;
+export interface RegisterInput {
+  name: string;
   email: string;
   password: string;
-  acceptPrivacyPolicy: boolean;
+  isAdult: true;
+  acceptTerms: true;
+  acceptDataPolicy: true;
 }
 
 interface AuthContextValue {
   status: AuthStatus;
   user: User | null;
+  /** true justo después de crear la cuenta: se muestra el onboarding */
+  isNewAccount: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (input: RegisterInput) => Promise<void>;
   signOut: () => Promise<void>;
+  /** Reemplaza el usuario en memoria con la versión que devolvió la API */
+  setUser: (user: User) => void;
+  finishOnboarding: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+/** Nombre del dispositivo para la lista de sesiones (sessions.device_name). */
+const deviceName = (Constants.deviceName ?? 'Android').slice(0, 80);
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading');
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUserState] = useState<User | null>(null);
+  const [isNewAccount, setIsNewAccount] = useState(false);
 
   const applySession = useCallback(async (session: AuthSession) => {
     await storeSession(session);
-    setUser(session.user);
+    setUserState(session.user);
     setStatus('signedIn');
   }, []);
 
-  const resetSession = useCallback(async () => {
-    await clearSession();
-    setUser(null);
-    setStatus('signedOut');
-  }, []);
-
-  // Al abrir la app: si hay un refresh token guardado, se intenta recuperar la sesión.
+  // Al abrir la app: si hay un token de renovación guardado, se recupera la sesión.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -58,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const session = await refreshSession();
         if (!cancelled) {
-          setUser(session.user);
+          setUserState(session.user);
           setStatus('signedIn');
         }
       } catch {
@@ -73,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setSessionExpiredHandler(() => {
-      setUser(null);
+      setUserState(null);
       setStatus('signedOut');
     });
     return () => setSessionExpiredHandler(null);
@@ -83,26 +89,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       status,
       user,
+      isNewAccount,
       signIn: async (email, password) => {
-        const session = await apiRequest<AuthSession>('/auth/login', { method: 'POST', body: { email, password } });
+        const session = await apiRequest<AuthSession>('/auth/login', {
+          method: 'POST',
+          body: { email, password, deviceName },
+        });
         await applySession(session);
       },
       signUp: async (input) => {
-        const session = await apiRequest<AuthSession>('/auth/register', { method: 'POST', body: input });
+        const session = await apiRequest<AuthSession>('/auth/register', {
+          method: 'POST',
+          body: { ...input, deviceName },
+        });
+        setIsNewAccount(true);
         await applySession(session);
       },
       signOut: async () => {
         const refreshToken = await readRefreshToken().catch(() => null);
         if (refreshToken) {
+          // Si el servidor no responde, igual se cierra la sesión en el dispositivo.
           await apiRequest('/auth/logout', { method: 'POST', body: { refreshToken } }).catch((error: unknown) => {
-            // Si el servidor no responde, igual se cierra la sesión en el dispositivo.
             if (!(error instanceof ApiError)) throw error;
           });
         }
-        await resetSession();
+        await clearSession();
+        setUserState(null);
+        setIsNewAccount(false);
+        setStatus('signedOut');
       },
+      setUser: setUserState,
+      finishOnboarding: () => setIsNewAccount(false),
     }),
-    [status, user, applySession, resetSession],
+    [status, user, isNewAccount, applySession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
