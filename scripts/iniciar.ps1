@@ -107,9 +107,11 @@ $ip = IP-Local
 Ok "mobile\.env apunta a http://${ip}:4000/api"
 
 # 3. Dependencias --------------------------------------------------------------
-Paso 'Instalando dependencias (la primera vez tarda unos minutos)'
-if (-not (Test-Path (Join-Path $Backend 'node_modules'))) { Ejecutar 'npm install' $Backend } else { Ok 'backend listo' }
-if (-not (Test-Path (Join-Path $Mobile 'node_modules'))) { Ejecutar 'npm install' $Mobile } else { Ok 'mobile listo' }
+Paso 'Revisando dependencias (la primera vez tarda unos minutos)'
+# Se ejecuta siempre: si no hay cambios tarda segundos, y si el proyecto agregó
+# librerías nuevas (por ejemplo después de un git pull) las instala.
+Ejecutar 'npm install --no-audit --no-fund' $Backend
+Ejecutar 'npm install --no-audit --no-fund' $Mobile
 
 # 4. Base de datos -------------------------------------------------------------
 Paso 'Iniciando la base de datos local (prisma dev)'
