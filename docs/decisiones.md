@@ -81,3 +81,22 @@ Cada decisión importante se registra aquí con su fecha, contexto y motivo, par
 **Motivo.** Identidad reconocible y coherente en todas las pantallas; los acentos se reservan para acciones principales, progreso y el mentor.
 
 **Notas.** Se conserva Manrope (la sección 15 no fija tipografía y la v2 la proponía). La pestaña sigue llamándose «Asistente», como en el Anexo I del anteproyecto; dentro, la función se presenta como «Tu mentor ASCENDX AI».
+
+---
+
+## D-008 · Logo oficial y animación de inicio (2026-10-13)
+
+**Contexto.** El autor entregó el logo oficial de ASCENDX AI: un símbolo geométrico (letras «E» y «M» con una flecha que asciende) en degradado magenta → violeta → azul → cian, y el nombre «ASCENDX AI».
+
+**Decisión.** El logo reemplaza el isotipo provisional de D-007 en todas las piezas:
+
+- Símbolo vectorizado en `apps/mobile/src/components/brand/LogoSymbol.tsx` (y `assets/brand/symbol.svg`), dividido en cuatro piezas para poder animarlo.
+- Nombre extraído del original con fondo transparente, en versión clara y oscura (`assets/brand/wordmark-*.png`).
+- Ícono de la app, ícono adaptativo y monocromo de Android, favicon y pantalla de inicio nativa (fondo `#0B1020`) regenerados con el logo.
+- **Animación de inicio** (`IntroAnimation.tsx`, ≈ 1,8 s): aparece un resplandor, se arman las barras de la «E» y la «M», la flecha sube a su lugar y aparece el nombre; se desvanece cuando la app terminó de cargar. Con «reducir movimiento» se muestra el logo sin desplazamientos.
+- Uso en pantallas: bienvenida (símbolo + nombre), inicio de sesión y registro (símbolo) y pie de Perfil (nombre + versión).
+- El archivo original se guarda en `docs/marca/logo-original.png`.
+
+**Motivo.** Identidad reconocible desde el primer segundo y coherente entre el ícono del teléfono, el arranque y la app.
+
+**Nota.** El ícono y la pantalla nativa solo se ven en una compilación instalada (APK); en Expo Go aparecen los de Expo. La animación sí se ve en Expo Go.

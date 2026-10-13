@@ -254,3 +254,11 @@ Si una pantalla funciona técnicamente, pero parece genérica, desordenada o vis
 ### Verificación visual realizada
 
 Capturas a 390 × 844 en la vista previa web, temas oscuro y claro: bienvenida, registro, panel con y sin perfil financiero, metas y mentor. **Pendiente:** verificar en un teléfono Android real (fuentes ampliadas, teclado, gestos).
+
+## Logo oficial (2026-10-13)
+
+- **Símbolo:** «E» + «M» con flecha ascendente, degradado `#D21DFC → #7A18FA → #3532F8 → #2069FB → #08B6FC → #3EF4FE`. Componente `LogoSymbol` / `BrandMark`.
+- **Nombre:** «ASCENDX» con la X en degradado y «AI» en cian. Componente `Wordmark` (versión para fondo oscuro y claro).
+- **Combinación:** `BrandLockup` (símbolo + nombre) en la bienvenida.
+- **Animación de inicio:** `IntroAnimation`, verificada en la vista previa a 100, 450, 750, 1050, 1500 y 2300 ms y en la transición a la bienvenida y al inicio de sesión.
+- **Zona de respeto:** no deformar, no recolorear el degradado, no poner el símbolo sobre fondos con mucho detalle. Tamaño mínimo del símbolo: 24 pt de alto.

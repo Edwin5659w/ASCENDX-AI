@@ -2,6 +2,7 @@ import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
+import { Wordmark } from '@/components/brand/BrandMark';
 import { AppText, Button, Card, Header, NavRow, Screen, ToggleRow } from '@/components/ui';
 import { updateConsents } from '@/features/account/api';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -121,9 +122,12 @@ export default function ProfileScreen() {
           await signOut();
         }}
       />
-      <AppText variant="caption" color="textSubtle" align="center">
-        ASCENDX AI · versión {Constants.expoConfig?.version ?? '—'}
-      </AppText>
+      <View style={{ alignItems: 'center', gap: spacing.sm, paddingTop: spacing.lg }}>
+        <Wordmark width={140} />
+        <AppText variant="caption" color="textMuted" align="center">
+          Versión {Constants.expoConfig?.version ?? '—'}
+        </AppText>
+      </View>
     </Screen>
   );
 }

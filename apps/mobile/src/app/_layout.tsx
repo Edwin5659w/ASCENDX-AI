@@ -7,15 +7,21 @@ import {
 } from '@expo-google-fonts/manrope';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, LogBox, Platform, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { LogBox, Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { BrandMark } from '@/components/brand/BrandMark';
+import { IntroAnimation } from '@/components/brand/IntroAnimation';
 import { AuthProvider, useAuth } from '@/features/auth/AuthProvider';
 import { useTheme } from '@/theme/useTheme';
 
 // Aviso conocido de react-native-svg solo en la vista previa web (atributo "collapsable"); no afecta Android.
-if (Platform.OS === 'web') LogBox.ignoreLogs(['Received `false` for a non-boolean attribute']);
+if (Platform.OS === 'web') LogBox.ignoreLogs([/non-boolean attribute/, /Received `%s` for a non-boolean/]);
+
+// La pantalla de inicio nativa (fondo #0B1020 con el símbolo) se mantiene hasta
+// que la animación de inicio está lista para dibujarse encima.
+SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 function RootNavigator() {
   const { status } = useAuth();
@@ -28,22 +34,23 @@ function RootNavigator() {
     Manrope_800ExtraBold,
   });
 
+  const [showIntro, setShowIntro] = useState(true);
+  const finishIntro = useCallback(() => setShowIntro(false), []);
+
+  // La animación de inicio ya cubre la pantalla: se oculta la pantalla nativa.
+  useEffect(() => {
+    SplashScreen.hideAsync().catch(() => undefined);
+  }, []);
+
   // Mientras se cargan las fuentes y se recupera la sesión guardada no se
   // muestra ninguna ruta, para no parpadear entre "sin sesión" y "con sesión".
-  if (status === 'loading' || (!fontsLoaded && !fontError)) {
-    return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 24, backgroundColor: colors.background }}>
-        <BrandMark size={56} />
-        <ActivityIndicator color={colors.primary} />
-      </View>
-    );
-  }
-
+  const appReady = status !== 'loading' && (fontsLoaded || Boolean(fontError));
   const signedIn = status === 'signedIn';
 
   return (
-    <>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
+    <View style={{ flex: 1, backgroundColor: showIntro ? '#0B1020' : colors.background }}>
+      <StatusBar style={showIntro || isDark ? 'light' : 'dark'} />
+      {appReady ? (
       <Stack
         screenOptions={{
           headerShown: false,
@@ -62,7 +69,9 @@ function RootNavigator() {
           <Stack.Screen name="(app)" />
         </Stack.Protected>
       </Stack>
-    </>
+      ) : null}
+      {showIntro ? <IntroAnimation ready={appReady} onFinish={finishIntro} /> : null}
+    </View>
   );
 }
 
