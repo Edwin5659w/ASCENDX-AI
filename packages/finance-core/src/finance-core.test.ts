@@ -463,3 +463,42 @@ describe('simulador ahorro vs. crédito vs. mixto (6.4, RF-20)', () => {
     expect(a.assumptions.join(' ')).toMatch(/No se incluyeron seguros/);
   });
 });
+
+/**
+ * Casos de prueba iniciales del Anexo J del anteproyecto. Los valores
+ * esperados se calcularon por separado con las fórmulas de la sección 6.4.
+ */
+describe('casos del Anexo J (anteproyecto)', () => {
+  it('TC-03: EA = 26,82 % equivale a ≈ 2 % mensual', () => {
+    const monthly = effectiveAnnualToMonthly(0.2682);
+    expect(Math.abs(monthly - 0.01999719880586559)).toBeLessThan(1e-9);
+    expect(Math.abs(monthlyToEffectiveAnnual(monthly) - 0.2682)).toBeLessThan(1e-9);
+  });
+
+  it('TC-04: P = $5.000.000, i = 2 % mensual, n = 24', () => {
+    // C = 5.000.000 × 0,02 / (1 − 1,02^−24) = 264.355,49
+    expect(Math.abs(fixedInstallment(5_000_000, 0.02, 24) - 264_355.48626624927)).toBeLessThan(1e-6);
+    const loan = summarizeLoan(5_000_000, 0.02, 24);
+    expect(loan.installment).toBe(264_355);
+    expect(loan.schedule.at(-1)?.balance).toBe(0);
+    // Intereses ≈ C × n − P = 1.344.520 (diferencias de redondeo al peso ≤ n pesos)
+    expect(Math.abs(loan.totalInterest - 1_344_520)).toBeLessThanOrEqual(24);
+    expect(loan.totalInstallments).toBe(5_000_000 + loan.totalInterest);
+  });
+
+  it('TC-05: si los aportes requeridos superan la capacidad prudente, reparte por prioridad y marca la meta en riesgo', () => {
+    const result = allocateGoals(
+      [
+        { id: 'computador', targetAmount: 3_600_000, savedAmount: 0, priority: 'baja', targetDate: '2027-10-13' }, // 300.000
+        { id: 'emergencia', targetAmount: 2_400_000, savedAmount: 0, priority: 'alta', targetDate: '2027-10-13' }, // 200.000
+      ],
+      250_000,
+      '2026-10-13',
+    );
+    const byId = Object.fromEntries(result.plans.map((plan) => [plan.id, plan]));
+    expect(byId.emergencia?.assignedMonthly).toBe(200_000);
+    expect(byId.emergencia?.status).toBe('en_curso');
+    expect(byId.computador?.assignedMonthly).toBe(50_000);
+    expect(byId.computador?.status).toBe('en_riesgo');
+  });
+});

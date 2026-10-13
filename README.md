@@ -10,48 +10,46 @@ ASCENDX AI ayuda a registrar ingresos, gastos y deudas, crear varias metas finan
 
 ## Estado del proyecto
 
+Fase actual del cronograma del anteproyecto: **Fase 2 — Fundamentos y pruebas técnicas**. La trazabilidad completa por requisito (RF-01 a RF-34) está en [`docs/estado.md`](docs/estado.md).
+
 | Módulo | Estado |
 |---|---|
-| Estructura del repositorio | ✅ Terminado |
-| Backend base (Express + TypeScript) | ✅ Terminado |
-| Modelo de datos (Prisma + PostgreSQL) | ✅ Esquema inicial |
-| Motor de cálculos financieros | ✅ Con pruebas unitarias |
-| Autenticación propia (JWT + refresh rotativo) | ✅ Con pruebas de integración |
-| App móvil: sesión, navegación y tema visual | ✅ Primera versión |
-| Simulador ahorro vs financiación | ✅ API + pantalla |
-| Movimientos, categorías, deudas | ⏳ Planificado |
-| Panel financiero y metas | ⏳ Planificado |
-| IA contextual | ⏳ Planificado |
-| OCR de recibos | ⏳ Planificado |
-| Sincronización híbrida (SQLite) | ⏳ Planificado |
-
-Se distingue siempre entre **planificado**, **en desarrollo** y **terminado**. Ver [`docs/estado.md`](docs/estado.md).
+| Monorepo, integración continua y arranque con un clic | ✅ Terminado |
+| Modelo de datos v2 (Anexo G, montos en pesos enteros) | ✅ Terminado |
+| Reglas financieras `finance-core` (sección 6 / Anexo H) | ✅ 49 pruebas, ~99 % de cobertura |
+| Cuenta: registro, sesión, bloqueo, recuperación, perfil, permisos, eliminar (RF-01 a RF-06) | ✅ Terminado (falta elegir proveedor de correo) |
+| Simulador ahorro / crédito / mixto (RF-20, RF-21) | ✅ API + pantalla |
+| Movimientos, categorías, deudas, panel, metas (fase 3) | ⏳ Planificado |
+| Asistente de IA (fase 4) | ⏳ Planificado |
+| OCR, sin conexión, gamificación P2 (fases 4–5) | ⏳ Planificado |
 
 ## Arquitectura
 
 ```
-┌──────────────────────────┐      HTTPS + JWT      ┌───────────────────────────┐
-│  App Android (mobile/)   │ ────────────────────▶ │  API (backend/)           │
-│  React Native · Expo     │                       │  Node.js · Express · TS   │
-│  TypeScript · Expo Router│ ◀──────────────────── │  Zod · reglas financieras │
-│  SQLite (caché, futuro)  │                       │  Auth · IA · OCR (futuro) │
-└──────────────────────────┘                       └─────────────┬─────────────┘
-                                                                 │ Prisma ORM
-                                                         ┌───────▼───────┐
-                                                         │  PostgreSQL   │
-                                                         └───────────────┘
+┌──────────────────────────────┐   HTTPS + JWT   ┌──────────────────────────────┐
+│ App Android  (apps/mobile)   │ ──────────────▶ │ API  (apps/api)              │
+│ React Native · Expo · TS     │                 │ Node.js · Express · TS · Zod │
+│ Expo Router · SecureStore    │ ◀────────────── │ Auth · reglas · IA (futuro)  │
+└──────────────┬───────────────┘                 └──────────────┬───────────────┘
+               │        packages/finance-core (cálculos)        │ Prisma
+               └──────────────── compartido ───────────────────┘
+                                                        ┌───────▼───────┐
+                                                        │  PostgreSQL   │
+                                                        └───────────────┘
 ```
 
-- Las **claves de IA y secretos viven solo en el backend**.
-- Los **cálculos financieros** (cuotas, intereses, proyecciones) son funciones deterministas y probadas en `backend/src/modules/finance/calculations`.
-- La IA recibirá únicamente el contexto autorizado y preparado por el backend.
+- La app nunca habla directamente con la IA ni con la base de datos: todo pasa por la API.
+- Las cifras (capacidad de ahorro, metas, cuotas, intereses) se calculan con funciones puras y probadas en `packages/finance-core`; la IA solo las explicará.
+- Secretos y claves solo en el servidor.
 
 ## Estructura
 
 ```
-backend/   API REST: Express + TypeScript + Prisma + Zod
-mobile/    App Android: React Native + Expo + TypeScript
-docs/      Documentación del proyecto de grado y decisiones técnicas
+apps/api/                API REST: Express + TypeScript + Prisma + Zod
+apps/mobile/             App Android: React Native + Expo + TypeScript
+packages/finance-core/   Reglas financieras compartidas (sección 6 del Documento Maestro v2)
+docs/                    Documento maestro, decisiones, modelo de datos, API y estado
+scripts/                 Arranque y apagado en Windows
 ```
 
 ## Inicio rápido
@@ -62,34 +60,20 @@ Doble clic en **`INICIAR.bat`** (o `npm start` desde la carpeta raíz). El scrip
 
 ### Opción manual
 
-### Requisitos
-
-- Node.js 20 o superior
-- PostgreSQL 15+ (local o en la nube)
-- Android Studio con emulador, o la app **Expo Go** en un teléfono Android
-
-### Backend
+Requisitos: Node.js 20+, PostgreSQL (local, `npx prisma dev` o en la nube) y Expo Go o un emulador Android.
 
 ```bash
-cd backend
-cp .env.example .env        # completa DATABASE_URL y los secretos JWT
-npm install
-npm run db:generate         # genera el cliente de Prisma
-npm run db:migrate          # crea las tablas
-npm run db:seed             # categorías por defecto (solo desarrollo)
-npm run dev                 # http://localhost:4000/api/health
-npm test                    # pruebas unitarias (no requieren base de datos)
-npm run test:int            # pruebas de integración (requieren la base ascendx_test)
+npm install                          # una sola instalación para todo el monorepo
+cp apps/api/.env.example apps/api/.env      # DATABASE_URL y JWT_ACCESS_SECRET
+npm run db:deploy -w @ascendx/api    # crea las tablas
+npm run db:seed -w @ascendx/api      # categorías por defecto y configuración
+npm run api                          # http://localhost:4000/api/health
+npm run app                          # en otra terminal: abre Expo
+npm test                             # pruebas de finance-core y de la API
+npm run test:coverage                # cobertura de finance-core (umbral 90 %)
 ```
 
-### App móvil
-
-```bash
-cd mobile
-cp .env.example .env        # EXPO_PUBLIC_API_URL (ver mobile/README.md)
-npm install
-npx expo start              # "a" abre el emulador Android
-```
+Mientras no se elija el proveedor de correo, el código de recuperación de contraseña aparece en la consola de la API (solo en desarrollo).
 
 ## Documentación
 
@@ -102,7 +86,7 @@ npx expo start              # "a" abre el emulador Android
 ## Convención de commits
 
 Usamos [Conventional Commits](https://www.conventionalcommits.org/es/):
-`feat`, `fix`, `docs`, `refactor`, `test`, `chore`, con alcance opcional: `feat(backend): ...`, `feat(mobile): ...`.
+`feat`, `fix`, `docs`, `refactor`, `test`, `chore`, con alcance opcional: `feat(api): ...`, `feat(mobile): ...`, `feat(core): ...`.
 
 ## Historial
 

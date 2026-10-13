@@ -88,6 +88,15 @@ if ((Test-Path $oldEnv) -and -not (Test-Path $backendEnv)) {
   Move-Item $oldEnv $backendEnv
   Ok 'Se movió backend\.env a apps\api\.env (nueva estructura del proyecto)'
 }
+# Las carpetas viejas solo conservan archivos generados (node_modules, .expo, .env
+# de la app); si se dejan, Metro podría encontrar copias duplicadas de React.
+foreach ($vieja in @('backend', 'mobile')) {
+  $ruta = Join-Path $Root $vieja
+  if ((Test-Path $ruta) -and -not (Test-Path (Join-Path $ruta 'package.json'))) {
+    Remove-Item -Recurse -Force $ruta
+    Ok "Se eliminó la carpeta antigua $vieja\ (solo tenía archivos generados)"
+  }
+}
 if (-not (Test-Path $backendEnv)) {
   $secreto = Secreto-Aleatorio
   @(
