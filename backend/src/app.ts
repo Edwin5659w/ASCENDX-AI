@@ -6,7 +6,10 @@ import { pinoHttp } from 'pino-http';
 import { env } from './config/env.js';
 import { logger } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
+import { authRouter } from './modules/auth/auth.routes.js';
 import { healthRouter } from './modules/health/health.routes.js';
+import { simulatorRouter } from './modules/simulator/simulator.routes.js';
+import { usersRouter } from './modules/users/users.routes.js';
 
 /**
  * Crea la aplicación Express sin abrir el puerto, para poder probarla
@@ -44,6 +47,9 @@ export function createApp() {
   );
 
   app.use('/api/health', healthRouter);
+  app.use('/api/auth', authRouter);
+  app.use('/api/me', usersRouter);
+  app.use('/api/simulator', simulatorRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
