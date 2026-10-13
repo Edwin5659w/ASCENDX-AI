@@ -1,0 +1,13 @@
+{
+  "name": "ascendx-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ASCENDX AI: comandos de la raíz. El código está en backend/ y mobile/.",
+  "scripts": {
+    "start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/iniciar.ps1",
+    "stop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/detener.ps1",
+    "api": "npm --prefix backend run dev",
+    "app": "npm --prefix mobile start",
+    "test": "npm --prefix backend test"
+  }
+}
