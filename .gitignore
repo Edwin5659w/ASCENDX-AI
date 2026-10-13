@@ -1,17 +1,38 @@
+# Dependencias
 node_modules/
+
+# Builds
 dist/
-web/test-results/
-web/playwright-report/
 build/
-.expo/
+coverage/
+*.tsbuildinfo
+
+# Entorno y secretos
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+
+# Expo / React Native
+mobile/.expo/
+mobile/android/
+mobile/ios/
+mobile/web-build/
+*.jks
+*.keystore
+*.p8
+*.p12
+*.mobileprovision
+
+# Prisma
+backend/src/generated/
+
+# Logs y sistema
 *.log
+npm-debug.log*
 .DS_Store
 Thumbs.db
-coverage/
-.prisma/
-*.db
-*.db-journal
-mobile/.vscode/
+
+# Editores
+.vscode/*
+!.vscode/extensions.json
+.idea/
