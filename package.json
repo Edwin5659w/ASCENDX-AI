@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "start": "node scripts/arrancar.mjs",
+    "apk": "cd apps/mobile && npx eas-cli build --platform android --profile preview",
     "local": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/iniciar.ps1",
     "stop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/detener.ps1",
     "build:core": "npm run build -w @ascendx/finance-core",

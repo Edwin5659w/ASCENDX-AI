@@ -58,6 +58,8 @@ scripts/                 Arranque y apagado en Windows
 
 **Uso diario:** `npm start` desde la carpeta raíz (o doble clic en **`INICIAR.bat`**). Abre Expo en la misma ventana con el código QR para Expo Go; la app usa el servidor en la nube (Render + Neon, ver `docs/despliegue.md`). Solo instala dependencias si cambiaron.
 
+**Instalar como APK** (sin Expo Go): `npm run apk`. Compila en los servidores de Expo (EAS Build, plan gratis) con `apps/mobile/eas.json`, perfil `preview`; la primera vez pide iniciar sesión con una cuenta de expo.dev. Al terminar entrega un enlace y un QR para descargar la APK en el teléfono.
+
 **Todo en el computador** (API y base de datos locales, para desarrollar el servidor): **`INICIAR-LOCAL.bat`** (o `npm run local`). Instala Node.js si falta, crea `apps/api/.env`, levanta PostgreSQL local con `prisma dev`, crea las tablas y abre la API y la app apuntando a ella. Para apagar la base de datos: **`DETENER.bat`** (o `npm run stop`).
 
 ### Opción manual
