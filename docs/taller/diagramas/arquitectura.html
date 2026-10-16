@@ -1,0 +1,51 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#111;background:#fff}
+.wrap{width:1400px;padding:28px 32px;box-sizing:border-box}
+h1{font-size:24px;margin:0 0 4px}
+.sub{font-size:15px;color:#333;margin:0 0 18px}
+.layer{border:2px solid #222;border-radius:14px;padding:14px 16px 16px;background:#f3f3f3}
+.layer.dom{background:#dcdcdc;border-width:3px}
+.lt{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.lt b{font-size:18px;letter-spacing:.04em}
+.lt span{font-size:14px;color:#222}
+.boxes{display:grid;gap:12px}
+.box{background:#fff;border:1.5px solid #222;border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.35}
+.box b{display:block;font-size:15px;margin-bottom:2px}
+.box.ext{border-style:dashed}
+.arrow{display:flex;align-items:center;justify-content:center;gap:12px;height:56px;font-size:14px}
+.arrow .ln{width:3px;height:44px;background:#222;position:relative}
+.arrow .ln:after{content:"";position:absolute;left:-7px;bottom:-2px;border-left:8.5px solid transparent;border-right:8.5px solid transparent;border-top:13px solid #222}
+.arrow.up .ln:after{bottom:auto;top:-2px;border-top:none;border-bottom:13px solid #222}
+.legend{margin-top:14px;font-size:13.5px;color:#222}
+</style></head><body><div class="wrap">
+<h1>ASCENDX AI — Diagrama de capas (Clean Architecture adaptada a cliente-servidor)</h1>
+<p class="sub">Regla de dependencia: Presentación y Datos dependen del Dominio; el Dominio no depende de ninguna otra capa ni de librerías externas.</p>
+
+<div class="layer"><div class="lt"><b>CAPA DE PRESENTACIÓN</b><span>apps/mobile · React Native 0.86 + Expo SDK 57 + TypeScript</span></div>
+<div class="boxes" style="grid-template-columns:1.3fr 1fr 1.2fr">
+<div class="box"><b>Pantallas (Screens)</b>Expo Router: Bienvenida, Registro, Inicio de sesión, Inicio (panel), Simulador, Metas, Asistente, Perfil</div>
+<div class="box"><b>Componentes de UI</b>Button, Card, ProgressRing, AnimatedAmount, SegmentedControl, animación del logo</div>
+<div class="box"><b>Estado de la vista (ViewModel)</b>AuthProvider (sesión), ThemePreference (modo oscuro/claro) con React Context + hooks</div>
+</div></div>
+
+<div class="arrow"><div class="ln"></div><span>usa reglas y formatos del dominio · pide datos a la capa de datos por HTTPS</span></div>
+
+<div class="layer dom"><div class="lt"><b>CAPA DE DOMINIO</b><span>packages/finance-core + servicios de la API · sin dependencias de UI ni de base de datos</span></div>
+<div class="boxes" style="grid-template-columns:1.4fr 1.2fr 1fr">
+<div class="box"><b>Entidades y reglas (finance-core)</b>Capacidad de ahorro y prudente (80 %), reparto entre metas, simulador ahorro / crédito / mixto, tasas EA ↔ MV, aviso de usura, posibles duplicados</div>
+<div class="box"><b>Casos de uso (servicios de la API)</b>register, login, refresh, updateProfile, updateConsents, compare, deleteAccount</div>
+<div class="box"><b>Contratos (interfaces)</b>Mailer, tipos User / AuthSession, esquemas de validación Zod</div>
+</div></div>
+
+<div class="arrow up"><div class="ln"></div><span>implementa los contratos y entrega los datos que el dominio necesita</span></div>
+
+<div class="layer"><div class="lt"><b>CAPA DE DATOS</b><span>adaptadores e infraestructura · apps/api (Render) + almacenamiento del teléfono</span></div>
+<div class="boxes" style="grid-template-columns:repeat(5,1fr)">
+<div class="box"><b>Cliente HTTP</b>lib/api.ts: JWT de 15 min y renovación automática</div>
+<div class="box"><b>SecureStore</b>Token de renovación cifrado (Android Keystore)</div>
+<div class="box"><b>API REST</b>Express 5: /auth, /me, /simulator, /health</div>
+<div class="box"><b>Repositorio</b>Prisma 7 ORM → PostgreSQL en Neon (18 tablas)</div>
+<div class="box ext"><b>Servicios externos</b>IA y correo (por seleccionar), ML Kit (P2)</div>
+</div></div>
+<p class="legend">Recuadro con borde punteado = componente planificado. Las cifras financieras siempre se calculan en el dominio; la IA solo recibe resultados ya calculados.</p>
+</div></body></html>

@@ -1,0 +1,42 @@
+digraph N {
+  graph [rankdir=TB, fontname="Arial", fontsize=16, pad=0.3, nodesep=0.35, ranksep=0.5, label="Diagrama de navegación — ASCENDX AI\n ", labelloc=t];
+  node [shape=box, style="rounded", fontname="Arial", fontsize=12, color="#222222", penwidth=1.3, margin="0.15,0.07"];
+  edge [fontname="Arial", fontsize=10, color="#222222", penwidth=1.1];
+  intro [label="Animación del logo\n(carga fuentes y sesión)", style="rounded,bold"];
+  d [label="¿Hay sesión guardada\ny válida?", shape=diamond, margin="0.05,0.05"];
+  welcome [label="Bienvenida"];
+  reg [label="Registro"];
+  login [label="Inicio de sesión"];
+  forgot [label="Olvidé mi contraseña"];
+  reset [label="Nueva contraseña\n(código de 6 dígitos)"];
+  nueva [label="¿Cuenta nueva?", shape=diamond, margin="0.05,0.05"];
+  onb [label="Onboarding\n1. Permisos IA / OCR\n2. Perfil financiero"];
+  subgraph cluster_tabs { label="Pestañas (usuario autenticado)"; style="rounded"; color="#222222"; fontname="Arial Bold"; fontsize=12;
+    home [label="Inicio (panel)", style="rounded,bold"]; mov [label="Movimientos"]; add [label="( + ) Nuevo\nmovimiento"]; goals [label="Metas"]; asis [label="Asistente\n(mentor IA)"];
+  }
+  sim [label="Simulador"]; prof [label="Perfil y ajustes"]; fprof [label="Perfil financiero"]; del [label="Eliminar cuenta"]; debts [label="Deudas"];
+  intro -> d;
+  d -> welcome [label="no"];
+  d -> home [label="sí"];
+  welcome -> reg [label="Crear cuenta"];
+  welcome -> login [label="Ya tengo cuenta"];
+  reg -> login [dir=both, label="pestañas", style=dashed];
+  login -> forgot [label="¿Olvidaste tu\ncontraseña?"];
+  forgot -> reset [label="código enviado"];
+  reset -> login [label="contraseña\ncambiada"];
+  reg -> nueva [label="cuenta creada"];
+  login -> nueva [label="sesión iniciada"];
+  nueva -> onb [label="sí"];
+  nueva -> home [label="no"];
+  onb -> home [label="Guardar y empezar"];
+  home -> sim [label="Próxima acción"];
+  home -> prof [label="botón con inicial"];
+  home -> asis [label="tarjeta del mentor"];
+  tabbar [label="Barra inferior de pestañas", shape=box, style="rounded,dashed"];
+  home -> tabbar [label="siempre visible", style=dashed, arrowhead=none];
+  tabbar -> mov; tabbar -> add [label="botón central"]; tabbar -> goals; tabbar -> asis [style=dashed];
+  prof -> fprof; prof -> del;
+  prof -> welcome [label="Cerrar sesión", style=dashed];
+  del -> welcome [label="cuenta borrada", style=dashed];
+  home -> debts [label="(Sprint 2)", style=dashed];
+}

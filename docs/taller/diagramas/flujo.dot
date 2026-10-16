@@ -1,0 +1,22 @@
+digraph F {
+  graph [rankdir=TB, fontname="Arial", fontsize=16, pad=0.3, nodesep=0.3, ranksep=0.45, label="Flujo de datos — caso de uso: «Comparar ahorrar vs. financiar una compra» (US-004)\n ", labelloc=t];
+  node [shape=box, style="rounded", fontname="Arial", fontsize=12, color="#222222", penwidth=1.3, margin="0.15,0.08", width=3.2];
+  edge [fontname="Arial", fontsize=10.5, color="#222222", penwidth=1.2];
+  u [label="1. Usuario\nescribe precio, cuota inicial,\ntasa (EA o MV), plazo\ny ahorro mensual", shape=box, style="rounded,bold"];
+  s [label="2. Pantalla Simulador\nvalida campos y\nformatea pesos"];
+  c [label="3. Cliente HTTP\nañade el JWT y envía\nPOST /api/simulator/compare"];
+  a [label="4. API (Express)\nprotectedRoute verifica el JWT\nZod valida los montos"];
+  db [label="5. PostgreSQL (Neon)\nlee la tasa de usura\nvigente (app_settings)", shape=cylinder];
+  fc [label="6. finance-core\nsimulatePurchase: crédito,\nahorro y mixto; avisos", style="rounded,bold"];
+  r [label="7. Respuesta JSON\ncuotas, intereses, total pagado,\nmeses, tasa EA, supuestos"];
+  v [label="8. Resultados en pantalla\ntarjetas que entran escalonadas;\nmontos que cuentan"];
+  u -> s -> c -> a;
+  a -> db [label="consulta"];
+  db -> fc [label="usura"];
+  a -> fc [label="datos validados"];
+  fc -> r -> v;
+  err [label="Error 400: dato inválido\n(se muestra junto al campo)", style="rounded,dashed"];
+  a -> err [style=dashed, label="si Zod rechaza"];
+  {rank=same; a; err}
+  {rank=same; db; fc}
+}

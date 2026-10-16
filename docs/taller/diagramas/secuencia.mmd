@@ -1,0 +1,36 @@
+sequenceDiagram
+    autonumber
+    actor U as Usuario
+    participant P as Pantalla Registro<br/>(Presentación)
+    participant A as AuthProvider +<br/>cliente HTTP
+    participant R as API /auth/register<br/>(Express + Zod)
+    participant S as auth.service<br/>(caso de uso)
+    participant DB as PostgreSQL<br/>(Prisma → Neon)
+    participant K as SecureStore<br/>(teléfono)
+    U->>P: Escribe nombre, correo, contraseña<br/>y marca los 3 consentimientos
+    P->>P: Valida campos y fuerza de la contraseña
+    P->>A: signUp(datos)
+    A->>R: POST /api/auth/register (HTTPS, JSON)
+    R->>R: Zod valida (correo, mayoría de edad, consentimientos)
+    alt Datos inválidos
+        R-->>A: 400 VALIDATION_ERROR (errores por campo)
+        A-->>P: Muestra el error junto a cada campo
+    else Datos válidos
+        R->>S: register(input)
+        S->>S: hashPassword con Argon2id
+        S->>DB: INSERT users + financial_profiles + consents (terminos, datos)
+        alt Correo ya registrado (restricción UNIQUE)
+            DB-->>S: Error P2002
+            S-->>R: 409 EMAIL_IN_USE
+            R-->>A: 409 «Ya existe una cuenta con ese correo»
+            A-->>P: Mensaje claro, sin revelar más datos
+        else Usuario creado
+            DB-->>S: Usuario con perfil y consentimientos
+            S->>DB: INSERT sessions (hash del token de renovación)
+            S-->>R: { user, accessToken (JWT 15 min), refreshToken }
+            R-->>A: 201 Created
+            A->>K: Guarda el token de renovación cifrado
+            A-->>P: Sesión iniciada (cuenta nueva)
+            P-->>U: Abre el Onboarding (permisos y perfil financiero)
+        end
+    end
