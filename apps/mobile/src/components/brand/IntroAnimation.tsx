@@ -5,6 +5,7 @@ import { darkPalette } from '@/theme/tokens';
 import { Wordmark } from './BrandMark';
 import { markIntroDone } from './introState';
 import { LOGO_ASPECT, LogoSymbol, type LogoPart } from './LogoSymbol';
+import { NATIVE_DRIVER } from '@/components/motion/nativeDriver';
 
 interface IntroAnimationProps {
   /** La app terminó de cargar (fuentes y sesión). */
@@ -53,7 +54,7 @@ export function IntroAnimation({ ready, onFinish }: IntroAnimationProps) {
         return;
       }
       const timing = (value: Animated.Value, duration: number, delay: number, easing = easeOut) =>
-        Animated.timing(value, { toValue: 1, duration, delay, easing, useNativeDriver: true });
+        Animated.timing(value, { toValue: 1, duration, delay, easing, useNativeDriver: NATIVE_DRIVER });
       Animated.parallel([
         timing(values.glow, 600, 0),
         timing(values.bar, 420, 120),
@@ -75,7 +76,7 @@ export function IntroAnimation({ ready, onFinish }: IntroAnimationProps) {
     if (!played || !ready) return;
     // La pantalla de abajo empieza sus animaciones mientras el logo se desvanece.
     markIntroDone();
-    Animated.timing(values.overlay, { toValue: 0, duration: 320, easing: easeOut, useNativeDriver: true }).start(() =>
+    Animated.timing(values.overlay, { toValue: 0, duration: 320, easing: easeOut, useNativeDriver: NATIVE_DRIVER }).start(() =>
       onFinish(),
     );
   }, [played, ready, values, onFinish]);

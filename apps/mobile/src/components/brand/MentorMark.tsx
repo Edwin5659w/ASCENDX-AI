@@ -2,6 +2,7 @@ import { useEffect, useId, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Path, RadialGradient, Stop } from 'react-native-svg';
 import { useTheme } from '@/theme/useTheme';
+import { NATIVE_DRIVER } from '@/components/motion/nativeDriver';
 
 /**
  * Identidad del mentor de IA (sección 15.6): un símbolo geométrico abstracto
@@ -27,7 +28,7 @@ export function MentorMark({ size = 56, animate = false }: { size?: number; anim
         toValue: 1,
         duration: 600,
         easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
+        useNativeDriver: NATIVE_DRIVER,
       }).start();
     });
     return () => {

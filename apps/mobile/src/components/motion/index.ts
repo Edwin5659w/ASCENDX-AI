@@ -3,3 +3,4 @@ export { haptic, type HapticKind } from './haptics';
 export { PressableScale } from './PressableScale';
 export { useCountUp } from './useCountUp';
 export { useReducedMotion } from './useReducedMotion';
+export { NATIVE_DRIVER } from './nativeDriver';

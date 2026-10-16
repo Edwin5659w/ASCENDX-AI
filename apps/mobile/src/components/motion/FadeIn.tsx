@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Animated, Easing, type StyleProp, type ViewStyle } from 'react-native';
 import { useReducedMotion } from './useReducedMotion';
+import { NATIVE_DRIVER } from './nativeDriver';
 
 interface FadeInProps {
   children: ReactNode;
@@ -26,7 +27,7 @@ export function FadeIn({ children, delay = 0, offset = 14, style }: FadeInProps)
       duration: 420,
       delay,
       easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
+      useNativeDriver: NATIVE_DRIVER,
     });
     animation.start();
     return () => animation.stop();

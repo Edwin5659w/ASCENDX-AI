@@ -12,7 +12,7 @@ La API se publica en **Render** (plan gratis) y la base de datos PostgreSQL en *
 1. **Neon:** crear cuenta en neon.com → *New project* → nombre `ascendx`, PostgreSQL más reciente, región **AWS US East 2 (Ohio)** (la misma región que Render). En *Connect* copiar la *connection string* (`postgresql://…`).
 2. **Render:** crear cuenta en render.com con GitHub → *New* → *Blueprint* → elegir el repositorio `ASCENDX-AI`. Render lee `render.yaml` y pide `DATABASE_URL`: pegar la dirección de Neon. *Deploy*.
 3. Dirección del servicio: **https://ascendx-api.onrender.com** (salud: `/api/health`). Desplegado y verificado el 2026-10-13 (registro, sesión y borrado de cuenta).
-4. En el computador: ejecutar `INICIAR-NUBE.bat` y pegar esa dirección (queda guardada en `scripts/servidor-nube.txt`).
+4. En el computador: `npm start` (o `INICIAR.bat`). La app usa esta dirección por defecto (`apps/mobile/src/lib/api.ts`) y la despierta al abrir.
 
 ## Qué hace Render en cada despliegue
 

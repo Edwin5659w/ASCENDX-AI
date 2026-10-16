@@ -8,7 +8,8 @@
     "apps/*"
   ],
   "scripts": {
-    "start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/iniciar.ps1",
+    "start": "node scripts/arrancar.mjs",
+    "local": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/iniciar.ps1",
     "stop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/detener.ps1",
     "build:core": "npm run build -w @ascendx/finance-core",
     "api": "npm run dev -w @ascendx/api",

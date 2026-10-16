@@ -4,6 +4,7 @@ import { haptic, useReducedMotion } from '@/components/motion';
 import { useTheme } from '@/theme/useTheme';
 import { AppText } from './AppText';
 import { Icon, type IconName } from './Icon';
+import { NATIVE_DRIVER } from '@/components/motion/nativeDriver';
 
 interface Option<T extends string> {
   value: T;
@@ -30,7 +31,7 @@ export function SegmentedControl<T extends string>({ options, value, onChange, a
 
   useEffect(() => {
     if (reduced) position.setValue(index);
-    else Animated.spring(position, { toValue: index, useNativeDriver: true, speed: 16, bounciness: 6 }).start();
+    else Animated.spring(position, { toValue: index, useNativeDriver: NATIVE_DRIVER, speed: 16, bounciness: 6 }).start();
   }, [index, position, reduced]);
 
   return (

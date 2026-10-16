@@ -1,6 +1,7 @@
 ﻿#Requires -Version 5.1
 <#
-  ASCENDX AI - arranque de desarrollo en Windows con un solo clic.
+  ASCENDX AI - arranque COMPLETO en este computador (API + base de datos locales).
+  Para el uso diario basta `npm start` o INICIAR.bat: la app usa el servidor en la nube.
 
   Hace todo lo necesario para correr el proyecto en este computador:
     1. Verifica Node.js (lo instala con winget si falta).
@@ -115,11 +116,11 @@ if (-not (Test-Path $backendEnv)) {
 }
 
 $ip = IP-Local
-@(
-  '# Generado por scripts/iniciar.ps1 con la IP actual de este computador.',
-  "EXPO_PUBLIC_API_URL=http://${ip}:4000/api"
-) | Set-Content -Path (Join-Path $Mobile '.env') -Encoding ascii
-Ok "apps\mobile\.env apunta a http://${ip}:4000/api"
+# La dirección de la API local se pasa solo a la ventana de la app (no se guarda
+# en un archivo), para que `npm start` siga usando el servidor en la nube.
+$oldMobileEnv = Join-Path $Mobile '.env'
+if (Test-Path $oldMobileEnv) { Remove-Item $oldMobileEnv }
+Ok "La app usará la API local en http://${ip}:4000/api"
 
 # 3. Dependencias --------------------------------------------------------------
 Paso 'Revisando dependencias (la primera vez tarda unos minutos)'
@@ -147,14 +148,14 @@ Start-Process powershell -WorkingDirectory $Backend -ArgumentList @(
 )
 Start-Sleep -Seconds 4
 Start-Process powershell -WorkingDirectory $Mobile -ArgumentList @(
-  '-NoExit', '-Command', "`$Host.UI.RawUI.WindowTitle = 'ASCENDX - App'; npx expo start -c --web"
+  '-NoExit', '-Command', "`$Host.UI.RawUI.WindowTitle = 'ASCENDX - App (API local)'; `$env:EXPO_PUBLIC_API_URL = 'http://${ip}:4000/api'; npx expo start"
 )
 
 Write-Host ''
 Write-Host '==============================================' -ForegroundColor Green
 Write-Host '  Listo. Se abrieron dos ventanas:' -ForegroundColor Green
 Write-Host '   - "ASCENDX - API": el servidor (http://localhost:4000/api/health)'
-Write-Host '   - "ASCENDX - App": la app. Se abrirá en el navegador.'
+Write-Host '   - "ASCENDX - App (API local)": la app con su código QR.'
 Write-Host ''
 Write-Host '  Para verla en tu celular: instala Expo Go desde Play Store,'
 Write-Host '  conéctate al mismo Wi-Fi y escanea el código QR de la ventana "App".'

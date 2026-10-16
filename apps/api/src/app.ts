@@ -15,6 +15,9 @@ import { usersRouter } from './modules/users/users.routes.js';
  * Crea la aplicación Express sin abrir el puerto, para poder probarla
  * con supertest.
  */
+/** Vista previa web de Expo en el propio computador. */
+const LOCAL_ORIGIN = /^http:\/\/(localhost|127\.0\.0\.1):\d+$/;
+
 export function createApp() {
   const app = express();
 
@@ -26,8 +29,13 @@ export function createApp() {
   app.use(helmet());
   app.use(
     cors({
-      // La app móvil nativa no envía Origin; CORS solo aplica a navegadores (p. ej. Expo web en desarrollo).
-      origin: env.CORS_ORIGINS.length > 0 ? env.CORS_ORIGINS : false,
+      // La app móvil nativa no envía Origin; CORS solo aplica a navegadores.
+      // Se permiten los orígenes configurados y la vista previa web local de Expo
+      // (http://localhost:<puerto>). Es seguro porque la API usa tokens Bearer, no cookies.
+      origin: (origin, callback) => {
+        const allowed = !origin || env.CORS_ORIGINS.includes(origin) || LOCAL_ORIGIN.test(origin);
+        callback(null, allowed);
+      },
     }),
   );
   app.use(express.json({ limit: '100kb' }));

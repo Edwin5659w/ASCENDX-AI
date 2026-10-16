@@ -55,8 +55,7 @@ export function LogoSymbol({ width, parts = ['base', 'arrow', 'bar', 'hook'], co
       width={width}
       height={width / LOGO_ASPECT}
       viewBox={`0 0 ${LOGO_VIEWBOX.width} ${LOGO_VIEWBOX.height}`}
-      accessibilityLabel={accessibilityLabel}
-      accessible={Boolean(accessibilityLabel)}
+      {...(accessibilityLabel ? { accessible: true, accessibilityLabel, accessibilityRole: 'image' as const } : {})}
     >
       {color ? null : (
         <Defs>

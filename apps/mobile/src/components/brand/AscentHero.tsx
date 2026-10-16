@@ -4,6 +4,7 @@ import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 import { AppText } from '@/components/ui/AppText';
 import { useTheme } from '@/theme/useTheme';
 import { whenIntroDone } from './introState';
+import { NATIVE_DRIVER } from '@/components/motion/nativeDriver';
 
 /**
  * Ilustración principal de la bienvenida: una ruta que asciende y pasa por
@@ -92,8 +93,8 @@ export function AscentHero() {
         }
         const driftLoop = Animated.loop(
           Animated.sequence([
-            Animated.timing(drift, { toValue: 1, duration: 6000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-            Animated.timing(drift, { toValue: 0, duration: 6000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+            Animated.timing(drift, { toValue: 1, duration: 6000, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE_DRIVER }),
+            Animated.timing(drift, { toValue: 0, duration: 6000, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE_DRIVER }),
           ]),
         );
         driftLoop.start();
@@ -110,7 +111,7 @@ export function AscentHero() {
           setArrived(true);
           const pulseLoop = Animated.loop(
             Animated.sequence([
-              Animated.timing(pulse, { toValue: 1, duration: 1600, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+              Animated.timing(pulse, { toValue: 1, duration: 1600, easing: Easing.out(Easing.quad), useNativeDriver: NATIVE_DRIVER }),
               Animated.delay(500),
             ]),
             { resetBeforeIteration: true },

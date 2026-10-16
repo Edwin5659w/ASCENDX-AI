@@ -56,7 +56,9 @@ scripts/                 Arranque y apagado en Windows
 
 ### Opción fácil (Windows)
 
-Doble clic en **`INICIAR.bat`** (o `npm start` desde la carpeta raíz). El script instala Node.js si falta, crea los `.env`, instala dependencias, levanta una base de datos PostgreSQL local con `prisma dev` (no hace falta instalar PostgreSQL), crea las tablas y abre la API y la app. Para apagar la base de datos: **`DETENER.bat`** (o `npm run stop`).
+**Uso diario:** `npm start` desde la carpeta raíz (o doble clic en **`INICIAR.bat`**). Abre Expo en la misma ventana con el código QR para Expo Go; la app usa el servidor en la nube (Render + Neon, ver `docs/despliegue.md`). Solo instala dependencias si cambiaron.
+
+**Todo en el computador** (API y base de datos locales, para desarrollar el servidor): **`INICIAR-LOCAL.bat`** (o `npm run local`). Instala Node.js si falta, crea `apps/api/.env`, levanta PostgreSQL local con `prisma dev`, crea las tablas y abre la API y la app apuntando a ella. Para apagar la base de datos: **`DETENER.bat`** (o `npm run stop`).
 
 ### Opción manual
 

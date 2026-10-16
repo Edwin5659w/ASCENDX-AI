@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Animated, Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
 import { haptic, type HapticKind } from './haptics';
 import { useReducedMotion } from './useReducedMotion';
+import { NATIVE_DRIVER } from './nativeDriver';
 
 interface PressableScaleProps extends PressableProps {
   /** Escala al presionar (1 = sin efecto). */
@@ -33,7 +34,7 @@ export function PressableScale({
     if (reduced) return;
     Animated.spring(scale, {
       toValue,
-      useNativeDriver: true,
+      useNativeDriver: NATIVE_DRIVER,
       speed: release ? 18 : 50,
       bounciness: release ? 10 : 0,
     }).start();

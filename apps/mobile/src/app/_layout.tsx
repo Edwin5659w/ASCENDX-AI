@@ -14,6 +14,7 @@ import { LogBox, Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntroAnimation } from '@/components/brand/IntroAnimation';
 import { AuthProvider, useAuth } from '@/features/auth/AuthProvider';
+import { wakeServer } from '@/lib/api';
 import { ThemePreferenceProvider } from '@/theme/ThemePreference';
 import { useTheme } from '@/theme/useTheme';
 
@@ -23,6 +24,9 @@ if (Platform.OS === 'web') LogBox.ignoreLogs([/non-boolean attribute/, /Received
 // La pantalla de inicio nativa (fondo #0B1020 con el símbolo) se mantiene hasta
 // que la animación de inicio está lista para dibujarse encima.
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
+
+// Despierta el servidor en la nube desde el primer instante.
+wakeServer();
 
 function RootNavigator() {
   const { status } = useAuth();
