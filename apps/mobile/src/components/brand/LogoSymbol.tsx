@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { Platform } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
 /**
@@ -47,6 +48,13 @@ interface LogoSymbolProps {
   accessibilityLabel?: string;
 }
 
+/** En el navegador el SVG va directo al DOM: se usan atributos web (role, aria-label). */
+function a11yProps(label?: string) {
+  if (!label) return {};
+  if (Platform.OS === 'web') return { role: 'img', 'aria-label': label } as Record<string, string>;
+  return { accessible: true, accessibilityLabel: label, accessibilityRole: 'image' as const };
+}
+
 export function LogoSymbol({ width, parts = ['base', 'arrow', 'bar', 'hook'], color, accessibilityLabel }: LogoSymbolProps) {
   const gradientId = `logo-${useId().replace(/:/g, '')}`;
   const fill = color ?? `url(#${gradientId})`;
@@ -55,7 +63,7 @@ export function LogoSymbol({ width, parts = ['base', 'arrow', 'bar', 'hook'], co
       width={width}
       height={width / LOGO_ASPECT}
       viewBox={`0 0 ${LOGO_VIEWBOX.width} ${LOGO_VIEWBOX.height}`}
-      {...(accessibilityLabel ? { accessible: true, accessibilityLabel, accessibilityRole: 'image' as const } : {})}
+      {...a11yProps(accessibilityLabel)}
     >
       {color ? null : (
         <Defs>
