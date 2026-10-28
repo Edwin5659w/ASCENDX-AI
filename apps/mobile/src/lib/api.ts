@@ -109,7 +109,9 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     if (options.auth && error instanceof ApiError && error.status === 401) {
       try {
         await refreshSession();
-      } catch {
+      } catch (refreshError) {
+        // Sin conexión no se cierra la sesión: se sigue mostrando lo guardado (RF-27).
+        if (refreshError instanceof ApiError && refreshError.status === 0) throw refreshError;
         onSessionExpired?.();
         throw error;
       }

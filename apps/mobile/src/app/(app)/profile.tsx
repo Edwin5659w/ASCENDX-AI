@@ -10,6 +10,7 @@ import { FormError } from '@/features/auth/AuthShell';
 import { ApiError } from '@/lib/api';
 import { formatCop } from '@/lib/format';
 import { useThemePreference, type ThemePreference } from '@/theme/ThemePreference';
+import { useOutbox } from '@/lib/outbox';
 import { useTheme } from '@/theme/useTheme';
 
 const THEME_OPTIONS: { value: ThemePreference; label: string; icon: 'phone' | 'sun' | 'moon' }[] = [
@@ -23,6 +24,7 @@ const dateFormatter = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 
 /** Perfil y ajustes: datos, permisos (RF-06), perfil financiero (RF-04) y eliminar cuenta (RF-05). */
 export default function ProfileScreen() {
   const { user, setUser, signOut } = useAuth();
+  const pendingSync = useOutbox().length;
   const { spacing } = useTheme();
   const { preference, setPreference } = useThemePreference();
   const [savingConsent, setSavingConsent] = useState<'ia' | 'ocr' | null>(null);
@@ -73,6 +75,14 @@ export default function ProfileScreen() {
           }
           onPress={() => router.push('/financial-profile')}
         />
+      </Card>
+
+      <Card>
+        <AppText variant="heading">Organización y hábitos</AppText>
+        <NavRow icon="wallet" title="Mis cuentas" subtitle="Efectivo, banco y billetera digital" onPress={() => router.push('/accounts')} />
+        <NavRow icon="repeat" title="Movimientos recurrentes" subtitle="Arriendo, salario y suscripciones automáticos" onPress={() => router.push('/recurring')} />
+        <NavRow icon="trophy" title="Logros" subtitle="Tu racha semanal e insignias" onPress={() => router.push('/achievements')} />
+        <NavRow icon="bell" title="Recordatorios" subtitle="Avisos en el teléfono, también sin conexión" onPress={() => router.push('/reminders')} />
       </Card>
 
       <Card>
@@ -134,6 +144,11 @@ export default function ProfileScreen() {
         />
       </Card>
 
+      {pendingSync ? (
+        <AppText variant="caption" color="warning">
+          Tienes {pendingSync} {pendingSync === 1 ? 'movimiento' : 'movimientos'} sin enviar. Si cierras sesión ahora se perderán.
+        </AppText>
+      ) : null}
       <Button
         title="Cerrar sesión"
         variant="secondary"

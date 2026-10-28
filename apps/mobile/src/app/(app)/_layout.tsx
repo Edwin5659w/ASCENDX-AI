@@ -1,10 +1,13 @@
 import { Stack } from 'expo-router';
+import { SyncManager } from '@/features/sync/SyncManager';
 import { useTheme } from '@/theme/useTheme';
 
 /** Pantallas con sesión: pestañas y pantallas que se abren encima de ellas. */
 export default function AppLayout() {
   const { colors } = useTheme();
   return (
+    <>
+    <SyncManager />
     <Stack
       screenOptions={{
         headerShown: false,
@@ -23,10 +26,16 @@ export default function AppLayout() {
       <Stack.Screen name="categories" />
       <Stack.Screen name="scenarios" />
       <Stack.Screen name="scan-receipt" />
+      <Stack.Screen name="accounts" />
+      <Stack.Screen name="recurring" />
+      <Stack.Screen name="achievements" />
+      <Stack.Screen name="reminders" />
+      <Stack.Screen name="sync" />
       <Stack.Screen name="profile" />
       <Stack.Screen name="financial-profile" />
       <Stack.Screen name="delete-account" />
       <Stack.Screen name="new-movement" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
     </Stack>
+    </>
   );
 }

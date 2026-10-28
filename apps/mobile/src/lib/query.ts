@@ -68,7 +68,10 @@ async function run<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
       return data;
     })
     .catch((error) => {
-      entries.set(key, { ...entries.get(key), error, promise: undefined, fetcher });
+      const previous = entries.get(key);
+      // Sin conexión, lo último que se vio sigue en pantalla y se marca como guardado.
+      const offline = (error as { code?: string } | null)?.code === 'NETWORK_ERROR' && previous?.data !== undefined;
+      entries.set(key, { ...previous, error, promise: undefined, fetcher, fromCache: offline || Boolean(previous?.fromCache) });
       notify(key);
       throw error;
     });
@@ -131,6 +134,11 @@ export function useQuery<T>(key: string | null, fetcher: () => Promise<T>): Quer
       if (key) await run(key, () => fetcherRef.current()).catch(() => undefined);
     },
   };
+}
+
+/** Pide una consulta por adelantado (p. ej. las categorías, para poder registrar sin conexión). */
+export function prefetch<T>(key: string, fetcher: () => Promise<T>) {
+  return run(key, fetcher).catch(() => undefined);
 }
 
 /** Vuelve a pedir las consultas cuyo nombre empieza por alguno de los prefijos. */

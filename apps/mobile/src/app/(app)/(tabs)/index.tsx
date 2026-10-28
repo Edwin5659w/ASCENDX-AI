@@ -8,6 +8,8 @@ import { getDashboard, type Dashboard } from '@/features/finance/api';
 import { CategoryBars, EvolutionChart, MovementRow, StatusBadge } from '@/features/finance/components';
 import { formatDay, monthLabel } from '@/features/finance/labels';
 import { firstName, formatCop } from '@/lib/format';
+import { HabitsRow } from '@/features/habits/components';
+import { PendingSyncBanner } from '@/features/sync/SyncManager';
 import { useQuery } from '@/lib/query';
 import { useTheme } from '@/theme/useTheme';
 
@@ -96,6 +98,7 @@ export default function HomeScreen() {
       </View>
 
       {fromCache ? <OfflineBanner updatedAt={updatedAt} /> : null}
+      <PendingSyncBanner />
       {loading ? <LoadingView label="Calculando tu panel…" /> : null}
       {error && !d ? <ErrorView error={error} onRetry={refetch} /> : null}
 
@@ -138,6 +141,8 @@ export default function HomeScreen() {
               </View>
             </Card>
           </PressableScale>
+
+          <HabitsRow />
 
           {/* Ahorro prudente */}
           <Card highlighted={!capacity!.alert && capacity!.base !== 'sin_datos'}>

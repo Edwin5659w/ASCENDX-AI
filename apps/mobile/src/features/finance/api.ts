@@ -100,7 +100,7 @@ export interface Dashboard {
 
 const auth = true;
 /** Después de cambiar datos financieros, todas estas vistas se recalculan. */
-const refreshFinance = () => invalidate('dashboard', 'transactions', 'debts', 'debt:', 'goals', 'goal:', 'assistant');
+const refreshFinance = () => invalidate('dashboard', 'transactions', 'debts', 'debt:', 'goals', 'goal:', 'accounts', 'habits', 'assistant');
 
 // ── Panel ──
 export const getDashboard = (month?: string) =>
@@ -160,7 +160,7 @@ export async function createTransaction(input: MovementInput) {
   return result;
 }
 
-export async function updateTransaction(id: string, changes: Partial<Pick<MovementInput, 'amount' | 'date' | 'categoryId' | 'description'>>) {
+export async function updateTransaction(id: string, changes: Partial<Pick<MovementInput, 'amount' | 'date' | 'categoryId' | 'description' | 'accountId'>>) {
   const result = await apiRequest<{ transaction: Transaction }>(`/transactions/${id}`, { method: 'PATCH', body: changes, auth });
   refreshFinance();
   return result;
@@ -254,4 +254,36 @@ export async function moveGoal(id: string, input: { kind: 'aporte' | 'retiro'; a
   });
   refreshFinance();
   return result;
+}
+
+// ── Cuentas (RF-31) ──
+export type AccountKind = 'efectivo' | 'banco' | 'billetera';
+
+export interface Account {
+  id: string;
+  name: string;
+  kind: AccountKind;
+  initialBalance: number;
+  balance: number;
+  movements: number;
+  archived: boolean;
+}
+
+export const getAccounts = () => apiRequest<{ accounts: Account[]; total: number }>('/accounts', { auth });
+
+export async function createAccount(input: { name: string; kind: AccountKind; initialBalance?: number }) {
+  const result = await apiRequest<{ account: Account }>('/accounts', { method: 'POST', body: input, auth });
+  invalidate('accounts');
+  return result;
+}
+
+export async function updateAccount(id: string, changes: Partial<{ name: string; kind: AccountKind; initialBalance: number }>) {
+  const result = await apiRequest<{ account: Account }>(`/accounts/${id}`, { method: 'PATCH', body: changes, auth });
+  invalidate('accounts');
+  return result;
+}
+
+export async function archiveAccount(id: string) {
+  await apiRequest<void>(`/accounts/${id}`, { method: 'DELETE', auth });
+  invalidate('accounts');
 }

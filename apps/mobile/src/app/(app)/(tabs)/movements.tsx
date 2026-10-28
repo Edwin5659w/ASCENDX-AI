@@ -7,6 +7,7 @@ import { getTransactions, type Transaction } from '@/features/finance/api';
 import { MonthSwitcher, MovementRow } from '@/features/finance/components';
 import { dayHeading, shiftMonth, todayKey } from '@/features/finance/labels';
 import { formatCop } from '@/lib/format';
+import { PendingSyncBanner } from '@/features/sync/SyncManager';
 import { useQuery } from '@/lib/query';
 import { useTheme } from '@/theme/useTheme';
 
@@ -114,6 +115,7 @@ export default function MovementsScreen() {
       />
 
       {fromCache ? <OfflineBanner updatedAt={updatedAt} /> : null}
+      <PendingSyncBanner />
 
       {totals ? (
         <Card>

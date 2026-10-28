@@ -6,6 +6,7 @@ import { AppText, Button, Card, Chip, ChipGroup, errorMessage, Header, Icon, Loa
 import {
   createTransaction,
   deleteTransaction,
+  getAccounts,
   getCategories,
   getDebts,
   getGoals,
@@ -15,6 +16,7 @@ import {
 } from '@/features/finance/api';
 import { MOVEMENT_LABELS, newClientOpId, shiftDay, todayKey } from '@/features/finance/labels';
 import { ApiError } from '@/lib/api';
+import { enqueueMovement } from '@/lib/outbox';
 import { formatAmountInput, formatCop, parseAmount } from '@/lib/format';
 import { useQuery } from '@/lib/query';
 import { useTheme } from '@/theme/useTheme';
@@ -64,6 +66,9 @@ function MovementForm({ params, initial }: { params: Params; initial?: Transacti
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [clientOpId] = useState(newClientOpId);
+  const [accountId, setAccountId] = useState<string | null>(initial?.account?.id ?? null);
+  const accounts = useQuery('accounts', getAccounts);
+  const accountOptions = accounts.data?.accounts ?? [];
 
   const categories = useQuery('categories', getCategories);
   const debts = useQuery(type === 'pago_deuda' ? 'debts' : null, getDebts);
@@ -94,24 +99,34 @@ function MovementForm({ params, initial }: { params: Params; initial?: Transacti
           amount: value!,
           date,
           description: description.trim() || null,
+          accountId,
           ...(type === 'ingreso' || type === 'gasto' ? { categoryId } : {}),
         });
       } else {
-        await createTransaction({
+        const body = {
           type,
           amount: value!,
           date,
           categoryId: type === 'ingreso' || type === 'gasto' ? categoryId : null,
           debtId: type === 'pago_deuda' ? debtId : null,
           goalId: type === 'aporte_meta' || type === 'retiro_meta' ? goalId : null,
+          accountId,
           description: description.trim() || null,
-          source: params.source === 'ocr' ? 'ocr' : 'manual',
+          source: params.source === 'ocr' ? ('ocr' as const) : ('manual' as const),
           ...(params.source === 'ocr'
             ? { receipt: { merchant: params.merchant ?? null, date: params.receiptDate ?? null, total: params.total ? Number(params.total) : null } }
             : {}),
           clientOpId,
           confirmDuplicate,
-        });
+        };
+        try {
+          await createTransaction(body);
+        } catch (error) {
+          // RF-29: sin conexión se guarda en el teléfono y se envía al volver la red.
+          if (!(error instanceof ApiError && error.status === 0)) throw error;
+          const category = categoryOptions.find((c) => c.id === categoryId)?.name;
+          await enqueueMovement(body, `${MOVEMENT_LABELS[type]}${category ? ` · ${category}` : ''} · ${formatCop(value!)}`);
+        }
       }
       router.back();
     } catch (error) {
@@ -282,6 +297,20 @@ function MovementForm({ params, initial }: { params: Params; initial?: Transacti
           </AppText>
         ) : null}
       </View>
+
+      {accountOptions.length ? (
+        <View style={{ gap: spacing.sm }}>
+          <AppText variant="label" color="textMuted">
+            Cuenta (opcional)
+          </AppText>
+          <ChipGroup>
+            <Chip label="Sin cuenta" selected={!accountId} onPress={() => setAccountId(null)} />
+            {accountOptions.map((account) => (
+              <Chip key={account.id} label={account.name} selected={accountId === account.id} onPress={() => setAccountId(account.id)} />
+            ))}
+          </ChipGroup>
+        </View>
+      ) : null}
 
       <TextField label="Descripción (opcional)" value={description} onChangeText={setDescription} placeholder="Ej.: mercado de la semana" maxLength={200} />
 
