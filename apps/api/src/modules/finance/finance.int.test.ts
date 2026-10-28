@@ -17,7 +17,7 @@ async function newUser(email: string) {
   });
   expect(res.status).toBe(201);
   const token = res.body.accessToken as string;
-  const call = (method: 'get' | 'post' | 'patch' | 'delete', path: string, body?: unknown) => {
+  const call = (method: 'get' | 'post' | 'patch' | 'delete', path: string, body?: object) => {
     const req = request(app)[method](`/api${path}`).set('Authorization', `Bearer ${token}`);
     return body === undefined ? req : req.send(body);
   };

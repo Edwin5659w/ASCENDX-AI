@@ -29,6 +29,11 @@ const createSchema = z.object({
   priority: z.enum(['alta', 'media', 'baja']).default('media'),
   icon: z.string().trim().max(40).nullable().optional(),
   isEmergencyFund: z.boolean().default(false),
+  /** Lo que ya tenía ahorrado para esta meta antes de usar la app (no es un movimiento del mes) */
+  initialSavedAmount: z.number().int().min(0).max(100_000_000_000).default(0),
+}).refine((v) => v.initialSavedAmount <= v.targetAmount, {
+  path: ['initialSavedAmount'],
+  message: 'Lo ahorrado no puede superar el valor de la meta',
 });
 
 goalsRouter.post('/', async (req, res) => {
@@ -47,6 +52,10 @@ goalsRouter.post('/', async (req, res) => {
       priority: data.priority,
       icon: data.icon ?? null,
       isEmergencyFund: data.isEmergencyFund,
+      savedAmount: BigInt(data.initialSavedAmount),
+      ...(data.initialSavedAmount > 0 && data.initialSavedAmount === data.targetAmount
+        ? { status: 'completada' as const, completedAt: new Date() }
+        : {}),
     },
   });
   const snapshot = await financialSnapshot(userId);

@@ -1,76 +1,77 @@
 import { router } from 'expo-router';
 import { View } from 'react-native';
-import { AppText, Button, Card, Icon, ProgressRing, Screen } from '@/components/ui';
+import { AppText, Button, Card, EmptyView, ErrorView, Icon, LoadingView, NavRow, OfflineBanner, Screen } from '@/components/ui';
+import { getGoals } from '@/features/finance/api';
+import { GoalCard } from '@/features/finance/components';
+import { formatCop } from '@/lib/format';
+import { useQuery } from '@/lib/query';
 import { useTheme } from '@/theme/useTheme';
 
-const HOW_IT_WILL_WORK = [
-  'Cada meta con nombre, ícono, valor objetivo, fecha y prioridad (RF-16)',
-  'Aportes y retiros, sin dejar una meta en negativo (RF-17)',
-  'Fecha estimada y aporte mensual previsto según tu capacidad prudente (RF-18)',
-  'Aviso de meta en riesgo con dos ajustes posibles: nueva fecha o nuevo aporte (RF-19)',
-];
-
-/**
- * Metas (sección 15.5). Estado vacío mientras se construye el módulo de
- * metas (fase 3): explica cómo se verán y cómo se medirán, sin datos ficticios.
- */
+/** RF-16 a RF-19: metas, reparto de la capacidad prudente y metas en riesgo. */
 export default function GoalsScreen() {
   const { spacing } = useTheme();
+  const { data, error, loading, refetch, fromCache, updatedAt } = useQuery('goals', getGoals);
+  const visible = (data?.goals ?? []).filter((goal) => goal.status !== 'cancelada');
+  const active = visible.filter((goal) => goal.status === 'activa');
+  const atRisk = active.filter((goal) => goal.plan?.status === 'en_riesgo' || goal.plan?.status === 'vencida');
+
   return (
     <Screen scroll>
-      <AppText variant="title" accessibilityRole="header">
-        Metas
-      </AppText>
-
-      <Card elevated>
-        <View style={{ alignItems: 'center', gap: spacing.lg, paddingVertical: spacing.md }}>
-          <ProgressRing
-            value={0}
-            size={148}
-            strokeWidth={12}
-            milestones={[0.25, 0.5, 0.75]}
-            accessibilityLabel="Ilustración de progreso de una meta con hitos de 25, 50 y 75 por ciento"
-          >
-            <AppText variant="caption" color="textMuted" align="center">
-              Hitos
-            </AppText>
-            <AppText variant="label" align="center">
-              25 · 50 · 75 · 100 %
-            </AppText>
-          </ProgressRing>
-          <View style={{ gap: spacing.sm }}>
-            <AppText variant="heading" align="center">
-              Construye tus metas paso a paso
-            </AppText>
-            <AppText color="textMuted" align="center">
-              Moto, computador, viaje o fondo de emergencia: tu ahorro prudente se reparte primero en lo más importante y
-              en lo más cercano.
-            </AppText>
-          </View>
-        </View>
-      </Card>
-
-      <Card>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-          <Icon name="info" color="primary" size={20} />
-          <AppText variant="heading">En desarrollo · fase 3</AppText>
-        </View>
-        <View style={{ gap: spacing.md }}>
-          {HOW_IT_WILL_WORK.map((item) => (
-            <View key={item} style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' }}>
-              <Icon name="pending" size={18} color="textSubtle" />
-              <AppText variant="caption" color="textMuted" style={{ flex: 1 }}>
-                {item}
-              </AppText>
-            </View>
-          ))}
-        </View>
-        <AppText variant="caption" color="textMuted">
-          Las reglas de cálculo ya están implementadas y probadas; falta la pantalla y el registro de metas.
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <AppText variant="title" accessibilityRole="header">
+          Metas
         </AppText>
-      </Card>
+        <Button title="Nueva meta" variant="ghost" onPress={() => router.push('/goal-form')} />
+      </View>
 
-      <Button title="Mientras tanto, simula una compra" variant="secondary" onPress={() => router.push('/simulator')} />
+      {fromCache ? <OfflineBanner updatedAt={updatedAt} /> : null}
+      {loading ? <LoadingView /> : null}
+      {error && !data ? <ErrorView error={error} onRetry={refetch} /> : null}
+
+      {data && visible.length === 0 ? (
+        <EmptyView
+          icon="goals"
+          title="Define tu primera meta"
+          description="Una moto, un viaje o tu fondo de emergencia. Repartimos tu ahorro prudente entre tus metas por prioridad y fecha, y te avisamos si alguna está en riesgo."
+          action={{ title: 'Crear meta', onPress: () => router.push('/goal-form') }}
+        />
+      ) : null}
+
+      {data && visible.length > 0 ? (
+        <Card highlighted={data.allocation.allOnTrack}>
+          <AppText variant="overline" color="textMuted">
+            Reparto de tu ahorro prudente
+          </AppText>
+          {data.capacity.base === 'sin_datos' ? (
+            <AppText color="textMuted">{data.capacity.explanation}</AppText>
+          ) : (
+            <>
+              <AppText variant="amount">{formatCop(data.allocation.prudentCapacity)}</AppText>
+              <AppText variant="caption" color="textMuted">
+                al mes · tus metas con fecha necesitan {formatCop(data.allocation.totalRequired)}
+                {data.allocation.unassigned > 0 ? ` · sobran ${formatCop(data.allocation.unassigned)}` : ''}
+              </AppText>
+              <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center' }}>
+                <Icon name={data.allocation.allOnTrack ? 'check' : 'warning'} color={data.allocation.allOnTrack ? 'success' : 'warning'} size={18} />
+                <AppText variant="caption" style={{ flex: 1 }}>
+                  {data.allocation.allOnTrack
+                    ? 'Tu ahorro alcanza para todas tus metas con fecha.'
+                    : `${atRisk.length} ${atRisk.length === 1 ? 'meta está' : 'metas están'} en riesgo: el ahorro no alcanza para todas. Se reparte primero por prioridad y luego por fecha.`}
+                </AppText>
+              </View>
+            </>
+          )}
+        </Card>
+      ) : null}
+
+      {visible.map((goal) => (
+        <GoalCard key={goal.id} goal={goal} onPress={() => router.push({ pathname: '/goal/[id]', params: { id: goal.id } })} />
+      ))}
+
+      <View style={{ gap: spacing.xs }}>
+        <NavRow icon="simulator" title="Simulador" subtitle="¿Ahorrar, financiar o combinar?" onPress={() => router.push('/simulator')} />
+        <NavRow icon="debt" title="Deudas" subtitle="Saldos, cuotas y pagos" onPress={() => router.push('/debts')} />
+      </View>
     </Screen>
   );
 }
