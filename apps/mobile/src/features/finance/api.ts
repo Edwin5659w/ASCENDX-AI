@@ -150,6 +150,8 @@ export interface MovementInput {
   source?: 'manual' | 'ocr' | 'recurrente';
   clientOpId?: string;
   confirmDuplicate?: boolean;
+  /** RF-28: datos del recibo leído por OCR (sin la imagen) */
+  receipt?: { merchant?: string | null; date?: string | null; total?: number | null } | null;
 }
 
 export async function createTransaction(input: MovementInput) {

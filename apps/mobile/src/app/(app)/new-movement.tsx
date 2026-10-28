@@ -21,7 +21,7 @@ import { useTheme } from '@/theme/useTheme';
 
 const TYPES: MovementType[] = ['gasto', 'ingreso', 'pago_deuda', 'aporte_meta', 'retiro_meta'];
 
-type Params = { id?: string; type?: MovementType; debtId?: string; goalId?: string; amount?: string; date?: string; description?: string; source?: 'ocr' };
+type Params = { id?: string; type?: MovementType; debtId?: string; goalId?: string; amount?: string; date?: string; description?: string; source?: 'ocr'; merchant?: string; receiptDate?: string; total?: string };
 
 /**
  * RF-07: registrar o editar un movimiento. RF-09: si parece duplicado, se
@@ -106,6 +106,9 @@ function MovementForm({ params, initial }: { params: Params; initial?: Transacti
           goalId: type === 'aporte_meta' || type === 'retiro_meta' ? goalId : null,
           description: description.trim() || null,
           source: params.source === 'ocr' ? 'ocr' : 'manual',
+          ...(params.source === 'ocr'
+            ? { receipt: { merchant: params.merchant ?? null, date: params.receiptDate ?? null, total: params.total ? Number(params.total) : null } }
+            : {}),
           clientOpId,
           confirmDuplicate,
         });

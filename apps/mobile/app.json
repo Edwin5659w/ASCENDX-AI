@@ -39,6 +39,14 @@
             "image": "./assets/splash-icon.png"
           }
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "ASCENDX AI usa la cámara solo cuando tú decides escanear un recibo.",
+          "photosPermission": "ASCENDX AI abre tus fotos solo para leer el recibo que elijas.",
+          "microphonePermission": false
+        }
       ]
     ],
     "experiments": {
