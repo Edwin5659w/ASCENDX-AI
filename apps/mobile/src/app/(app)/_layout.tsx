@@ -21,6 +21,8 @@ export default function AppLayout() {
       <Stack.Screen name="goal-form" />
       <Stack.Screen name="goal/[id]" />
       <Stack.Screen name="categories" />
+      <Stack.Screen name="scenarios" />
+      <Stack.Screen name="scan-receipt" />
       <Stack.Screen name="profile" />
       <Stack.Screen name="financial-profile" />
       <Stack.Screen name="delete-account" />

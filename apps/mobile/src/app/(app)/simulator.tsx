@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { AppText, Button, Header, Screen, TextField } from '@/components/ui';
-import { compareScenarios, type CompareResult, type RateType } from '@/features/simulator/api';
+import { router } from 'expo-router';
+import { AppText, Button, Card, errorMessage, Header, NavRow, Screen, TextField } from '@/components/ui';
+import { getDashboard } from '@/features/finance/api';
+import { useQuery } from '@/lib/query';
+import { compareScenarios, saveScenario, type CompareInput, type CompareResult, type RateType } from '@/features/simulator/api';
 import { ComparisonResultView } from '@/features/simulator/ComparisonResultView';
 import { ApiError } from '@/lib/api';
-import { formatAmountInput, parseAmount, parsePercent } from '@/lib/format';
+import { formatAmountInput, formatCop, parseAmount, parsePercent } from '@/lib/format';
 import { useTheme } from '@/theme/useTheme';
 
 type Field = 'assetPrice' | 'downPayment' | 'interestRate' | 'termMonths' | 'monthlySavingAmount' | 'currentSavings';
@@ -60,7 +63,24 @@ export default function SimulatorScreen() {
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [result, setResult] = useState<CompareResult | null>(null);
+  const [lastInput, setLastInput] = useState<CompareInput | null>(null);
   const [loading, setLoading] = useState(false);
+  const [scenarioName, setScenarioName] = useState('');
+  const [saveState, setSaveState] = useState<{ saving?: boolean; saved?: boolean; error?: string }>({});
+  const dashboard = useQuery('dashboard:actual', () => getDashboard());
+  const prudent = dashboard.data?.capacity.prudentCapacity ?? 0;
+
+  async function handleSave() {
+    if (!lastInput) return;
+    const name = scenarioName.trim() || `Compra de ${formatCop(lastInput.price)} a ${lastInput.termMonths} meses`;
+    setSaveState({ saving: true });
+    try {
+      await saveScenario({ name, input: lastInput });
+      setSaveState({ saved: true });
+    } catch (error) {
+      setSaveState({ error: errorMessage(error) });
+    }
+  }
 
   const setAmount = (field: Field) => (text: string) =>
     setValues((current) => ({ ...current, [field]: formatAmountInput(text) }));
@@ -85,7 +105,7 @@ export default function SimulatorScreen() {
 
     setLoading(true);
     try {
-      const response = await compareScenarios({
+      const input: CompareInput = {
         price: assetPrice!,
         downPayment,
         rate: interestRate!,
@@ -93,8 +113,11 @@ export default function SimulatorScreen() {
         termMonths: termMonths!,
         monthlySaving: monthlySavingAmount!,
         currentSavings,
-      });
+      };
+      const response = await compareScenarios(input);
       setResult(response);
+      setLastInput(input);
+      setSaveState({});
     } catch (err) {
       setFormError(err instanceof ApiError ? err.message : 'No se pudo calcular la simulación.');
     } finally {
@@ -105,6 +128,7 @@ export default function SimulatorScreen() {
   return (
     <Screen scroll edges={['top', 'bottom']}>
       <Header title="Simulador" />
+      <NavRow icon="bookmark" title="Escenarios guardados" subtitle="Ábrelos o compáralos lado a lado" onPress={() => router.push('/scenarios')} />
       <View style={{ gap: spacing.xs }}>
         <AppText variant="title" accessibilityRole="header">
           ¿Ahorrar o financiar?
@@ -160,7 +184,15 @@ export default function SimulatorScreen() {
         onChangeText={setAmount('monthlySavingAmount')}
         placeholder="1.500.000"
         error={errors.monthlySavingAmount}
+        hint={prudent > 0 ? `Tu ahorro prudente estimado es ${formatCop(prudent)} al mes` : undefined}
       />
+      {prudent > 0 && !values.monthlySavingAmount ? (
+        <Button
+          title={`Usar mi ahorro prudente: ${formatCop(prudent)}`}
+          variant="secondary"
+          onPress={() => setValues((current) => ({ ...current, monthlySavingAmount: formatAmountInput(String(prudent)) }))}
+        />
+      ) : null}
       <TextField
         label="Ahorro que ya tienes para esto"
         prefix="$"
@@ -176,6 +208,25 @@ export default function SimulatorScreen() {
       <Button title="Comparar" onPress={handleCompare} loading={loading} />
 
       {result ? <ComparisonResultView result={result} /> : null}
+
+      {result ? (
+        <Card>
+          <AppText variant="heading">Guardar este escenario</AppText>
+          <TextField
+            label="Nombre"
+            value={scenarioName}
+            onChangeText={setScenarioName}
+            placeholder={lastInput ? `Compra de ${formatCop(lastInput.price)} a ${lastInput.termMonths} meses` : ''}
+            maxLength={80}
+          />
+          {saveState.error ? <AppText color="danger">{saveState.error}</AppText> : null}
+          {saveState.saved ? (
+            <AppText color="success">Guardado. Lo encuentras en «Escenarios guardados».</AppText>
+          ) : (
+            <Button title="Guardar escenario" variant="secondary" onPress={handleSave} loading={saveState.saving} />
+          )}
+        </Card>
+      ) : null}
     </Screen>
   );
 }
