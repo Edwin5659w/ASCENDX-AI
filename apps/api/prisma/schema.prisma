@@ -220,21 +220,24 @@ model Category {
 }
 
 model Transaction {
-  id          String            @id @default(uuid()) @db.Uuid
-  userId      String            @map("user_id") @db.Uuid
-  type        TransactionType
-  amount      BigInt
-  date        DateTime          @db.Date
-  categoryId  String?           @map("category_id") @db.Uuid
-  description String?           @db.VarChar(200)
-  debtId      String?           @map("debt_id") @db.Uuid
-  goalId      String?           @map("goal_id") @db.Uuid
-  accountId   String?           @map("account_id") @db.Uuid
-  source      TransactionSource @default(manual)
-  clientOpId  String?           @map("client_op_id") @db.Uuid
-  createdAt   DateTime          @default(now()) @map("created_at")
-  updatedAt   DateTime          @updatedAt @map("updated_at")
-  deletedAt   DateTime?         @map("deleted_at")
+  id              String            @id @default(uuid()) @db.Uuid
+  userId          String            @map("user_id") @db.Uuid
+  type            TransactionType
+  amount          BigInt
+  date            DateTime          @db.Date
+  categoryId      String?           @map("category_id") @db.Uuid
+  description     String?           @db.VarChar(200)
+  debtId          String?           @map("debt_id") @db.Uuid
+  goalId          String?           @map("goal_id") @db.Uuid
+  accountId       String?           @map("account_id") @db.Uuid
+  source          TransactionSource @default(manual)
+  /// RF-12: en un pago de deuda, parte que abonó a capital y parte de intereses
+  principalAmount BigInt?           @map("principal_amount")
+  interestAmount  BigInt?           @map("interest_amount")
+  clientOpId      String?           @map("client_op_id") @db.Uuid
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  deletedAt       DateTime?         @map("deleted_at")
 
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   category         Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)

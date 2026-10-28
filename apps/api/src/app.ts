@@ -7,8 +7,14 @@ import { env } from './config/env.js';
 import { logger } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { authRouter } from './modules/auth/auth.routes.js';
+import { categoriesRouter } from './modules/categories/categories.routes.js';
+import { debtsRouter } from './modules/debts/debts.routes.js';
+import { dashboardRouter } from './modules/finance/dashboard.routes.js';
+import { goalsRouter } from './modules/goals/goals.routes.js';
 import { healthRouter } from './modules/health/health.routes.js';
+import { scenariosRouter } from './modules/simulator/scenarios.routes.js';
 import { simulatorRouter } from './modules/simulator/simulator.routes.js';
+import { transactionsRouter } from './modules/transactions/transactions.routes.js';
 import { usersRouter } from './modules/users/users.routes.js';
 
 /**
@@ -59,7 +65,13 @@ export function createApp() {
   app.use('/api/health', healthRouter);
   app.use('/api/auth', authRouter);
   app.use('/api/me', usersRouter);
+  app.use('/api/simulator/scenarios', scenariosRouter);
   app.use('/api/simulator', simulatorRouter);
+  app.use('/api/categories', categoriesRouter);
+  app.use('/api/transactions', transactionsRouter);
+  app.use('/api/debts', debtsRouter);
+  app.use('/api/goals', goalsRouter);
+  app.use('/api/dashboard', dashboardRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
