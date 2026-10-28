@@ -21,6 +21,19 @@ La API se publica en **Render** (plan gratis) y la base de datos PostgreSQL en *
 - Cada `git push` a `main` vuelve a desplegar.
 - `JWT_ACCESS_SECRET` lo genera Render; nunca está en el repositorio.
 
+## Asistente de IA
+
+Por defecto `AI_PROVIDER=local`: el mentor explica las cifras con reglas y no envía datos a terceros. Para usar un modelo externo, en Render → *Environment*:
+
+| Variable | Valor |
+|---|---|
+| `AI_PROVIDER` | `anthropic` u `openai` |
+| `AI_API_KEY` | la clave del proveedor (secreta; nunca en el repositorio) |
+| `AI_MODEL` | opcional (por defecto `claude-haiku-4-5` o `gpt-4o-mini`) |
+| `AI_BASE_URL` | opcional, para una API compatible con OpenAI |
+
+Aunque se use un modelo externo, cada cifra de la respuesta se compara con los datos calculados; si no coincide, se reintenta una vez y luego se muestra la explicación con reglas. Los límites diarios y el tope mensual de tokens están en `app_settings`.
+
 ## Limitaciones conocidas
 
 - **Recuperar contraseña** no envía correo en producción hasta elegir proveedor de correo (pendiente del Documento Maestro v2).

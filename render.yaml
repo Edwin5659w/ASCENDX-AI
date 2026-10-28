@@ -31,3 +31,9 @@ services:
         generateValue: true
       - key: LOG_LEVEL
         value: info
+      # Asistente de IA: «local» explica con reglas, sin enviar datos a terceros.
+      # Para usar un modelo externo: AI_PROVIDER=anthropic u openai y AI_API_KEY (secreta).
+      - key: AI_PROVIDER
+        value: local
+      - key: AI_API_KEY
+        sync: false
