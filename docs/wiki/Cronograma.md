@@ -2,6 +2,19 @@
 
 El proyecto empieza con dos semanas de planeación y documentación (Fase 0) y sigue con **16 sprints de dos semanas** entre el 9 de noviembre de 2026 y el 11 de julio de 2027, con una pausa por vacaciones del 21 de diciembre al 10 de enero. Cada fase termina en una puerta de control con el director. Las fechas se ajustarán al calendario académico oficial.
 
+## Avance real frente al plan (27 de octubre de 2026)
+
+El desarrollo va adelantado: el prototipo funcional de las fases 2 a 5 ya está construido y probado (ver [Requisitos funcionales](Requisitos-funcionales) y `docs/estado.md`). El cronograma no se acorta: el tiempo ganado se usa en lo que el plan pone después del código.
+
+| Fase | Plan | Real |
+| --- | --- | --- |
+| 2 · Fundamentos | dic. 2026 – ene. 2027 | Terminada (cuenta, despliegue, CI local) |
+| 3 · Núcleo financiero | ene. – mar. 2027 | Terminada |
+| 4 · IA y OCR | mar. – abr. 2027 | Terminada en código; falta probar ML Kit en el teléfono (puerta G2) |
+| 5 · Integración | abr. – may. 2027 | Funciones P2 y sin conexión terminadas; faltan pruebas con usuarios y en dispositivos |
+
+Las fases 1 (encuesta, entrevistas y prototipos con usuarios), 5 (validación) y 6 (cierre) se mantienen en sus fechas, porque dependen de personas y del calendario académico.
+
 ## Diagrama de Gantt
 
 ```mermaid

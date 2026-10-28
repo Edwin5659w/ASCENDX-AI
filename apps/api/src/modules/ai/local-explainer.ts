@@ -127,8 +127,27 @@ export function localPlan(c: AiContext, goalName?: string | null): AiAnswer {
 
 const norm = (text: string) => text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
+/** Palabras que indican que la pregunta es sobre finanzas personales o la app. */
+const FINANCE_TOPIC =
+  /(dinero|plata|plat[ao]|peso|ahorr|gast|ingres|sueldo|salari|pago|pagar|deud|debo|credit|prestam|financ|cuota|tasa|interes|meta|presupuest|mes|flujo|disponible|capacidad|compr|invert|acciones|cripto|cdt|banco|cuenta|tarjeta|finanz|econom|cuanto|como voy|situacion|riesgo|lograr|alcanz|simul|recorta|fondo|emergencia|ascendx|app|hola|ayuda)/;
+
+export const OFF_TOPIC_ANSWER =
+  'Solo puedo ayudarte con tus finanzas personales y con las funciones de ASCENDX AI: tus gastos, tu capacidad de ahorro, tus metas, tus deudas y el simulador. ¿Quieres que revisemos alguno de esos temas?';
+
+export function isOffTopic(question: string) {
+  return !FINANCE_TOPIC.test(norm(question));
+}
+
 export function localChat(c: AiContext, question: string): ChatAnswer {
   const q = norm(question);
+  // TC-08: preguntas fuera de las finanzas personales se rechazan con cortesía.
+  if (isOffTopic(question)) return { respuesta: OFF_TOPIC_ANSWER, funcion: null };
+  if (/(flujo|disponible|como voy|cuanto me queda|neto)/.test(q)) {
+    return {
+      respuesta: `Este mes llevas ingresos por ${formatCop(c.mesActual.ingresos)}, gastos por ${formatCop(c.mesActual.gastos)} y pagos de deuda por ${formatCop(c.mesActual.pagosDeuda)}. Tu flujo neto es ${formatCop(c.mesActual.flujoNeto)} y tu disponible, ${formatCop(c.mesActual.disponible)}.`,
+      funcion: 'movimientos',
+    };
+  }
   if (/(invert|acciones|cripto|bitcoin|rentabilidad|cdt)/.test(q)) {
     return { respuesta: 'No puedo recomendar inversiones ni prometer rendimientos. Puedo ayudarte a ver cuánto puedes ahorrar y a planear tus metas.', funcion: 'metas' };
   }

@@ -137,6 +137,22 @@ describe('asistente de IA (RF-23 a RF-26)', () => {
     expect((await call('get', '/ai/conversations')).body.conversations).toHaveLength(0);
   });
 
+  it('TC-07: el flujo neto del chat es la misma cifra del panel', async () => {
+    const call = await newUser('tc07@example.com');
+    const panel = await call('get', '/dashboard');
+    const res = await call('post', '/ai/chat', { message: '¿Cuál es mi flujo neto del mes?' });
+    const neto = new Intl.NumberFormat('es-CO').format(panel.body.indicators.netFlow);
+    expect(res.body.message.content).toContain(neto.replace('-', ''));
+    expect(res.body.message.meta.verification.ok).toBe(true);
+  });
+
+  it('TC-08: rechaza con cortesía una pregunta fuera de las finanzas personales', async () => {
+    const call = await newUser('tc08@example.com');
+    const res = await call('post', '/ai/chat', { message: '¿Quién ganó el mundial de fútbol de 2014?' });
+    expect(res.status).toBe(200);
+    expect(res.body.message.content).toMatch(/Solo puedo ayudarte con tus finanzas personales/);
+  });
+
   it('no recomienda inversiones', async () => {
     const call = await newUser('inv@example.com');
     const res = await call('post', '/ai/chat', { message: '¿En qué acciones invierto para ganar más?' });

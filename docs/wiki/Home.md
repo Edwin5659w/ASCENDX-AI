@@ -6,9 +6,9 @@ ASCENDX AI es una aplicación móvil Android de planificación financiera person
 
 ## Estado
 
-- **Fase actual:** Fase 0 — Planeación y documentación (23 de octubre al 8 de noviembre de 2026).
-- **Ya existe:** anteproyecto actualizado y una prueba de concepto desplegada (API en Render, base de datos en Neon) con registro, consentimientos, perfil financiero, motor de cálculo (49 pruebas, 99,2 % de cobertura) y simulador.
-- **Siguiente puerta:** G0 — documentación de planeación revisada por el director antes de continuar el desarrollo.
+- **Fase actual:** validación. El desarrollo funcional de las fases 1 a 5 está completo (27 de octubre de 2026): 33 de 34 requisitos funcionales terminados; RF-03 espera el proveedor de correo.
+- **Ya existe:** API desplegada (Render + Neon) y app con panel, movimientos, deudas, metas, simulador con escenarios, mentor de IA con cifras verificadas, lectura de recibos, modo sin conexión, cuentas, recurrentes, logros y recordatorios. 133 pruebas automáticas.
+- **Sigue:** compilar la app de Android y probarla en dos teléfonos, prueba con usuarios (SUS) y mediciones de desempeño.
 
 ## Documentación de planeación (antes del desarrollo)
 
