@@ -304,3 +304,19 @@ describe('aislamiento entre usuarios (RNF-01, TC-02)', () => {
     expect((await b.call('get', '/dashboard')).body.hasMovements).toBe(false);
   });
 });
+
+describe('recibos leídos con OCR (RF-28)', () => {
+  it('guarda los datos extraídos sin la imagen y exige la autorización de OCR', async () => {
+    const { call } = await newUser('ocr@example.com');
+    const mercado = await categoryId(call, 'Mercado');
+    const body = { type: 'gasto', amount: 45_900, date: today, categoryId: mercado, source: 'ocr', receipt: { merchant: 'Supermercado', date: today, total: 45_900 } };
+    const denied = await call('post', '/transactions', body);
+    expect(denied.status).toBe(403);
+    await call('patch', '/me/consents', { ocr: true });
+    const saved = await call('post', '/transactions', body);
+    expect(saved.status).toBe(201);
+    expect(saved.body.transaction.source).toBe('ocr');
+    const receipt = await prisma.receipt.findFirstOrThrow({ where: { transactionId: saved.body.transaction.id } });
+    expect(receipt).toMatchObject({ merchant: 'Supermercado', status: 'confirmado', total: 45_900n });
+  });
+});

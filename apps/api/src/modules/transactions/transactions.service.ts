@@ -27,6 +27,8 @@ export interface MovementInput {
   clientOpId?: string | null;
   /** RF-09: el usuario ya vio el aviso de posible duplicado y quiere guardar igual */
   confirmDuplicate?: boolean;
+  /** RF-28: datos que leyó el OCR (se guardan sin la imagen) */
+  receipt?: { merchant?: string | null; date?: string | null; total?: number | null } | null;
 }
 
 export const transactionInclude = {
@@ -179,6 +181,11 @@ export async function createMovement(userId: string, input: MovementInput) {
     }
   }
 
+  if (input.source === 'ocr') {
+    const consent = await prisma.consent.findFirst({ where: { userId, type: 'ocr', revokedAt: null } });
+    if (!consent) throw new HttpError(403, 'CONSENT_REQUIRED', 'Para guardar datos de recibos debes autorizar la lectura de recibos en tu perfil.');
+  }
+
   const transaction = await prisma.$transaction(async (tx) => {
     await validateReferences(tx, userId, input);
     const split = await applyEffect(tx, userId, input, 1);
@@ -198,6 +205,18 @@ export async function createMovement(userId: string, input: MovementInput) {
         ...split,
       },
     });
+    if (input.source === 'ocr') {
+      await tx.receipt.create({
+        data: {
+          userId,
+          transactionId: created.id,
+          status: 'confirmado',
+          merchant: input.receipt?.merchant?.slice(0, 120) || null,
+          date: input.receipt?.date ? fromCalendarDate(input.receipt.date) : null,
+          total: input.receipt?.total != null ? BigInt(input.receipt.total) : null,
+        },
+      });
+    }
     if (isGoalMovement(input.type) && input.goalId) {
       await tx.goalContribution.create({
         data: {

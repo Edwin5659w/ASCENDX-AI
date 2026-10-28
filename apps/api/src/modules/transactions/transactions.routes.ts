@@ -33,6 +33,14 @@ export const createMovementSchema = z.object({
   source: z.enum(['manual', 'ocr', 'recurrente']).optional(),
   clientOpId: uuidSchema.nullable().optional(),
   confirmDuplicate: z.boolean().optional(),
+  receipt: z
+    .object({
+      merchant: z.string().trim().max(120).nullable().optional(),
+      date: calendarDateSchema.nullable().optional(),
+      total: positivePesosSchema.nullable().optional(),
+    })
+    .nullable()
+    .optional(),
 });
 
 transactionsRouter.post('/', async (req, res) => {

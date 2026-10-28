@@ -17,6 +17,8 @@ export const logger = pino({
       '*.refreshToken',
       '*.accessToken',
       '*.token',
+      '*.apiKey',
+      'req.headers["x-api-key"]',
     ],
     censor: '[oculto]',
   },

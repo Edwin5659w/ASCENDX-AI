@@ -123,6 +123,7 @@ model User {
   goalContributions     GoalContribution[]
   creditScenarios       CreditScenario[]
   aiConversations       AiConversation[]
+  aiUsage               AiUsage[]
   receipts              Receipt[]
   accounts              Account[]
   recurringTransactions RecurringTransaction[]
@@ -369,12 +370,32 @@ model AiMessage {
   role           AiMessageRole
   content        String
   tokens         Int?
+  /// Respuesta estructurada, datos usados y resultado de la verificación de cifras
+  meta           Json?
   createdAt      DateTime      @default(now()) @map("created_at")
 
   conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId, createdAt])
   @@map("ai_messages")
+}
+
+/// RNF-11: registro de cada solicitud a la IA para los límites diarios y el tope mensual de gasto.
+model AiUsage {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  /// resumen | plan | chat
+  kind      String   @db.VarChar(20)
+  provider  String   @db.VarChar(30)
+  tokens    Int      @default(0)
+  verified  Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, kind, createdAt])
+  @@index([createdAt])
+  @@map("ai_usage")
 }
 
 // ───────────────────────── P2: OCR, cuentas, recurrentes, logros ─────────────────────────
@@ -457,6 +478,8 @@ model AppSettings {
   usuryRateDate       DateTime? @map("usury_rate_date") @db.Date
   aiDailyChatLimit    Int       @default(20) @map("ai_daily_chat_limit")
   aiDailySummaryLimit Int       @default(5) @map("ai_daily_summary_limit")
+  /// Tope mensual de tokens para todos los usuarios (RNF-11); 0 = sin tope
+  aiMonthlyTokenLimit Int       @default(2000000) @map("ai_monthly_token_limit")
   updatedAt           DateTime  @updatedAt @map("updated_at")
 
   @@map("app_settings")
