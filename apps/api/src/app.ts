@@ -6,6 +6,9 @@ import { pinoHttp } from 'pino-http';
 import { env } from './config/env.js';
 import { logger } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
+import { accountsRouter } from './modules/accounts/accounts.routes.js';
+import { habitsRouter } from './modules/habits/habits.routes.js';
+import { recurringRouter } from './modules/recurring/recurring.routes.js';
 import { aiRouter } from './modules/ai/ai.routes.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { categoriesRouter } from './modules/categories/categories.routes.js';
@@ -74,6 +77,9 @@ export function createApp() {
   app.use('/api/goals', goalsRouter);
   app.use('/api/dashboard', dashboardRouter);
   app.use('/api/ai', aiRouter);
+  app.use('/api/accounts', accountsRouter);
+  app.use('/api/recurring', recurringRouter);
+  app.use('/api/habits', habitsRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

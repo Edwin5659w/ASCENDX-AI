@@ -5,6 +5,7 @@ import { prisma } from '../../lib/prisma.js';
 import { currentUserId, protectedRoute } from '../../middleware/require-auth.js';
 import { parseQuery } from '../../middleware/validate.js';
 import { presentTransaction, transactionInclude } from '../transactions/transactions.service.js';
+import { runDueRecurring } from '../recurring/recurring.service.js';
 import { financialSnapshot } from './snapshot.service.js';
 
 /** RF-13 a RF-15: panel del mes con capacidad de ahorro, gráficos, metas y deudas. */
@@ -16,6 +17,8 @@ const PRIORITY_ORDER = { alta: 0, media: 1, baja: 2 } as const;
 dashboardRouter.get('/', async (req, res) => {
   const userId = currentUserId(req);
   const { month } = parseQuery(z.object({ month: monthSchema.optional() }), req);
+  // RF-30: antes de calcular, se crean los movimientos recurrentes que vencieron.
+  await runDueRecurring(userId);
   const [snapshot, recent] = await Promise.all([
     financialSnapshot(userId, { month }),
     prisma.transaction.findMany({

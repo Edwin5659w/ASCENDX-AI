@@ -10,6 +10,7 @@ export * from './capacity.js';
 export * from './dates.js';
 export * from './debts.js';
 export * from './goals.js';
+export * from './habits.js';
 export * from './loan.js';
 export * from './money.js';
 export * from './movements.js';
