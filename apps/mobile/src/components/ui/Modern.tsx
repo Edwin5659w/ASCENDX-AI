@@ -10,8 +10,8 @@ type Tone = 'brand' | 'violet' | 'danger';
 
 const GRADIENTS: Record<Tone, { dark: [string, string, string]; light: [string, string, string] }> = {
   // Esmeralda → azul petróleo → índigo: crecimiento + tecnología
-  brand: { dark: ['#0E7A5C', '#0F4C5C', '#1E1B4B'], light: ['#059669', '#0E7490', '#4338CA'] },
-  violet: { dark: ['#4C1D95', '#312E81', '#0F172A'], light: ['#7C3AED', '#4F46E5', '#1E3A8A'] },
+  brand: { dark: ['#0C8F6B', '#0D5F78', '#2A2370'], light: ['#059669', '#0E7490', '#4338CA'] },
+  violet: { dark: ['#6D3AE8', '#3F2FB0', '#141A3A'], light: ['#7C3AED', '#4F46E5', '#1E3A8A'] },
   danger: { dark: ['#7F1D1D', '#4C1D2E', '#1E1B2E'], light: ['#B91C1C', '#9D174D', '#4C1D95'] },
 };
 
@@ -25,7 +25,7 @@ export function GradientCard({ children, tone = 'brand', style }: { children: Re
   const [a, b, c] = GRADIENTS[tone][isDark ? 'dark' : 'light'];
   return (
     <View style={[{ borderRadius: 28, overflow: 'hidden' }, elevate('high'), style]}>
-      <Svg style={StyleSheet.absoluteFill} preserveAspectRatio="none" viewBox="0 0 100 100">
+      <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 100 100">
         <Defs>
           <LinearGradient id={`g${id}`} x1="0" y1="0" x2="1" y2="1">
             <Stop offset="0" stopColor={a} />
@@ -107,5 +107,25 @@ export function QuickAction({ icon, label, onPress }: { icon: IconName; label: s
         {label}
       </AppText>
     </PressableScale>
+  );
+}
+
+/** Degradados de acción: botones, selector activo, burbujas del usuario. */
+export const ACTION_GRADIENT = { dark: ['#22E6A8', '#12B5C9'], light: ['#059669', '#0E7490'] } as const;
+export const MENTOR_GRADIENT = { dark: ['#9B7BFF', '#5B6CFF'], light: ['#7C3AED', '#4F46E5'] } as const;
+
+/** Relleno con degradado para poner detrás de un contenido (posición absoluta). */
+export function GradientFill({ from, to, radius = 0 }: { from: string; to: string; radius?: number }) {
+  const id = useId().replace(/:/g, '');
+  return (
+    <Svg style={[StyleSheet.absoluteFill, { borderRadius: radius }]} width="100%" height="100%" pointerEvents="none" viewBox="0 0 100 100" preserveAspectRatio="none">
+      <Defs>
+        <LinearGradient id={`f${id}`} x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0" stopColor={from} />
+          <Stop offset="1" stopColor={to} />
+        </LinearGradient>
+      </Defs>
+      <Rect x="0" y="0" width="100" height="100" fill={`url(#f${id})`} />
+    </Svg>
   );
 }

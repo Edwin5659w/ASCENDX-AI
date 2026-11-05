@@ -2,6 +2,7 @@ import { ActivityIndicator, StyleSheet, type PressableProps } from 'react-native
 import { PressableScale } from '@/components/motion';
 import { useTheme } from '@/theme/useTheme';
 import { AppText } from './AppText';
+import { ACTION_GRADIENT, GradientFill } from './Modern';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
@@ -13,7 +14,9 @@ interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> {
 
 /** Botón con respuesta física: se hunde al presionar, rebota al soltar y vibra suave. */
 export function Button({ title, variant = 'primary', loading = false, disabled, ...props }: ButtonProps) {
-  const { colors, radius, spacing, elevate } = useTheme();
+  const { colors, spacing, elevate, isDark } = useTheme();
+  const [from, to] = ACTION_GRADIENT[isDark ? 'dark' : 'light'];
+  const gradient = variant === 'primary' && !isDisabledFlag(disabled, loading);
   const isDisabled = disabled || loading;
 
   const background = { primary: colors.primary, secondary: colors.surfaceAlt, ghost: 'transparent', danger: colors.dangerSoft }[variant];
@@ -29,16 +32,19 @@ export function Button({ title, variant = 'primary', loading = false, disabled, 
       disabled={isDisabled}
       style={({ pressed }) => [
         styles.base,
-        variant === 'primary' && !isDisabled ? elevate('low') : null,
+        variant === 'primary' && !isDisabled ? [elevate('high'), { shadowColor: from, shadowOpacity: 0.35 }] : null,
         {
-          backgroundColor: pressed ? pressedBackground : background,
-          borderRadius: radius.md,
+          backgroundColor: gradient ? 'transparent' : pressed ? pressedBackground : background,
+          borderRadius: 18,
+          overflow: 'hidden',
+          opacity: gradient && pressed ? 0.88 : undefined,
           paddingHorizontal: spacing.xl,
-          opacity: isDisabled && !loading ? 0.45 : 1,
         },
+        isDisabled && !loading ? { opacity: 0.45 } : null,
       ]}
       {...props}
     >
+      {gradient ? <GradientFill from={from} to={to} radius={18} /> : null}
       {loading ? (
         <ActivityIndicator color={colors[textColor]} />
       ) : (
@@ -53,3 +59,7 @@ export function Button({ title, variant = 'primary', loading = false, disabled, 
 const styles = StyleSheet.create({
   base: { minHeight: 56, alignItems: 'center', justifyContent: 'center' },
 });
+
+function isDisabledFlag(disabled: boolean | null | undefined, loading: boolean) {
+  return Boolean(disabled) && !loading;
+}

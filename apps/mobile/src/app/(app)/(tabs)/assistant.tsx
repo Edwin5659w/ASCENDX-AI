@@ -1,9 +1,9 @@
 import { router, type Href } from 'expo-router';
 import { useState } from 'react';
-import { View } from 'react-native';
-import { FadeIn } from '@/components/motion';
+import { TextInput, View } from 'react-native';
+import { FadeIn, PressableScale } from '@/components/motion';
 import { MentorMark } from '@/components/brand/MentorMark';
-import { AppText, Button, Card, Chip, ChipGroup, errorMessage, Icon, LoadingView, Screen, SegmentedControl, TextField } from '@/components/ui';
+import { AppText, Button, Card, Chip, ChipGroup, errorMessage, GradientCard, GradientFill, Icon, LoadingView, MENTOR_GRADIENT, ACTION_GRADIENT, OnGradient, Screen, type IconName } from '@/components/ui';
 import { updateConsents } from '@/features/account/api';
 import {
   clearConversations,
@@ -61,15 +61,27 @@ export default function AssistantScreen() {
 
   return (
     <Screen scroll animateIn={false}>
-      <View style={{ alignItems: 'center', gap: spacing.sm, paddingTop: spacing.sm }}>
-        <MentorMark size={64} animate />
-        <AppText variant="title" align="center" accessibilityRole="header">
-          Tu mentor ASCENDX AI
-        </AppText>
-        <AppText color="textMuted" align="center" style={{ maxWidth: 340 }}>
-          Explica tu situación con las cifras que calculó la app. Nunca inventa números.
-        </AppText>
-      </View>
+      <GradientCard tone="violet">
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg }}>
+          <View style={{ width: 72, height: 72, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}>
+            <MentorMark size={56} animate />
+          </View>
+          <View style={{ flex: 1, gap: 4 }}>
+            <OnGradient variant="caption" soft>
+              Asistente
+            </OnGradient>
+            <OnGradient variant="title" style={{ fontSize: 24, lineHeight: 29 }}>
+              Tu mentor ASCENDX AI
+            </OnGradient>
+          </View>
+        </View>
+        <OnGradient soft>Te explica tu situación con las cifras que calculó la app. Nunca inventa números.</OnGradient>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+          <Pill icon="check" label="Cifras verificadas" />
+          <Pill icon="shield" label="Solo ve totales" />
+          {status.data && !status.data.external ? <Pill icon="settings" label="Modo reglas" /> : null}
+        </View>
+      </GradientCard>
 
       {!allowed ? (
         <Card>
@@ -87,17 +99,14 @@ export default function AssistantScreen() {
         </Card>
       ) : (
         <>
-          <SegmentedControl
-            accessibilityLabel="Tipo de ayuda"
-            value={mode}
-            onChange={setMode}
-            options={[
-              { value: 'diagnostico', label: 'Diagnóstico' },
-              { value: 'plan', label: 'Plan' },
-              { value: 'chat', label: 'Preguntar' },
-            ]}
-          />
-          {status.data ? <ModeNotice external={status.data.external} /> : null}
+          <AppText variant="heading" style={{ fontSize: 18, marginTop: spacing.xs }} accessibilityRole="header">
+            ¿En qué te ayudo?
+          </AppText>
+          <View accessibilityRole="radiogroup" accessibilityLabel="Tipo de ayuda" style={{ flexDirection: 'row', gap: spacing.md }}>
+            <ModeTile icon="chart" title="Diagnóstico" detail="Tu mes" selected={mode === 'diagnostico'} onPress={() => setMode('diagnostico')} />
+            <ModeTile icon="goals" title="Plan" detail="Para tu meta" selected={mode === 'plan'} onPress={() => setMode('plan')} />
+            <ModeTile icon="sparkle" title="Preguntar" detail="Chat conmigo" selected={mode === 'chat'} onPress={() => setMode('chat')} />
+          </View>
           {mode === 'diagnostico' ? <Analysis kind="diagnostico" remaining={remaining(status.data?.limits.analysis)} /> : null}
           {mode === 'plan' ? <Analysis kind="plan" remaining={remaining(status.data?.limits.analysis)} /> : null}
           {mode === 'chat' ? <Chat remaining={remaining(status.data?.limits.chat)} /> : null}
@@ -108,28 +117,59 @@ export default function AssistantScreen() {
         <Icon name="info" color="textSubtle" size={16} />
         <AppText variant="caption" color="textMuted" style={{ flex: 1 }}>
           Orientación educativa: no es asesoría financiera profesional, no promete rendimientos ni garantiza créditos.
+          {status.data && !status.data.external ? ' Modo sin IA externa: las explicaciones se arman con reglas a partir de tus cifras.' : ''}
         </AppText>
       </View>
     </Screen>
   );
 }
 
-function remaining(bucket?: { used: number; limit: number }) {
-  return bucket ? Math.max(0, bucket.limit - bucket.used) : null;
-}
-
-function ModeNotice({ external }: { external: boolean }) {
-  const { colors, radius, spacing } = useTheme();
+function Pill({ icon, label }: { icon: IconName; label: string }) {
   return (
-    <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center', padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.violetSoft }}>
-      <Icon name={external ? 'sparkle' : 'settings'} color="violetText" size={18} />
-      <AppText variant="caption" style={{ flex: 1 }}>
-        {external
-          ? 'Respuestas con IA. Cada cifra se compara con tus datos antes de mostrarse.'
-          : 'Modo sin IA externa: las explicaciones se arman con reglas a partir de tus cifras, sin enviar datos a terceros.'}
-      </AppText>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.14)' }}>
+      <Icon name={icon} size={13} tint="#FFFFFF" />
+      <OnGradient variant="caption" style={{ fontSize: 12 }}>
+        {label}
+      </OnGradient>
     </View>
   );
+}
+
+/** Opción de ayuda como tarjeta independiente, con ícono, nombre y para qué sirve. */
+function ModeTile({ icon, title, detail, selected, onPress }: { icon: IconName; title: string; detail: string; selected: boolean; onPress: () => void }) {
+  const { colors, isDark, elevate } = useTheme();
+  const [from, to] = MENTOR_GRADIENT[isDark ? 'dark' : 'light'];
+  return (
+    <PressableScale
+      scaleTo={0.94}
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
+      accessibilityLabel={`${title}: ${detail}`}
+      onPress={onPress}
+      containerStyle={{ flex: 1 }}
+      style={[
+        { height: 128, padding: 12, gap: 10, borderRadius: 22, overflow: 'hidden', borderWidth: 1, borderColor: selected ? 'transparent' : colors.border, backgroundColor: colors.surface },
+        selected ? [elevate('high'), { shadowColor: from, shadowOpacity: 0.4 }] : null,
+      ]}
+    >
+      {selected ? <GradientFill from={from} to={to} radius={22} /> : null}
+      <View style={{ width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: selected ? 'rgba(255,255,255,0.18)' : colors.violetSoft }}>
+        <Icon name={icon} size={21} tint={selected ? '#FFFFFF' : colors.violetText} />
+      </View>
+      <View style={{ gap: 2 }}>
+        <AppText variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ color: selected ? '#FFFFFF' : colors.text, fontSize: 13.5 }}>
+          {title}
+        </AppText>
+        <AppText variant="caption" style={{ color: selected ? 'rgba(255,255,255,0.8)' : colors.textMuted, fontSize: 12 }} numberOfLines={1}>
+          {detail}
+        </AppText>
+      </View>
+    </PressableScale>
+  );
+}
+
+function remaining(bucket?: { used: number; limit: number }) {
+  return bucket ? Math.max(0, bucket.limit - bucket.used) : null;
 }
 
 function Analysis({ kind, remaining: left }: { kind: 'diagnostico' | 'plan'; remaining: number | null }) {
@@ -189,61 +229,81 @@ function AnswerView({ result, title }: { result: AnalysisResult; title: string }
   const { colors, spacing } = useTheme();
   const { answer } = result;
   return (
-    <Card elevated>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-        <MentorMark size={28} />
-        <AppText variant="heading" style={{ flex: 1 }}>
-          {title}
-        </AppText>
-      </View>
-      <AppText>{answer.resumen}</AppText>
+    <View style={{ gap: spacing.lg }}>
+      <Card elevated>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+          <View style={{ width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.violetSoft }}>
+            <MentorMark size={28} />
+          </View>
+          <AppText variant="heading" style={{ flex: 1, fontSize: 18 }}>
+            {title}
+          </AppText>
+        </View>
+        <AppText style={{ lineHeight: 25 }}>{answer.resumen}</AppText>
+        <VerificationBadge verification={result.verification} source={result.source} />
+      </Card>
+
+      <GradientCard tone="brand">
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+          <Icon name="lightbulb" size={18} tint="#FFFFFF" />
+          <OnGradient variant="label" soft>
+            Recomendación principal
+          </OnGradient>
+        </View>
+        <OnGradient variant="heading" style={{ fontSize: 19, lineHeight: 26 }}>
+          {answer.recomendacion}
+        </OnGradient>
+      </GradientCard>
+
       <DataUsedList items={result.dataUsed} />
-      <View style={{ gap: spacing.xs, padding: spacing.md, borderRadius: 12, backgroundColor: colors.primarySoft }}>
-        <AppText variant="overline" color="primary">
-          Recomendación principal
-        </AppText>
-        <AppText variant="bodyStrong">{answer.recomendacion}</AppText>
-      </View>
-      <Section title="Pasos concretos" items={answer.pasos} numbered />
-      <Section title="Alternativas" items={answer.alternativas} />
-      <Section title="Supuestos y límites" items={answer.supuestos} muted />
-      <VerificationBadge verification={result.verification} source={result.source} />
-    </Card>
+      <Section icon="check" title="Pasos concretos" items={answer.pasos} numbered />
+      <Section icon="compare" title="Alternativas" items={answer.alternativas} />
+      <Section icon="info" title="Supuestos y límites" items={answer.supuestos} muted />
+    </View>
   );
 }
 
-function Section({ title, items, numbered, muted }: { title: string; items: string[]; numbered?: boolean; muted?: boolean }) {
-  const { spacing } = useTheme();
+function Section({ icon, title, items, numbered, muted }: { icon: IconName; title: string; items: string[]; numbered?: boolean; muted?: boolean }) {
+  const { colors, spacing } = useTheme();
   if (!items.length) return null;
   return (
-    <View style={{ gap: spacing.xs }}>
-      <AppText variant="overline" color="textMuted">
-        {title}
-      </AppText>
+    <Card>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+        <Icon name={icon} size={18} color={muted ? 'textMuted' : 'violetText'} />
+        <AppText variant="label" color={muted ? 'textMuted' : 'text'}>
+          {title}
+        </AppText>
+      </View>
       {items.map((item, index) => (
-        <View key={index} style={{ flexDirection: 'row', gap: spacing.sm }}>
-          <AppText variant="label" color={muted ? 'textMuted' : 'violetText'}>
-            {numbered ? `${index + 1}.` : '•'}
-          </AppText>
+        <View key={index} style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' }}>
+          {numbered ? (
+            <View style={{ width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.violetSoft }}>
+              <AppText variant="label" color="violetText" style={{ fontSize: 13 }}>
+                {index + 1}
+              </AppText>
+            </View>
+          ) : (
+            <View style={{ width: 7, height: 7, borderRadius: 4, marginTop: 9, backgroundColor: muted ? colors.textSubtle : colors.violet }} />
+          )}
           <AppText variant={muted ? 'caption' : 'body'} color={muted ? 'textMuted' : 'text'} style={{ flex: 1 }}>
             {item}
           </AppText>
         </View>
       ))}
-    </View>
+    </Card>
   );
 }
 
 function DataUsedList({ items }: { items: DataUsed[] }) {
   const { colors, spacing } = useTheme();
   return (
-    <View style={{ gap: spacing.xs }}>
-      <AppText variant="overline" color="textMuted">
-        Datos usados
+    <View style={{ gap: spacing.sm }}>
+      <AppText variant="label" color="textMuted" style={{ paddingHorizontal: spacing.xs }}>
+        Datos que usó (calculados por la app)
       </AppText>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
         {items.map((item) => (
-          <View key={item.label} style={{ width: '48%', flexGrow: 1, paddingHorizontal: spacing.md, paddingVertical: 10, borderRadius: 14, backgroundColor: colors.surfaceAlt }}>
+          <View key={item.label} style={{ width: '47%', flexGrow: 1, paddingHorizontal: spacing.md, paddingVertical: 12, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
             <AppText variant="caption" color="textMuted">
               {item.label}
             </AppText>
@@ -274,7 +334,7 @@ function VerificationBadge({ verification, source }: { verification?: Verificati
 }
 
 function Chat({ remaining: initialRemaining }: { remaining: number | null }) {
-  const { colors, radius, spacing } = useTheme();
+  const { colors, isDark, spacing } = useTheme();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [text, setText] = useState('');
@@ -308,53 +368,108 @@ function Chat({ remaining: initialRemaining }: { remaining: number | null }) {
     setConversationId(null);
   }
 
+  const [from, to] = ACTION_GRADIENT[isDark ? 'dark' : 'light'];
   return (
     <View style={{ gap: spacing.md }}>
       {messages.length === 0 ? (
-        <ChipGroup>
-          {QUICK_QUESTIONS.map((question) => (
-            <Chip key={question} label={question} onPress={() => send(question)} />
-          ))}
-        </ChipGroup>
+        <Card>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+            <MentorMark size={36} />
+            <AppText style={{ flex: 1 }}>¡Hola! Pregúntame sobre tus gastos, tus metas o un crédito. Te respondo con tus propias cifras.</AppText>
+          </View>
+          <AppText variant="label" color="textMuted">
+            Prueba con:
+          </AppText>
+          <View style={{ gap: spacing.sm }}>
+            {QUICK_QUESTIONS.map((question) => (
+              <PressableScale
+                key={question}
+                accessibilityRole="button"
+                accessibilityLabel={question}
+                onPress={() => send(question)}
+                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: 14, borderRadius: 16, backgroundColor: pressed ? colors.violetSoft : colors.surfaceAlt })}
+              >
+                <Icon name="sparkle" size={16} color="violetText" />
+                <AppText variant="label" style={{ flex: 1 }}>
+                  {question}
+                </AppText>
+                <Icon name="chevronRight" size={16} color="textSubtle" />
+              </PressableScale>
+            ))}
+          </View>
+        </Card>
       ) : null}
       {messages.map((message) => {
         const mine = message.role === 'user';
         const link = message.meta?.funcion ? FUNCTION_LINKS[message.meta.funcion] : null;
         return (
           <FadeIn key={message.id}>
-            <View
-              accessibilityLabel={`${mine ? 'Tú' : 'Mentor'}: ${message.content}`}
-              style={{
-                alignSelf: mine ? 'flex-end' : 'flex-start',
-                maxWidth: '88%',
-                gap: spacing.sm,
-                padding: spacing.md,
-                borderRadius: radius.lg,
-                backgroundColor: mine ? colors.primarySoft : colors.surface,
-                borderWidth: 1,
-                borderColor: mine ? colors.primary : colors.border,
-              }}
-            >
-              <AppText>{message.content}</AppText>
-              {!mine ? <VerificationBadge verification={message.meta?.verification} source={message.meta?.source} /> : null}
-              {link ? <Button title={link.label} variant="secondary" onPress={() => router.push(link.href)} /> : null}
+            <View style={{ flexDirection: 'row', justifyContent: mine ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: spacing.sm }}>
+              {!mine ? (
+                <View style={{ width: 32, height: 32, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.violetSoft }}>
+                  <MentorMark size={24} />
+                </View>
+              ) : null}
+              <View
+                accessibilityLabel={`${mine ? 'Tú' : 'Mentor'}: ${message.content}`}
+                style={{
+                  maxWidth: '82%',
+                  gap: spacing.sm,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  borderRadius: 22,
+                  borderBottomRightRadius: mine ? 6 : 22,
+                  borderBottomLeftRadius: mine ? 22 : 6,
+                  overflow: 'hidden',
+                  backgroundColor: mine ? 'transparent' : colors.surface,
+                  borderWidth: mine ? 0 : 1,
+                  borderColor: colors.border,
+                }}
+              >
+                {mine ? <GradientFill from={from} to={to} /> : null}
+                <AppText style={{ color: mine ? colors.onPrimary : colors.text }}>{message.content}</AppText>
+                {!mine ? <VerificationBadge verification={message.meta?.verification} source={message.meta?.source} /> : null}
+                {link ? <Button title={link.label} variant="secondary" onPress={() => router.push(link.href)} /> : null}
+              </View>
             </View>
           </FadeIn>
         );
       })}
-      {sending ? <LoadingView label="El mentor está revisando tus cifras…" /> : null}
+      {sending ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingLeft: 40 }}>
+          <AppText variant="caption" color="violetText">
+            El mentor está revisando tus cifras…
+          </AppText>
+        </View>
+      ) : null}
       {error ? <AppText color="danger">{error}</AppText> : null}
-      <TextField
-        label="Tu pregunta"
-        value={text}
-        onChangeText={setText}
-        placeholder="Ej.: ¿cómo puedo llegar antes a mi meta?"
-        maxLength={500}
-        returnKeyType="send"
-        onSubmitEditing={() => send()}
-      />
-      <Button title="Enviar" onPress={() => send()} loading={sending} disabled={remainingNow === 0} />
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+
+      {/* Barra para escribir */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: 6, paddingLeft: 18, borderRadius: 999, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+        <TextInput
+          accessibilityLabel="Tu pregunta"
+          value={text}
+          onChangeText={setText}
+          placeholder="Escribe tu pregunta…"
+          placeholderTextColor={colors.textSubtle}
+          maxLength={500}
+          returnKeyType="send"
+          onSubmitEditing={() => send()}
+          style={{ flex: 1, minHeight: 44, color: colors.text, fontSize: 16 }}
+        />
+        <PressableScale
+          scaleTo={0.9}
+          accessibilityRole="button"
+          accessibilityLabel="Enviar"
+          disabled={sending || remainingNow === 0 || text.trim().length < 2}
+          onPress={() => send()}
+          style={{ width: 46, height: 46, borderRadius: 23, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', opacity: text.trim().length < 2 ? 0.5 : 1 }}
+        >
+          <GradientFill from={from} to={to} />
+          <Icon name="send" size={20} color="onPrimary" />
+        </PressableScale>
+      </View>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.xs }}>
         <AppText variant="caption" color="textMuted">
           {remainingNow === null ? '' : remainingNow === 0 ? 'Llegaste al límite de mensajes por hoy.' : `Te quedan ${remainingNow} mensajes hoy.`}
         </AppText>

@@ -35,12 +35,12 @@ export function Chip({ label, selected = false, onPress, dotColor, leading, acce
         borderRadius: radius.pill,
         borderWidth: 1.5,
         borderColor: selected ? colors.primary : colors.border,
-        backgroundColor: selected ? colors.primarySoft : pressed ? colors.surfaceAlt : colors.surface,
+        backgroundColor: selected ? colors.primary : pressed ? colors.surfaceAlt : colors.surface,
       })}
     >
       {leading}
       {dotColor ? <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: dotColor }} /> : null}
-      <AppText variant="label" color={selected ? 'text' : 'textMuted'}>
+      <AppText variant="label" color={selected ? 'onPrimary' : 'textMuted'}>
         {label}
       </AppText>
     </PressableScale>

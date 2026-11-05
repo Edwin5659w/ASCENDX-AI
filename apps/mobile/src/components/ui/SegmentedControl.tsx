@@ -5,6 +5,7 @@ import { useTheme } from '@/theme/useTheme';
 import { AppText } from './AppText';
 import { Icon, type IconName } from './Icon';
 import { NATIVE_DRIVER } from '@/components/motion/nativeDriver';
+import { ACTION_GRADIENT, GradientFill } from './Modern';
 
 interface Option<T extends string> {
   value: T;
@@ -21,7 +22,8 @@ interface SegmentedControlProps<T extends string> {
 
 /** Selector de opciones excluyentes con un indicador que se desliza a la opción elegida. */
 export function SegmentedControl<T extends string>({ options, value, onChange, accessibilityLabel }: SegmentedControlProps<T>) {
-  const { colors, radius, spacing, elevate } = useTheme();
+  const { colors, spacing, elevate, isDark } = useTheme();
+  const [from, to] = ACTION_GRADIENT[isDark ? 'dark' : 'light'];
   const reduced = useReducedMotion();
   const [width, setWidth] = useState(0);
   const index = Math.max(0, options.findIndex((option) => option.value === value));
@@ -39,7 +41,7 @@ export function SegmentedControl<T extends string>({ options, value, onChange, a
       accessibilityRole="radiogroup"
       accessibilityLabel={accessibilityLabel}
       onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}
-      style={{ flexDirection: 'row', padding, borderRadius: radius.md, backgroundColor: colors.surfaceAlt }}
+      style={{ flexDirection: 'row', padding, borderRadius: 999, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
     >
       {segment > 0 ? (
         <Animated.View
@@ -51,15 +53,16 @@ export function SegmentedControl<T extends string>({ options, value, onChange, a
               bottom: padding,
               left: padding,
               width: segment,
-              borderRadius: radius.md - 2,
-              backgroundColor: colors.surfaceElevated,
-              borderWidth: 1,
-              borderColor: colors.border,
+              borderRadius: 999,
+              overflow: 'hidden',
               transform: [{ translateX: Animated.multiply(position, segment) }],
             },
             elevate('low'),
+            { shadowColor: from },
           ]}
-        />
+        >
+          <GradientFill from={from} to={to} />
+        </Animated.View>
       ) : null}
       {options.map((option) => {
         const selected = option.value === value;
@@ -76,8 +79,8 @@ export function SegmentedControl<T extends string>({ options, value, onChange, a
             }}
             style={{ flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center', gap: 2, paddingVertical: spacing.xs }}
           >
-            {option.icon ? <Icon name={option.icon} size={20} color={selected ? 'primary' : 'textMuted'} /> : null}
-            <AppText variant="label" color={selected ? 'text' : 'textMuted'}>
+            {option.icon ? <Icon name={option.icon} size={20} color={selected ? 'onPrimary' : 'textMuted'} /> : null}
+            <AppText variant="label" color={selected ? 'onPrimary' : 'textMuted'}>
               {option.label}
             </AppText>
           </Pressable>
