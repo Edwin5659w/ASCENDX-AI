@@ -1,4 +1,4 @@
-import { Children, type ReactNode } from 'react';
+import { Children, cloneElement, Fragment, isValidElement, type ReactElement, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { FadeIn } from '@/components/motion';
@@ -15,31 +15,45 @@ interface ScreenProps {
 
 export function Screen({ children, scroll = false, edges = ['top'], animateIn = true }: ScreenProps) {
   const { colors, spacing } = useTheme();
-  const content = { padding: spacing.xl, gap: spacing.lg };
+  const content = { paddingHorizontal: 20, paddingTop: spacing.lg, gap: 20 };
+  const items = flatten(children);
 
   return (
     <SafeAreaView edges={edges} style={[styles.flex, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {scroll ? (
           <ScrollView
-            contentContainerStyle={[content, { paddingBottom: spacing.xxxl }]}
+            contentContainerStyle={[content, { paddingBottom: 130 }]}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
             {animateIn
-              ? Children.toArray(children).map((child, index) => (
+              ? items.map((child, index) => (
                   <FadeIn key={(child as { key?: string }).key ?? index} delay={Math.min(index, 8) * 60}>
                     {child}
                   </FadeIn>
                 ))
-              : children}
+              : items}
           </ScrollView>
         ) : (
-          <View style={[styles.flex, content]}>{children}</View>
+          <View style={[styles.flex, content]}>{items}</View>
         )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
+}
+
+/**
+ * Las secciones agrupadas en <>…</> cuentan como una sola para el espacio
+ * entre tarjetas; se aplanan para que todas queden igual de separadas.
+ */
+function flatten(children: ReactNode, prefix = ''): ReactNode[] {
+  return Children.toArray(children).flatMap((child) => {
+    if (!isValidElement(child)) return [child];
+    const key = `${prefix}${child.key ?? ''}`;
+    if (child.type === Fragment) return flatten((child as ReactElement<{ children?: ReactNode }>).props.children, `${key}/`);
+    return [cloneElement(child, { key })];
+  });
 }
 
 const styles = StyleSheet.create({ flex: { flex: 1 } });

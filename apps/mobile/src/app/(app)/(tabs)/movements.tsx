@@ -2,7 +2,7 @@ import type { MovementType } from '@ascendx/finance-core';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
-import { AppText, Button, Card, Chip, ChipGroup, EmptyView, ErrorView, Icon, LoadingView, OfflineBanner, Screen, TextField } from '@/components/ui';
+import { AppText, Button, Card, Chip, ChipGroup, EmptyView, ErrorView, GradientCard, Icon, LoadingView, OfflineBanner, OnGradient, Screen, TextField } from '@/components/ui';
 import { getTransactions, type Transaction } from '@/features/finance/api';
 import { MonthSwitcher, MovementRow } from '@/features/finance/components';
 import { dayHeading, shiftMonth, todayKey } from '@/features/finance/labels';
@@ -118,22 +118,28 @@ export default function MovementsScreen() {
       <PendingSyncBanner />
 
       {totals ? (
-        <Card>
-          <View style={{ flexDirection: 'row', gap: spacing.lg }}>
-            <Total label="Ingresos" value={totals.income} tone="success" />
-            <Total label="Gastos" value={totals.expenses} />
-            <Total label="Pagos de deuda" value={totals.debtPayments} />
+        <GradientCard tone={totals.netFlow < 0 ? 'danger' : 'brand'}>
+          <OnGradient variant="label" soft>
+            Flujo neto del periodo
+          </OnGradient>
+          <OnGradient variant="display" style={{ fontSize: 34, lineHeight: 40 }}>
+            {formatCop(totals.netFlow)}
+          </OnGradient>
+          <View style={{ flexDirection: 'row', gap: spacing.md, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.16)' }}>
+            <View style={{ flex: 1 }}>
+              <OnGradient variant="caption" soft>Ingresos</OnGradient>
+              <OnGradient variant="label">{formatCop(totals.income)}</OnGradient>
+            </View>
+            <View style={{ flex: 1 }}>
+              <OnGradient variant="caption" soft>Gastos</OnGradient>
+              <OnGradient variant="label">{formatCop(totals.expenses)}</OnGradient>
+            </View>
+            <View style={{ flex: 1 }}>
+              <OnGradient variant="caption" soft>Deudas</OnGradient>
+              <OnGradient variant="label">{formatCop(totals.debtPayments)}</OnGradient>
+            </View>
           </View>
-          <View style={{ height: 1, backgroundColor: colors.border }} />
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <AppText variant="label" color="textMuted">
-              Flujo neto del filtro
-            </AppText>
-            <AppText variant="amountSmall" color={totals.netFlow < 0 ? 'danger' : 'text'}>
-              {formatCop(totals.netFlow)}
-            </AppText>
-          </View>
-        </Card>
+        </GradientCard>
       ) : null}
 
       {loading ? <LoadingView /> : null}
@@ -149,13 +155,17 @@ export default function MovementsScreen() {
       ) : null}
 
       {groups.map(([date, list]) => (
-        <View key={date} style={{ gap: spacing.xs }}>
-          <AppText variant="overline" color="textMuted">
+        <View key={date} style={{ gap: spacing.sm }}>
+          <AppText variant="label" color="textMuted" style={{ paddingHorizontal: spacing.xs }}>
             {dayHeading(date)}
           </AppText>
-          {list.map((movement) => (
-            <MovementRow key={movement.id} movement={movement} onPress={() => router.push({ pathname: '/new-movement', params: { id: movement.id } })} />
-          ))}
+          <Card style={{ gap: 0, paddingVertical: spacing.xs }}>
+            {list.map((movement, index) => (
+              <View key={movement.id} style={index ? { borderTopWidth: 1, borderTopColor: colors.border } : undefined}>
+                <MovementRow movement={movement} onPress={() => router.push({ pathname: '/new-movement', params: { id: movement.id } })} />
+              </View>
+            ))}
+          </Card>
         </View>
       ))}
 
@@ -170,18 +180,5 @@ export default function MovementsScreen() {
         </View>
       ) : null}
     </Screen>
-  );
-}
-
-function Total({ label, value, tone = 'text' }: { label: string; value: number; tone?: 'text' | 'success' }) {
-  return (
-    <View style={{ flex: 1, gap: 2 }}>
-      <AppText variant="caption" color="textMuted">
-        {label}
-      </AppText>
-      <AppText variant="label" color={tone}>
-        {formatCop(value)}
-      </AppText>
-    </View>
   );
 }

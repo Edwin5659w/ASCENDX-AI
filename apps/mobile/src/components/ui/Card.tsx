@@ -12,17 +12,17 @@ interface CardProps {
 }
 
 export function Card({ children, highlighted = false, elevated = false, style }: CardProps) {
-  const { colors, radius, spacing, elevate } = useTheme();
+  const { colors, elevate } = useTheme();
   return (
     <View
       style={[
         {
           backgroundColor: elevated ? colors.surfaceElevated : colors.surface,
-          borderRadius: radius.lg,
+          borderRadius: 22,
           borderWidth: 1,
           borderColor: highlighted ? colors.primary : colors.border,
-          padding: spacing.xl,
-          gap: spacing.md,
+          padding: 20,
+          gap: 12,
         },
         elevate(elevated || highlighted ? 'low' : 'none'),
         style,

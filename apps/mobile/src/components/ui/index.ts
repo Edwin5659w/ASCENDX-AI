@@ -15,3 +15,4 @@ export { ToggleRow } from './ToggleRow';
 export { SegmentedControl } from './SegmentedControl';
 export { Chip, ChipGroup } from './Chip';
 export { EmptyView, ErrorView, LoadingView, OfflineBanner, errorMessage } from './StateViews';
+export { GradientCard, OnGradient, QuickAction, SectionHeader, StatTile } from './Modern';

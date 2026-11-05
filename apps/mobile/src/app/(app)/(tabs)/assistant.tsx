@@ -235,7 +235,7 @@ function Section({ title, items, numbered, muted }: { title: string; items: stri
 }
 
 function DataUsedList({ items }: { items: DataUsed[] }) {
-  const { colors, radius, spacing } = useTheme();
+  const { colors, spacing } = useTheme();
   return (
     <View style={{ gap: spacing.xs }}>
       <AppText variant="overline" color="textMuted">
@@ -243,7 +243,7 @@ function DataUsedList({ items }: { items: DataUsed[] }) {
       </AppText>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
         {items.map((item) => (
-          <View key={item.label} style={{ paddingHorizontal: spacing.md, paddingVertical: 6, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border }}>
+          <View key={item.label} style={{ width: '48%', flexGrow: 1, paddingHorizontal: spacing.md, paddingVertical: 10, borderRadius: 14, backgroundColor: colors.surfaceAlt }}>
             <AppText variant="caption" color="textMuted">
               {item.label}
             </AppText>

@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
-import { Pressable, View } from 'react-native';
+import { Pressable, View, type ColorValue } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type IconName } from '@/components/ui';
 import { useTheme } from '@/theme/useTheme';
 
@@ -18,22 +19,28 @@ const TABS: { name: string; title: string; icon: IconName }[] = [
 ];
 
 function AddButton() {
-  const { colors } = useTheme();
+  const { colors, elevate } = useTheme();
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Registrar un nuevo movimiento"
         onPress={() => router.push('/new-movement')}
-        style={({ pressed }) => ({
-          width: 52,
-          height: 52,
-          borderRadius: 18,
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: pressed ? colors.primaryPressed : colors.primary,
-          transform: [{ translateY: -6 }],
-        })}
+        style={({ pressed }) => [
+          {
+            width: 58,
+            height: 58,
+            borderRadius: 29,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: pressed ? colors.primaryPressed : colors.primary,
+            borderWidth: 5,
+            borderColor: colors.surface,
+            transform: [{ translateY: -18 }],
+          },
+          elevate('high'),
+          { shadowColor: colors.primary },
+        ]}
       >
         <Icon name="add" size={28} color="onPrimary" />
       </Pressable>
@@ -41,8 +48,19 @@ function AddButton() {
   );
 }
 
+/** Ícono de pestaña con una «píldora» de fondo cuando está activa. */
+function TabIcon({ icon, color, focused, soft }: { icon: IconName; color: ColorValue; focused: boolean; soft: string }) {
+  return (
+    <View style={{ width: 54, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: focused ? soft : 'transparent' }}>
+      <Icon name={icon} tint={color} size={22} />
+    </View>
+  );
+}
+
 export default function TabsLayout() {
-  const { colors, fonts } = useTheme();
+  const { colors, fonts, elevate } = useTheme();
+  const insets = useSafeAreaInsets();
+  const bottom = Math.max(insets.bottom, 10);
 
   return (
     <Tabs
@@ -50,8 +68,19 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSubtle,
-        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border, height: 68, paddingTop: 6 },
-        tabBarLabelStyle: { fontFamily: fonts.semibold, fontSize: 11 },
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopWidth: 0,
+          height: 66 + bottom,
+          paddingTop: 10,
+          paddingBottom: bottom,
+          borderTopLeftRadius: 26,
+          borderTopRightRadius: 26,
+          position: 'absolute',
+          ...elevate('high'),
+        },
+        tabBarItemStyle: { paddingHorizontal: 0 },
+        tabBarLabelStyle: { fontFamily: fonts.semibold, fontSize: 10.5, letterSpacing: -0.1, marginTop: 4 },
         sceneStyle: { backgroundColor: colors.background },
       }}
     >
@@ -70,7 +99,9 @@ export default function TabsLayout() {
               title: tab.title,
               // El mentor conserva su color de identidad (violeta) al estar activo.
               ...(tab.name === 'assistant' ? { tabBarActiveTintColor: colors.violetText } : {}),
-              tabBarIcon: ({ color }) => <Icon name={tab.icon} tint={color} size={24} />,
+              tabBarIcon: ({ color, focused }) => (
+                <TabIcon icon={tab.icon} color={color} focused={focused} soft={tab.name === 'assistant' ? colors.violetSoft : colors.primarySoft} />
+              ),
             }}
           />
         ),

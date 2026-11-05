@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { View } from 'react-native';
-import { AppText, Button, Card, EmptyView, ErrorView, Icon, LoadingView, NavRow, OfflineBanner, Screen } from '@/components/ui';
+import { AppText, Button, Card, EmptyView, ErrorView, GradientCard, Icon, LoadingView, NavRow, OfflineBanner, OnGradient, Screen, SectionHeader } from '@/components/ui';
 import { getGoals } from '@/features/finance/api';
 import { GoalCard } from '@/features/finance/components';
 import { formatCop } from '@/lib/format';
@@ -38,40 +38,44 @@ export default function GoalsScreen() {
       ) : null}
 
       {data && visible.length > 0 ? (
-        <Card highlighted={data.allocation.allOnTrack}>
-          <AppText variant="overline" color="textMuted">
+        <GradientCard tone="brand">
+          <OnGradient variant="label" soft>
             Reparto de tu ahorro prudente
-          </AppText>
+          </OnGradient>
           {data.capacity.base === 'sin_datos' ? (
-            <AppText color="textMuted">{data.capacity.explanation}</AppText>
+            <OnGradient soft>{data.capacity.explanation}</OnGradient>
           ) : (
             <>
-              <AppText variant="amount">{formatCop(data.allocation.prudentCapacity)}</AppText>
-              <AppText variant="caption" color="textMuted">
+              <OnGradient variant="display" style={{ fontSize: 36, lineHeight: 42 }}>
+                {formatCop(data.allocation.prudentCapacity)}
+              </OnGradient>
+              <OnGradient variant="caption" soft>
                 al mes · tus metas con fecha necesitan {formatCop(data.allocation.totalRequired)}
                 {data.allocation.unassigned > 0 ? ` · sobran ${formatCop(data.allocation.unassigned)}` : ''}
-              </AppText>
-              <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center' }}>
-                <Icon name={data.allocation.allOnTrack ? 'check' : 'warning'} color={data.allocation.allOnTrack ? 'success' : 'warning'} size={18} />
-                <AppText variant="caption" style={{ flex: 1 }}>
+              </OnGradient>
+              <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center', padding: spacing.md, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.12)' }}>
+                <Icon name={data.allocation.allOnTrack ? 'check' : 'warning'} tint={data.allocation.allOnTrack ? '#6EE7B7' : '#FCD34D'} size={18} />
+                <OnGradient variant="caption" style={{ flex: 1 }}>
                   {data.allocation.allOnTrack
                     ? 'Tu ahorro alcanza para todas tus metas con fecha.'
                     : `${atRisk.length} ${atRisk.length === 1 ? 'meta está' : 'metas están'} en riesgo: el ahorro no alcanza para todas. Se reparte primero por prioridad y luego por fecha.`}
-                </AppText>
+                </OnGradient>
               </View>
             </>
           )}
-        </Card>
+        </GradientCard>
       ) : null}
 
+      {visible.length ? <SectionHeader title="Tus metas" /> : null}
       {visible.map((goal) => (
         <GoalCard key={goal.id} goal={goal} onPress={() => router.push({ pathname: '/goal/[id]', params: { id: goal.id } })} />
       ))}
 
-      <View style={{ gap: spacing.xs }}>
+      <SectionHeader title="Herramientas" />
+      <Card style={{ gap: spacing.xs, paddingVertical: spacing.md }}>
         <NavRow icon="simulator" title="Simulador" subtitle="¿Ahorrar, financiar o combinar?" onPress={() => router.push('/simulator')} />
         <NavRow icon="debt" title="Deudas" subtitle="Saldos, cuotas y pagos" onPress={() => router.push('/debts')} />
-      </View>
+      </Card>
     </Screen>
   );
 }

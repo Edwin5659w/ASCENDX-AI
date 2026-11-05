@@ -220,7 +220,7 @@ export function StatusBadge({ status }: { status: keyof typeof PLAN_STATUS | str
 }
 
 export function GoalCard({ goal, onPress }: { goal: Goal; onPress?: () => void }) {
-  const { colors, radius, spacing } = useTheme();
+  const { colors, spacing } = useTheme();
   const percent = goal.plan?.progress.percent ?? Math.min(100, (goal.savedAmount / Math.max(1, goal.targetAmount)) * 100);
   const status = goal.status === 'pausada' ? null : goal.status === 'completada' ? 'completada' : (goal.plan?.status ?? null);
   return (
@@ -233,8 +233,8 @@ export function GoalCard({ goal, onPress }: { goal: Goal; onPress?: () => void }
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.lg,
-        padding: spacing.lg,
-        borderRadius: radius.lg,
+        padding: 18,
+        borderRadius: 22,
         borderWidth: 1,
         borderColor: colors.border,
         backgroundColor: pressed ? colors.surfaceAlt : colors.surface,
