@@ -22,7 +22,7 @@ interface SegmentedControlProps<T extends string> {
 
 /** Selector de opciones excluyentes con un indicador que se desliza a la opción elegida. */
 export function SegmentedControl<T extends string>({ options, value, onChange, accessibilityLabel }: SegmentedControlProps<T>) {
-  const { colors, spacing, elevate, isDark } = useTheme();
+  const { colors, spacing, isDark } = useTheme();
   const [from, to] = ACTION_GRADIENT[isDark ? 'dark' : 'light'];
   const reduced = useReducedMotion();
   const [width, setWidth] = useState(0);
@@ -55,13 +55,12 @@ export function SegmentedControl<T extends string>({ options, value, onChange, a
               width: segment,
               borderRadius: 999,
               overflow: 'hidden',
+              backgroundColor: from,
               transform: [{ translateX: Animated.multiply(position, segment) }],
             },
-            elevate('low'),
-            { shadowColor: from },
           ]}
         >
-          <GradientFill from={from} to={to} />
+          <GradientFill from={from} to={to} radius={999} />
         </Animated.View>
       ) : null}
       {options.map((option) => {

@@ -1,6 +1,6 @@
-import { useId, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
-import Svg, { Circle, Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 import { PressableScale } from '@/components/motion';
 import { useTheme } from '@/theme/useTheme';
 import { AppText } from './AppText';
@@ -20,28 +20,15 @@ const GRADIENTS: Record<Tone, { dark: [string, string, string]; light: [string, 
  * El texto encima siempre es claro (contraste ≥ 4,5:1 sobre el tono más claro).
  */
 export function GradientCard({ children, tone = 'brand', style }: { children: ReactNode; tone?: Tone; style?: StyleProp<ViewStyle> }) {
-  const { isDark, elevate } = useTheme();
-  const id = useId().replace(/:/g, '');
+  const { isDark } = useTheme();
   const [a, b, c] = GRADIENTS[tone][isDark ? 'dark' : 'light'];
+  // Degradado nativo (Android y iOS) con fondo sólido: sin sombras grises ni bordes cortados.
   return (
-    <View style={[{ borderRadius: 28, overflow: 'hidden' }, elevate('high'), style]}>
-      <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 100 100">
-        <Defs>
-          <LinearGradient id={`g${id}`} x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor={a} />
-            <Stop offset="0.55" stopColor={b} />
-            <Stop offset="1" stopColor={c} />
-          </LinearGradient>
-          <RadialGradient id={`r${id}`} cx="0.9" cy="0.05" r="0.6">
-            <Stop offset="0" stopColor="#FFFFFF" stopOpacity="0.22" />
-            <Stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
-          </RadialGradient>
-        </Defs>
-        <Rect x="0" y="0" width="100" height="100" fill={`url(#g${id})`} />
-        <Rect x="0" y="0" width="100" height="100" fill={`url(#r${id})`} />
-        <Circle cx="96" cy="96" r="30" fill="#FFFFFF" fillOpacity="0.04" />
-        <Circle cx="8" cy="104" r="22" fill="#FFFFFF" fillOpacity="0.035" />
-      </Svg>
+    <View style={[{ borderRadius: 28, overflow: 'hidden', backgroundColor: b }, style]}>
+      <LinearGradient pointerEvents="none" colors={[a, b, c]} locations={[0, 0.55, 1]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+      <View pointerEvents="none" style={{ position: 'absolute', top: -70, right: -50, width: 200, height: 200, borderRadius: 100, backgroundColor: 'rgba(255,255,255,0.10)' }} />
+      <View pointerEvents="none" style={{ position: 'absolute', bottom: -60, right: -30, width: 150, height: 150, borderRadius: 75, backgroundColor: 'rgba(255,255,255,0.05)' }} />
+      <View pointerEvents="none" style={{ position: 'absolute', bottom: -50, left: -40, width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(255,255,255,0.04)' }} />
       <View style={{ padding: 24, gap: 12 }}>{children}</View>
     </View>
   );
@@ -116,16 +103,5 @@ export const MENTOR_GRADIENT = { dark: ['#9B7BFF', '#5B6CFF'], light: ['#7C3AED'
 
 /** Relleno con degradado para poner detrás de un contenido (posición absoluta). */
 export function GradientFill({ from, to, radius = 0 }: { from: string; to: string; radius?: number }) {
-  const id = useId().replace(/:/g, '');
-  return (
-    <Svg style={[StyleSheet.absoluteFill, { borderRadius: radius }]} width="100%" height="100%" pointerEvents="none" viewBox="0 0 100 100" preserveAspectRatio="none">
-      <Defs>
-        <LinearGradient id={`f${id}`} x1="0" y1="0" x2="1" y2="1">
-          <Stop offset="0" stopColor={from} />
-          <Stop offset="1" stopColor={to} />
-        </LinearGradient>
-      </Defs>
-      <Rect x="0" y="0" width="100" height="100" fill={`url(#f${id})`} />
-    </Svg>
-  );
+  return <LinearGradient pointerEvents="none" colors={[from, to]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: radius }]} />;
 }

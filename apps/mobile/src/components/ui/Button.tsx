@@ -14,7 +14,7 @@ interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> {
 
 /** Botón con respuesta física: se hunde al presionar, rebota al soltar y vibra suave. */
 export function Button({ title, variant = 'primary', loading = false, disabled, ...props }: ButtonProps) {
-  const { colors, spacing, elevate, isDark } = useTheme();
+  const { colors, spacing, isDark } = useTheme();
   const [from, to] = ACTION_GRADIENT[isDark ? 'dark' : 'light'];
   const gradient = variant === 'primary' && !isDisabledFlag(disabled, loading);
   const isDisabled = disabled || loading;
@@ -32,9 +32,8 @@ export function Button({ title, variant = 'primary', loading = false, disabled, 
       disabled={isDisabled}
       style={({ pressed }) => [
         styles.base,
-        variant === 'primary' && !isDisabled ? [elevate('high'), { shadowColor: from, shadowOpacity: 0.35 }] : null,
         {
-          backgroundColor: gradient ? 'transparent' : pressed ? pressedBackground : background,
+          backgroundColor: gradient ? from : pressed ? pressedBackground : background,
           borderRadius: 18,
           overflow: 'hidden',
           opacity: gradient && pressed ? 0.88 : undefined,

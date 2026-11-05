@@ -137,7 +137,7 @@ function Pill({ icon, label }: { icon: IconName; label: string }) {
 
 /** Opción de ayuda como tarjeta independiente, con ícono, nombre y para qué sirve. */
 function ModeTile({ icon, title, detail, selected, onPress }: { icon: IconName; title: string; detail: string; selected: boolean; onPress: () => void }) {
-  const { colors, isDark, elevate } = useTheme();
+  const { colors, isDark } = useTheme();
   const [from, to] = MENTOR_GRADIENT[isDark ? 'dark' : 'light'];
   return (
     <PressableScale
@@ -148,8 +148,7 @@ function ModeTile({ icon, title, detail, selected, onPress }: { icon: IconName; 
       onPress={onPress}
       containerStyle={{ flex: 1 }}
       style={[
-        { height: 128, padding: 12, gap: 10, borderRadius: 22, overflow: 'hidden', borderWidth: 1, borderColor: selected ? 'transparent' : colors.border, backgroundColor: colors.surface },
-        selected ? [elevate('high'), { shadowColor: from, shadowOpacity: 0.4 }] : null,
+        { height: 128, padding: 12, gap: 10, borderRadius: 22, overflow: 'hidden', borderWidth: selected ? 0 : 1, borderColor: colors.border, backgroundColor: selected ? from : colors.surface },
       ]}
     >
       {selected ? <GradientFill from={from} to={to} radius={22} /> : null}
@@ -421,7 +420,7 @@ function Chat({ remaining: initialRemaining }: { remaining: number | null }) {
                   borderBottomRightRadius: mine ? 6 : 22,
                   borderBottomLeftRadius: mine ? 22 : 6,
                   overflow: 'hidden',
-                  backgroundColor: mine ? 'transparent' : colors.surface,
+                  backgroundColor: mine ? from : colors.surface,
                   borderWidth: mine ? 0 : 1,
                   borderColor: colors.border,
                 }}
@@ -463,9 +462,9 @@ function Chat({ remaining: initialRemaining }: { remaining: number | null }) {
           accessibilityLabel="Enviar"
           disabled={sending || remainingNow === 0 || text.trim().length < 2}
           onPress={() => send()}
-          style={{ width: 46, height: 46, borderRadius: 23, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', opacity: text.trim().length < 2 ? 0.5 : 1 }}
+          style={{ width: 46, height: 46, borderRadius: 23, overflow: 'hidden', backgroundColor: from, alignItems: 'center', justifyContent: 'center', opacity: text.trim().length < 2 ? 0.5 : 1 }}
         >
-          <GradientFill from={from} to={to} />
+          <GradientFill from={from} to={to} radius={23} />
           <Icon name="send" size={20} color="onPrimary" />
         </PressableScale>
       </View>
